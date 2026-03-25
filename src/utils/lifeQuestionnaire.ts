@@ -145,7 +145,7 @@ export const getRandomizedLifeQuestions = (language: 'ar' | 'en' = 'ar') => {
 };
 
 export const ROMANTIC_QUESTIONNAIRE_AR = {
-  category: "في العلاقات الحسية",
+  category: "في العلاقات العاطفية",
   questions: [
     { id: 1, dimension: "البعد الوجودي", element: "الاستقبال", type: "سلوكي", text: "أتعامل مع ما يصلني من شريكي بلباقة وحكمة." },
     { id: 2, dimension: "البعد النفسي", element: "النية", type: "معرفي", text: "أرسم بوضوح ما أريد أن تكون عليه هذه العلاقة وأحدد مقصدي." },
@@ -319,3 +319,86 @@ export const getRandomizedWorkQuestions = (language: 'ar' | 'en' = 'ar') => {
     type: question.type
   }));
 }; 
+
+// --- استبيان إدارة الأحداث الكبرى (Crisis Management) ---
+
+export const CRISIS_MANAGEMENT_AR = {
+  category: "التعامل مع الأحداث الكبرى",
+  questions: [
+    { id: 24, dimension: "البعد الوجودي", element: "التطور", type: "سلوكي", text: "أرى في الأزمات فرصة لإعادة بناء نفسي على مستوى أفضل." },
+    { id: 7, dimension: "البعد الداخلي", element: "النية", type: "معرفي", text: "أحرص أن يكون موقفي من الأحداث الكبرى قائمًا على وعي لا على اندفاع." },
+    { id: 13, dimension: "البعد الخارجي", element: "التفاعل", type: "سلوكي", text: "أتعامل مع من حولي وقت الأزمات بوعي ومسؤولية أكبر." },
+    { id: 1, dimension: "البعد الداخلي", element: "الإدراك", type: "معرفي", text: "أدرك أن الأحداث الكبرى لا تغيّر الواقع من حولي فقط، بل تغيّر طريقة فهمي للحياة." },
+    { id: 18, dimension: "البعد الخارجي", element: "الناتج", type: "سلوكي", text: "أخرج من الأحداث الكبرى بنتيجة واضحة أو درس عملي أستفيد منه." },
+    { id: 9, dimension: "البعد الداخلي", element: "النية", type: "شعوري", text: "أنوي الاستفادة من الأحداث الكبرى في مراجعة نفسي وتحسين مساري." },
+    { id: 21, dimension: "البعد الوجودي", element: "الاستقبال", type: "سلوكي", text: "أستطيع تحديد ما إذا كان استقبالي للحدث يتسم بالهدوء أو الخوف أو الحذر." },
+    { id: 4, dimension: "البعد الداخلي", element: "الجاهزية", type: "شعوري", text: "أمتلك استعدادًا داخليًا للتعامل مع التحولات المفاجئة بدلًا من إنكارها." },
+    { id: 15, dimension: "البعد الخارجي", element: "التفاعل", type: "شعوري", text: "أستطيع التفاعل مع الحدث دون أن أفقد توازني أو أندفع بلا وعي." },
+    { id: 2, dimension: "البعد الداخلي", element: "الإدراك", type: "معرفي", text: "ألاحظ بسرعة الأثر الفكري والنفسي الذي تتركه الأحداث الكبرى داخلي." },
+    { id: 11, dimension: "البعد الخارجي", element: "الفعل", type: "سلوكي", text: "أغيّر بعض سلوكياتي عندما أكتشف أنها لم تعد مناسبة للواقع الجديد." },
+    { id: 27, dimension: "البعد الوجودي", element: "التشكيل", type: "سلوكي", text: "أرى أن التجارب الكبيرة يمكن أن تصنع مني نسخة أقوى وأكثر وعيًا." },
+    { id: 6, dimension: "البعد الداخلي", element: "الجاهزية", type: "سلوكي", text: "أستطيع تهدئة نفسي قبل أن أبني موقفي من الحدث." },
+    { id: 14, dimension: "البعد الخارجي", element: "التفاعل", type: "معرفي", text: "أراقب أثر الأخبار والناس ووسائل الإعلام على طريقة تفاعلي مع الحدث." },
+    { id: 22, dimension: "البعد الوجودي", element: "التطور", type: "شعوري", text: "أشعر أنني أنضج عندما أحسن فهم الأحداث الكبرى التي أمر بها." },
+    { id: 8, dimension: "البعد الداخلي", element: "النية", type: "معرفي", text: "أحدد بوضوح القيم التي أريد التمسك بها وقت الأزمات." },
+    { id: 20, dimension: "البعد الوجودي", element: "الاستقبال", type: "شعوري", text: "ألاحظ مشاعري الأولى عند استقبال الحدث الكبير." },
+    { id: 12, dimension: "البعد الخارجي", element: "الفعل", type: "معرفي", text: "أترجم فهمي للأحداث إلى قرارات واضحة في حياتي اليومية." },
+    { id: 25, dimension: "البعد الوجودي", element: "التشكيل", type: "شعوري", text: "أشعر أن الأحداث الكبرى تسهم في إعادة تشكيل هويتي." },
+    { id: 3, dimension: "البعد الداخلي", element: "الإدراك", type: "سلوكي", text: "أستطيع التمييز بين الحدث نفسه وبين تفسيري الشخصي له." },
+    { id: 17, dimension: "البعد الخارجي", element: "الناتج", type: "شعوري", text: "ألاحظ أن طريقة تعاملي مع الحدث تؤثر مباشرة في جودة حياتي." },
+    { id: 10, dimension: "البعد الخارجي", element: "الفعل", type: "سلوكي", text: "أتخذ خطوات عملية تساعدني على الحفاظ على اتزاني وقت الأحداث الكبرى." },
+    { id: 23, dimension: "البعد الوجودي", element: "التطور", type: "معرفي", text: "أستفيد من التجارب الكبيرة في تطوير طريقة تفكيري وقراراتي." },
+    { id: 5, dimension: "البعد الداخلي", element: "الجاهزية", type: "معرفي", text: "أكون مهيأً نفسيًا لمراجعة بعض قناعاتي عندما يتغير الواقع من حولي." },
+    { id: 19, dimension: "البعد الوجودي", element: "الاستقبال", type: "معرفي", text: "أعي الطريقة التي أستقبل بها الأحداث الكبرى في داخلي." },
+    { id: 16, dimension: "البعد الخارجي", element: "الناتج", type: "معرفي", text: "تكشف لي الأحداث الكبرى جوانب قوة وضعف في شخصيتي لم أكن منتبهًا لها." },
+    { id: 26, dimension: "البعد الوجودي", element: "التشكيل", type: "معرفي", text: "أصبحت أكثر وضوحًا في معرفة من أكون وما الذي أؤمن به بعد التجارب الكبرى." }
+  ]
+};
+
+export const CRISIS_MANAGEMENT_EN = {
+  category: "Dealing with Major Events",
+  questions: [
+    { id: 15, dimension: "External Dimension", element: "Interaction", type: "Emotional", text: "I can interact with the event without losing my balance or acting impulsively." },
+    { id: 3, dimension: "Internal Dimension", element: "Awareness", type: "Behavioral", text: "I can distinguish between the event itself and my personal interpretation of it." },
+    { id: 22, dimension: "Existential Dimension", element: "Evolution", type: "Emotional", text: "I feel that I mature when I better understand the major events I go through." },
+    { id: 8, dimension: "Internal Dimension", element: "Intention", type: "Cognitive", text: "I clearly define the values I want to hold onto during times of crisis." },
+    { id: 18, dimension: "External Dimension", element: "Outcome", type: "Behavioral", text: "I emerge from major events with a clear result or a practical lesson to benefit from." },
+    { id: 5, dimension: "Internal Dimension", element: "Readiness", type: "Cognitive", text: "I am psychologically prepared to review some of my convictions when the reality around me changes." },
+    { id: 27, dimension: "Existential Dimension", element: "Forming", type: "Behavioral", text: "I see that major experiences can create a stronger and more aware version of me." },
+    { id: 12, dimension: "External Dimension", element: "Action", type: "Cognitive", text: "I translate my understanding of events into clear decisions in my daily life." },
+    { id: 1, dimension: "Internal Dimension", element: "Awareness", type: "Cognitive", text: "I realize that major events do not only change the reality around me, but also change my understanding of life." },
+    { id: 24, dimension: "Existential Dimension", element: "Evolution", type: "Behavioral", text: "I see in crises an opportunity to rebuild myself at a better level." },
+    { id: 10, dimension: "External Dimension", element: "Action", type: "Behavioral", text: "I take practical steps that help me maintain my balance during major events." },
+    { id: 19, dimension: "Existential Dimension", element: "Reception", type: "Cognitive", text: "I am aware of the way I receive major events within myself." },
+    { id: 6, dimension: "Internal Dimension", element: "Readiness", type: "Behavioral", text: "I can calm myself before forming my stance toward an event." },
+    { id: 14, dimension: "External Dimension", element: "Interaction", type: "Cognitive", text: "I monitor the impact of news, people, and media on the way I interact with the event." },
+    { id: 2, dimension: "Internal Dimension", element: "Awareness", type: "Cognitive", text: "I quickly notice the intellectual and psychological impact that major events leave within me." },
+    { id: 26, dimension: "Existential Dimension", element: "Forming", type: "Cognitive", text: "I have become clearer in knowing who I am and what I believe in after major experiences." },
+    { id: 17, dimension: "External Dimension", element: "Outcome", type: "Emotional", text: "I notice that my way of handling the event directly affects my quality of life." },
+    { id: 9, dimension: "Internal Dimension", element: "Intention", type: "Emotional", text: "I intend to use major events to review myself and improve my path." },
+    { id: 21, dimension: "Existential Dimension", element: "Reception", type: "Behavioral", text: "I can identify whether my reception of the event is characterized by calmness, fear, or caution." },
+    { id: 4, dimension: "Internal Dimension", element: "Readiness", type: "Emotional", text: "I possess an internal readiness to deal with sudden shifts instead of denying them." },
+    { id: 13, dimension: "External Dimension", element: "Interaction", type: "Behavioral", text: "I deal with those around me during crises with greater awareness and responsibility." },
+    { id: 25, dimension: "Existential Dimension", element: "Forming", type: "Emotional", text: "I feel that major events contribute to reshaping my identity." },
+    { id: 7, dimension: "Internal Dimension", element: "Intention", type: "Cognitive", text: "I ensure that my stance toward major events is based on awareness rather than impulsivity." },
+    { id: 20, dimension: "Existential Dimension", element: "Reception", type: "Emotional", text: "I observe my initial feelings upon receiving a major event." },
+    { id: 11, dimension: "External Dimension", element: "Action", type: "Behavioral", text: "I change some of my behaviors when I discover they are no longer suitable for the new reality." },
+    { id: 23, dimension: "Existential Dimension", element: "Evolution", type: "Cognitive", text: "I benefit from major experiences in developing my way of thinking and making decisions." },
+    { id: 16, dimension: "External Dimension", element: "Outcome", type: "Cognitive", text: "Major events reveal strengths and weaknesses in my character that I hadn't noticed before." }
+  ]
+};
+
+// الدالة الموحدة لجلب الأسئلة
+export const getRandomizedCrisisQuestions = (language: 'ar' | 'en' = 'ar') => {
+  const questionnaire = language === 'ar' ? CRISIS_MANAGEMENT_AR : CRISIS_MANAGEMENT_EN;
+  
+  return questionnaire.questions.map((question, index) => ({
+    id: index + 1, // الترقيم التسلسلي لواجهة العرض
+    text: question.text,
+    originalId: question.id,
+    dimension: question.dimension,
+    element: question.element,
+    type: question.type
+  }));
+};
+

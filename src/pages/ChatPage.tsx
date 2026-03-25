@@ -12,7 +12,13 @@ import { PlusCircle, ArrowLeft } from 'lucide-react'
 import { useConversations, useAppState, actions } from '../store'
 import { genAIResponseStream, generateQuestions, type Message, HARMONY_PROMPT_AR, HARMONY_PROMPT_EN, PROMPT1_AR, PROMPT1_EN, GENERAL_PROMPT_AR, GENERAL_PROMPT_EN, translations } from '../utils'
 import { Globe, ChevronDown } from 'lucide-react'
-import { getRandomizedLifeQuestions, getRandomizedFamilyQuestions, getRandomizedRomanticQuestions, getRandomizedWorkQuestions } from '../utils/lifeQuestionnaire'
+import { 
+  getRandomizedLifeQuestions, 
+  getRandomizedFamilyQuestions, 
+  getRandomizedRomanticQuestions, 
+  getRandomizedWorkQuestions,
+  getRandomizedCrisisQuestions 
+} from '../utils/lifeQuestionnaire'
 import { generateAndOpenReport } from '../utils/reportService'
 import { getFontCSSProperties } from '../utils/fonts'
 
@@ -761,7 +767,49 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
     
     console.log('handleNewChat completed - currentConversationId should be null');
   }, [setCurrentConversationId, setPendingMessage, setLoading, setInputDisabled, setError])
-
+const handleCrisisQuestionnaire = useCallback(async () => {
+    setQuestionnaireResults(null)
+    setShowQuestionnaire(false)
+    try {
+      console.log('handleCrisisQuestionnaire called');
+      
+      const defaultTitle = language === 'ar' ? 'التعامل مع الأحداث الكبرى' : 'Dealing with Major Events'
+      
+      console.log('Creating new conversation for Crisis questionnaire...');
+      const id = await createNewConversation(defaultTitle)
+      console.log('New conversation created with ID:', id);
+      
+      // Clear any existing pending message and set the conversation
+      setPendingMessage(null)
+      setCurrentConversationId(id)
+      setInput('')
+      setInputDisabled(false) // Enable input for questionnaire interaction
+      
+      // Generate fixed randomized Crisis questions
+      const randomizedQuestions = getRandomizedCrisisQuestions(language)
+      setQuestions(randomizedQuestions)
+      
+      // Small delay to ensure conversation state is set before showing questionnaire
+      setTimeout(() => {
+        setShowQuestionnaire(true)
+        
+        // Persist initial questionnaire state
+        const questionnaireData = {
+          showQuestionnaire: true,
+          questions: randomizedQuestions,
+          visualizationData: null,
+          questionnaireResults: null,
+          isCompleted: false
+        }
+        actions.updateConversationQuestionnaire(id, questionnaireData)
+      }, 100)
+      
+      console.log('Crisis questionnaire started with', randomizedQuestions.length, 'questions');
+    } catch (error) {
+      console.error('Error in handleCrisisQuestionnaire:', error);
+      setError('Failed to create Crisis questionnaire. Please try again.');
+    }
+  }, [language, createNewConversation, setCurrentConversationId, setPendingMessage, setError])
   const handleDefineProblem = useCallback(async () => {
     try {
       console.log('handleDefineProblem called - current state:', {
@@ -980,6 +1028,8 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
     }
   }, [language, createNewConversation, setCurrentConversationId, setPendingMessage, setError])
 
+  
+
   const handleDeleteChat = useCallback(async (id: string) => {
     await deleteConversation(id)
   }, [deleteConversation]);
@@ -1146,10 +1196,12 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
               isLoading={isLoading}
               disabled={inputDisabled}
               onDefineProblem={handleDefineProblem}
+              onCrisisQuestionnaire={handleCrisisQuestionnaire}
               onLifeQuestionnaire={handleLifeQuestionnaire}
               onFamilyQuestionnaire={handleFamilyQuestionnaire}
               onRomanticQuestionnaire={handleRomanticQuestionnaire}
               onWorkQuestionnaire={handleWorkQuestionnaire}
+              
             />
           )}
       </div>

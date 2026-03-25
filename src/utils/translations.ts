@@ -6,7 +6,8 @@ export const translations = {
     placeholder: "Write here...",
     instruction: 'Please describe any challenge you\'re facing in life. Mr. Harmony will help analyze it using the Harmony Model to find the best understanding and solution.',
     welcomeSubtitle: 'We accompany you on your journey of self-discovery toward a more balanced and impactful life.',
-    topics: ['Life', 'Family', 'Emotions', 'Work'],
+    // أضيفت Major Events في نهاية المصفوفة
+    topics: ['Life', 'Family', 'Emotions', 'Work', 'Major Events'],
     thinking: 'Mr. Harmony is thinking...',
     hero: {
       whoWeAre: 'Who are we?',
@@ -29,11 +30,12 @@ export const translations = {
   ar: {
     newChat: 'دردشة جديدة',
     describeProblem: 'حدد مشكلتك',
-    chooseTopic: 'حدد علاقتك بـ...',
+    chooseTopic: 'حدد موقفك من...',
     placeholder: 'اكتب هنا...',
     instruction: 'حدد أي مشكلة تواجهها في الحياة، وسيساعدك السيد هارموني في تحليلها باستخدام نموذج هارموني للوصول إلى أفضل فهم وحل ممكن.',
     welcomeSubtitle: 'نرافقك في رحلة الذات لحياة أكثر توازنًا وأثرًا.',
-    topics: ['الحياة', 'العائلة', 'العلاقات الحسية', 'العمل'],
+    // أضيفت الأحداث الكبرى في نهاية المصفوفة
+    topics: ['الأحداث الكبرى', 'الحياة العامة', 'الشؤون الأسرية', 'العلاقات العاطفية', 'المسار المهني'],
     thinking: 'السيد هارموني يفكر...',
     hero: {
       whoWeAre: 'من نحن؟',
@@ -53,6 +55,6 @@ export const translations = {
       talkToHarmony: 'تحدث مع السيد هارموني'
     }
   }
-} as const
+} as const;
 
-export type SupportedLang = keyof typeof translations
+export type SupportedLang = keyof typeof translations;
