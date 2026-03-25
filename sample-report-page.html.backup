@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Report Page - Interactive</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Tahoma', sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        /* A4 Page Container */
+        .report-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: #000000;
+            color: #ffffff;
+            padding: 20mm;
+            font-size: 12pt;
+            line-height: 1.6;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+            }
+            
+            .report-container {
+                background: white !important;
+                color: black !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 20mm !important;
+            }
+            
+            .interactive-controls {
+                display: none !important;
+            }
+            
+            h1, h2, h3, p, li, span {
+                color: black !important;
+            }
+            
+            .chart-placeholder {
+                border: 1px solid #ccc !important;
+                background: white !important;
+            }
+        }
+
+        /* Interactive Controls */
+        .interactive-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-size: 14px;
+        }
+
+        .interactive-controls button {
+            margin: 5px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #3b82f6;
+            color: white;
+        }
+
+        .interactive-controls button:hover {
+            background: #2563eb;
+        }
+
+        /* Typography Styles */
+        h1 {
+            font-size: 24pt;
+            font-weight: bold;
+            margin: 40px 0 24px 0;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 18pt;
+            font-weight: bold;
+            margin: 32px 0 16px 0;
+        }
+
+        h3 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin: 24px 0 12px 0;
+        }
+
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
+        .bold-text {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .bullet-point {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            margin-right: 16px;
+        }
+
+        .bullet-point .bullet {
+            margin-left: 8px;
+            margin-top: 2px;
+        }
+
+        /* Charts Section */
+        .charts-section {
+            margin-bottom: 32px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-container {
+            background: #1f2937;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .chart-placeholder {
+            width: 100%;
+            height: 200px;
+            background: #374151;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            border: 2px dashed #6b7280;
+        }
+
+        .chart-title {
+            font-weight: bold;
+            font-size: 14pt;
+            color: #ffffff;
+        }
+
+        /* Content Section */
+        .ai-content {
+            line-height: 1.8;
+        }
+
+        /* Responsive Design */
+        @media screen and (max-width: 900px) {
+            .report-container {
+                width: 100%;
+                margin: 0;
+                min-height: auto;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+        }
+
+        /* Direction Toggle */
+        .rtl-mode {
+            direction: rtl;
+            text-align: right;
+        }
+
+        .ltr-mode {
+            direction: ltr;
+            text-align: left;
+        }
+
+        /* Color Theme Variants */
+        .dark-theme {
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .light-theme {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .light-theme .chart-container {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+        }
+
+        .light-theme .chart-placeholder {
+            background: #ffffff;
+            border: 2px dashed #d1d5db;
+            color: #6b7280;
+        }
+
+        .light-theme .chart-title {
+            color: #1f2937;
+        }
+    </style>
+</head>
+<body>
+    <!-- Interactive Controls -->
+    <div class="interactive-controls">
+        <h4>🔧 Interactive Controls</h4>
+        <button onclick="toggleTheme()">Toggle Theme</button>
+        <button onclick="toggleDirection()">Toggle RTL/LTR</button>
+        <button onclick="toggleLayout()">Toggle Layout</button>
+        <button onclick="window.print()">Print Preview</button>
+        <br><br>
+        <label>
+            Font Size: 
+            <input type="range" min="10" max="16" value="12" onchange="changeFontSize(this.value)">
+            <span id="fontSizeDisplay">12pt</span>
+        </label>
+        <br><br>
+        <label>
+            Spacing: 
+            <input type="range" min="1.2" max="2.0" step="0.1" value="1.6" onchange="changeLineHeight(this.value)">
+            <span id="lineHeightDisplay">1.6</span>
+        </label>
+    </div>
+
+    <!-- Report Container -->
+    <div class="report-container dark-theme rtl-mode" id="reportContainer">
+        
+        <!-- Charts Section -->
+        <section class="charts-section">
+            <div class="charts-grid" id="chartsGrid">
+                <div class="chart-container">
+                    <div class="chart-placeholder">
+                        <span>📊 Cognitive Chart<br>الذهني</span>
+                    </div>
+                    <div class="chart-title">العالم الذهني</div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-placeholder">
+                        <span>📈 Emotional Chart<br>الشعوري</span>
+                    </div>
+                    <div class="chart-title">العالم الشعوري</div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-placeholder">
+                        <span>📋 Behavioral Chart<br>السلوكي</span>
+                    </div>
+                    <div class="chart-title">العالم السلوكي</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Content Section -->
+        <section class="ai-content">
+            <!-- Sample Arabic Content -->
+            <div class="arabic-content">
+                <h2>## التحليل النفسي المتعمق</h2>
+                
+                <p>يُظهر التحليل توازناً واضحاً في العالم الذهني، حيث تعكس إجاباتك وعياً جيداً وتصوراً إيجابياً تجاه الحب والعلاقة، خاصة في رؤيتك المرنة وتفسيرك المتزن لتصرفات شريكك. على المستوى الشعوري، يبدو أنك تعبر عن مشاعرك بوضوح، وتملك بيئة داخلية آمنة تدعم الانفتاح الحسي.</p>
+
+                <h3>### نقاط القوة الأساسية</h3>
+                
+                <div class="bullet-point">
+                    <span class="bullet">•</span>
+                    <p>القدرة على التكيف مع المواقف الصعبة والتفاعل بإيجابية مع التحديات اليومية</p>
+                </div>
+                
+                <div class="bullet-point">
+                    <span class="bullet">•</span>
+                    <p>وضوح الرؤية الذاتية والقدرة على التطور الفكري والنفسي من خلال التجارب</p>
+                </div>
+                
+                <div class="bullet-point">
+                    <span class="bullet">•</span>
+                    <p>الإخلاص والصدق في النوايا تجاه المستقبل والأهداف الشخصية</p>
+                </div>
+
+                <h3>### المجالات التي تحتاج إلى تطوير</h3>
+                
+                <p class="bold-text">**العمل على التخطيط والتنفيذ:**</p>
+                <p>يُلاحظ وجود فجوة بين الوعي والإدراك من جهة، والتنفيذ العملي من جهة أخرى. ينصح بوضع خطط عملية محددة لتحويل الأفكار إلى أفعال ملموسة.</p>
+
+                <p class="bold-text">**تعزيز الاستعداد للتغيير:**</p>
+                <p>رغم الوعي الجيد بما يُحتاج للتغيير، هناك حاجة لتقوية الجاهزية النفسية والعملية لاتخاذ خطوات التحسين المطلوبة.</p>
+
+                <h3>### التوصيات المستقبلية</h3>
+                
+                <div class="bullet-point">
+                    <span class="bullet">•</span>
+                    <p>وضع جدول زمني واضح للأهداف مع خطوات عملية قابلة للقياس</p>
+                </div>
+                
+                <div class="bullet-point">
+                    <span class="bullet">•</span>
+                    <p>ممارسة تقنيات الوعي الذاتي بانتظام لتعزيز الاتصال بين الفكر والعمل</p>
+                </div>
+                
+                <div class="bullet-point">
+                    <span class="bullet">•</span>
+                    <p>تطوير نظام مراقبة ذاتية لتتبع التقدم وتعديل المسار عند الحاجة</p>
+                </div>
+
+                <p>الخلاصة: لديك أساس قوي من الوعي والنوايا الصادقة، والخطوة التالية هي تحويل هذا الوعي إلى خطوات عملية مستمرة تقودك نحو التطور المنشود. استمر في بناء الجسور بين عالمك الداخلي وأفعالك الخارجية.</p>
+            </div>
+
+            <!-- Sample English Content (Hidden by default) -->
+            <div class="english-content" style="display: none;">
+                <h2>## In-Depth Psychological Analysis</h2>
+                
+                <p>The analysis reveals a clear balance in the cognitive realm, where your responses reflect good awareness and a positive perception towards love and relationships, especially in your flexible perspective and balanced interpretation of your partner's actions. On an emotional level, it appears that you express your feelings clearly and possess a safe internal environment that supports emotional openness.</p>
+
+                <h3>### Core Strengths</h3>
+                
+                <div class="bullet-point">
+                    <span class="bullet">•</span>
+                    <p>Ability to adapt to difficult situations and interact positively with daily challenges</p>
+                </div>
+                
+                <div class="bullet-point">
+                    <span class="bullet">•</span>
+                    <p>Clear self-vision and ability for intellectual and psychological development through experiences</p>
+                </div>
+                
+                <div class="bullet-point">
+                    <span class="bullet">•</span>
+                    <p>Sincerity and honesty in intentions towards the future and personal goals</p>
+                </div>
+
+                <h3>### Areas Needing Development</h3>
+                
+                <p class="bold-text">**Working on Planning and Implementation:**</p>
+                <p>There's a noticeable gap between awareness and perception on one hand, and practical implementation on the other. It's recommended to create specific practical plans to transform ideas into concrete actions.</p>
+
+                <p class="bold-text">**Enhancing Readiness for Change:**</p>
+                <p>Despite good awareness of what's needed for change, there's a need to strengthen psychological and practical readiness to take required improvement steps.</p>
+
+                <h3>### Future Recommendations</h3>
+                
+                <div class="bullet-point">
+                    <span class="bullet">•</span>
+                    <p>Create a clear timeline for goals with measurable practical steps</p>
+                </div>
+                
+                <div class="bullet-point">
+                    <span class="bullet">•</span>
+                    <p>Practice self-awareness techniques regularly to enhance the connection between thought and action</p>
+                </div>
+                
+                <div class="bullet-point">
+                    <span class="bullet">•</span>
+                    <p>Develop a self-monitoring system to track progress and adjust course when needed</p>
+                </div>
+
+                <p>Conclusion: You have a strong foundation of awareness and sincere intentions, and the next step is to transform this awareness into continuous practical steps that lead you towards desired development. Continue building bridges between your inner world and external actions.</p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let isRTL = true;
+        let isDarkTheme = true;
+        let currentLayout = 'grid';
+
+        function toggleTheme() {
+            const container = document.getElementById('reportContainer');
+            isDarkTheme = !isDarkTheme;
+            
+            if (isDarkTheme) {
+                container.className = container.className.replace('light-theme', 'dark-theme');
+            } else {
+                container.className = container.className.replace('dark-theme', 'light-theme');
+            }
+        }
+
+        function toggleDirection() {
+            const container = document.getElementById('reportContainer');
+            const arabicContent = document.querySelector('.arabic-content');
+            const englishContent = document.querySelector('.english-content');
+            
+            isRTL = !isRTL;
+            
+            if (isRTL) {
+                container.className = container.className.replace('ltr-mode', 'rtl-mode');
+                document.documentElement.setAttribute('dir', 'rtl');
+                arabicContent.style.display = 'block';
+                englishContent.style.display = 'none';
+            } else {
+                container.className = container.className.replace('rtl-mode', 'ltr-mode');
+                document.documentElement.setAttribute('dir', 'ltr');
+                arabicContent.style.display = 'none';
+                englishContent.style.display = 'block';
+            }
+        }
+
+        function toggleLayout() {
+            const chartsGrid = document.getElementById('chartsGrid');
+            currentLayout = currentLayout === 'grid' ? 'vertical' : 'grid';
+            
+            if (currentLayout === 'vertical') {
+                chartsGrid.style.gridTemplateColumns = '1fr';
+                chartsGrid.style.gap = '16px';
+            } else {
+                chartsGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+                chartsGrid.style.gap = '24px';
+            }
+        }
+
+        function changeFontSize(value) {
+            const container = document.getElementById('reportContainer');
+            container.style.fontSize = value + 'pt';
+            document.getElementById('fontSizeDisplay').textContent = value + 'pt';
+        }
+
+        function changeLineHeight(value) {
+            const container = document.getElementById('reportContainer');
+            container.style.lineHeight = value;
+            document.getElementById('lineHeightDisplay').textContent = value;
+        }
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.altKey) {
+                switch(e.key) {
+                    case 't':
+                        e.preventDefault();
+                        toggleTheme();
+                        break;
+                    case 'd':
+                        e.preventDefault();
+                        toggleDirection();
+                        break;
+                    case 'l':
+                        e.preventDefault();
+                        toggleLayout();
+                        break;
+                    case 'p':
+                        e.preventDefault();
+                        window.print();
+                        break;
+                }
+            }
+        });
+
+        // Show keyboard shortcuts info
+        console.log('🎹 Keyboard Shortcuts:');
+        console.log('Alt + T: Toggle Theme');
+        console.log('Alt + D: Toggle Direction (RTL/LTR)');
+        console.log('Alt + L: Toggle Layout');
+        console.log('Alt + P: Print Preview');
+    </script>
+</body>
+</html> 

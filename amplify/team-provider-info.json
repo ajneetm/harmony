@@ -1,0 +1,31 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-misbara-dev-ccc9b-authRole",
+      "UnauthRoleArn": "arn:aws:iam::149536478791:role/amplify-misbara-dev-ccc9b-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::149536478791:role/amplify-misbara-dev-ccc9b-authRole",
+      "Region": "eu-west-2",
+      "DeploymentBucketName": "amplify-misbara-dev-ccc9b-deployment",
+      "UnauthRoleName": "amplify-misbara-dev-ccc9b-unauthRole",
+      "StackName": "amplify-misbara-dev-ccc9b",
+      "StackId": "arn:aws:cloudformation:eu-west-2:149536478791:stack/amplify-misbara-dev-ccc9b/f4a87e00-5e6b-11f0-946b-06706648ca7d",
+      "AmplifyAppId": "d3nebez3jpwcvv"
+    },
+    "categories": {
+      "function": {
+        "misbara": {
+          "viteOpenaiApiKey": "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",
+          "secretsPathAmplifyAppId": "d3nebez3jpwcvv",
+          "deploymentBucketName": "amplify-misbara-dev-ccc9b-deployment",
+          "s3Key": "amplify-builds/misbara-53517332543853364f65-build.zip"
+        }
+      },
+      "auth": {
+        "misbara": {}
+      },
+      "api": {
+        "misbara": {}
+      }
+    }
+  }
+}

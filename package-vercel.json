@@ -1,0 +1,12 @@
+{
+  "name": "misbara-api",
+  "version": "1.0.0",
+  "description": "Fast API for Misbara AI chat",
+  "main": "api/ai-response.js",
+  "dependencies": {
+    "openai": "^4.20.1"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+} 

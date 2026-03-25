@@ -1,0 +1,1513 @@
+@import "highlight.js/styles/github-dark.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Font CSS Custom Properties */
+:root {
+  --font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+}
+
+/* Override all font-family declarations to use CSS variables */
+* {
+  font-family: var(--font-family) !important;
+}
+
+body {
+  @apply m-0;
+  font-family: var(--font-family) !important;
+  font-weight: var(--font-weight-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+/* Language-specific font classes with higher specificity */
+.font-arabic {
+  font-family: var(--font-family) !important;
+  font-weight: var(--font-weight-normal);
+}
+
+.font-english {
+  font-family: var(--font-family) !important;
+  font-weight: var(--font-weight-normal);
+}
+
+/* Font weight utility classes */
+.font-normal {
+  font-weight: var(--font-weight-normal) !important;
+}
+
+.font-medium {
+  font-weight: var(--font-weight-medium) !important;
+}
+
+.font-semibold {
+  font-weight: var(--font-weight-semibold) !important;
+}
+
+.font-bold {
+  font-weight: var(--font-weight-bold) !important;
+}
+
+/* Ensure Tailwind font classes work */
+.font-tajawal {
+  font-family: "Tajawal", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+.font-inter {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif !important;
+}
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.7);
+}
+
+/* Smooth transitions for dark mode */
+html {
+  transition: background-color 0.3s ease;
+}
+
+/* Markdown content styles */
+.prose {
+  max-width: none;
+  color: #e5e7eb; /* text-gray-200 */
+}
+
+/* .prose p {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+} */
+
+.prose code {
+  color: #e5e7eb;
+  background-color: rgba(31, 41, 55, 0.5);
+  padding: 0.2em 0.4em;
+  border-radius: 0.375rem;
+  font-size: 0.875em;
+}
+
+.prose pre {
+  background-color: rgba(31, 41, 55, 0.5);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1.25em 0;
+  overflow-x: auto;
+}
+
+.prose pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  color: #f9fafb; /* text-gray-50 */
+  /* margin-top: 2em; */
+  /* margin-bottom: 1em; */
+}
+
+.prose ul, .prose ol {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+  padding-left: 1.625em;
+}
+
+.prose li {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose blockquote {
+  border-left-color: #ae1f23; /* red-600 */
+  background-color: rgba(174, 31, 35, 0.1);
+  padding: 1em;
+  margin: 1.25em 0;
+  border-radius: 0.5rem;
+}
+
+.prose hr {
+  border-color: rgba(174, 31, 35, 0.2);
+  margin: 2em 0;
+}
+
+.prose a {
+  color: #ae1f23; /* red-600 */
+  text-decoration: underline;
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.2em;
+}
+
+.prose a:hover {
+  color: #ae1f23; /* red-600 */
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25em 0;
+}
+
+.prose th, .prose td {
+  padding: 0.75em;
+  border: 1px solid rgba(185, 28, 28, 0.2);
+  color: #ffffff;
+}
+
+.prose th {
+  background-color: #b91c1c;
+  font-weight: 600;
+}
+
+/* Message transition animations */
+.message-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.message-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.message-exit {
+  opacity: 1;
+}
+
+.message-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+/* Add/update these styles to match AI formatting capabilities */
+.prose h1 {
+  font-size: 2em;
+  /* margin-top: 1em; */
+  margin-bottom: 0.5em;
+}
+
+.prose h2 {
+  font-size: 1.5em;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.prose h3 {
+  font-size: 1.25em;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+}
+
+.prose ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid rgba(185, 28, 28, 0.2);
+  padding: 0.5em;
+  color: #ffffff;
+}
+
+.prose th {
+  background-color: #b91c1c;
+}
+
+.prose strong {
+  color: #f9fafb; /* text-gray-50 */
+  font-weight: 600;
+}
+
+.prose em {
+  font-style: italic;
+}
+
+.prose blockquote {
+  border-left: 4px solid #ae1f23; /* red-600 */
+  padding-left: 1em;
+  margin: 1em 0;
+  color: #d1d5db; /* text-gray-300 */
+}
+
+/* Ensure code blocks match the AI's formatting */
+.prose code {
+  color: #e5e7eb;
+  background-color: rgba(31, 41, 55, 0.5);
+  padding: 0.2em 0.4em;
+  border-radius: 0.375rem;
+  font-size: 0.875em;
+}
+
+.prose pre {
+  background-color: rgba(31, 41, 55, 0.5);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1em 0;
+}
+
+.prose pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* Specific table styling within chat messages */
+.chat-message table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1em;
+}
+
+.chat-message th,
+.chat-message td {
+  border: 1px solid rgba(185, 28, 28, 0.2);
+  padding: 8px;
+  color: #ffffff;
+}
+
+.chat-message th {
+  background-color: #b91c1c;
+}
+
+[dir='rtl'] .chat-message th,
+[dir='rtl'] .chat-message td {
+  text-align: right;
+}
+
+[dir='ltr'] .chat-message th,
+[dir='ltr'] .chat-message td {
+  text-align: left;
+}
+
+/* Table wrapper - all screen sizes */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto; /* Always enable horizontal scroll for tables */
+  border-radius: 0.375rem;
+  background: rgba(20, 20, 20, 0.3);
+  margin: 1rem 0;
+}
+
+/* Desktop: make table wrapper more subtle */
+@media (min-width: 769px) {
+  .table-wrapper {
+    overflow-x: visible; /* Desktop can show full table */
+    background: transparent; /* Remove background on desktop */
+    padding: 0;
+  }
+}
+
+/* Mobile responsive styles for all message content */
+@media (max-width: 768px) {
+  /* CRITICAL: Prevent horizontal overflow on mobile */
+  body {
+    overflow-x: hidden !important;
+  }
+  
+  /* Allow proper scrolling and dynamic viewport handling */
+  html {
+    @apply h-100dvh overflow-x-hidden;
+    height: 100dvh !important;
+    height: 100vh !important; /* Fallback for older browsers */
+    overflow-x: hidden !important;
+  }
+  
+  body {
+    @apply h-100dvh overflow-x-hidden overflow-y-auto;
+    height: 100dvh !important;
+    height: 100vh !important; /* Fallback for older browsers */
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  /* Mobile TopBar - Full width with better mobile UX - High specificity for production */
+  .fixed.top-0.left-0.right-0.z-30 {
+    height: 60px !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    border-bottom: 1px solid rgba(174, 31, 35, 0.2) !important;
+  }
+  
+  /* Fallback for any fixed top elements */
+  .fixed.top-0.left-0.right-0 {
+    height: 60px !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Mobile content area adjustments */
+  .pt-16 {
+    padding-top: 60px !important; /* Match TopBar height */
+  }
+
+  /* Mobile input area improvements */
+  .fixed.bottom-0 {
+    height: auto !important;
+    min-height: 60px !important;
+    backdrop-filter: blur(15px) !important;
+    box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.4) !important;
+    border-top: 1px solid rgba(174, 31, 35, 0.3) !important;
+  }
+
+  /* Mobile chat input styling */
+  .fixed.bottom-0 textarea {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+    min-height: 44px !important; /* Better touch target */
+    padding: 12px 50px 12px 16px !important;
+    border-radius: 12px !important;
+    background: rgba(26, 26, 26, 0.95) !important;
+    border: 1px solid rgba(174, 31, 35, 0.3) !important;
+    backdrop-filter: blur(10px) !important;
+  }
+
+     /* Mobile floating button improvements */
+   .fixed.bottom-\[114px\] {
+     bottom: 84px !important; /* Adjust for new input height */
+     width: 48px !important;
+     height: 48px !important;
+     box-shadow: 0 4px 20px rgba(174, 31, 35, 0.4) !important;
+     backdrop-filter: blur(10px) !important;
+   }
+
+  /* Mobile chat messages - bigger touch targets and better spacing */
+  .chat-message {
+    padding: 12px !important;
+    margin-bottom: 8px !important;
+    border-radius: 12px !important;
+    background: rgba(26, 26, 26, 0.3) !important;
+    backdrop-filter: blur(5px) !important;
+  }
+
+  /* Mobile welcome screen improvements */
+  .w-40 {
+    width: 160px !important; /* Larger logo on mobile */
+  }
+
+  /* Mobile button improvements */
+  .flex.items-center.justify-center.gap-4 > button,
+  .flex.items-center.justify-center.gap-4 > div > button {
+    padding: 12px 20px !important;
+    font-size: 16px !important;
+    min-height: 44px !important; /* Better touch target */
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    backdrop-filter: blur(10px) !important;
+  }
+  
+  /* Enhanced mobile scrolling behavior */
+  .flex-1.pb-24.overflow-y-auto {
+    /* Optimize scroll performance on mobile */
+    -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
+    scroll-behavior: auto; /* Instant scroll on mobile for better performance */
+    overscroll-behavior: contain; /* Prevent bounce effect */
+  }
+  
+  /* Ensure scroll container has proper boundaries on mobile */
+  .flex-1.pb-24.overflow-y-auto {
+    /* Use dynamic viewport height for better mobile keyboard handling */
+    height: calc(100dvh - 120px) !important; /* TopBar (60px) + Input area (60px) = 120px */
+    max-height: calc(100dvh - 120px) !important;
+    padding-bottom: 96px !important; /* Enough space to show content above input area */
+    min-height: 200px !important; /* Smaller minimum height */
+    flex: 1 !important; /* Allow flexible sizing */
+    overflow-y: auto !important; /* Ensure scrolling works */
+  }
+  
+  /* Main content container mobile fixes */
+  .flex-1.pb-24.overflow-y-auto {
+    min-width: 0; /* Prevent flex shrinking issues */
+    max-width: 100vw; /* Constrain to viewport width */
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    position: relative !important; /* Ensure proper positioning */
+    flex-shrink: 1 !important; /* Allow shrinking for better layout */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+  
+  /* Main layout container fixes */
+  .flex.flex-col.flex-1.pt-12 {
+    min-width: 0; /* Allow flex shrinking */
+    max-width: 100vw; /* Constrain to viewport */
+    overflow-x: hidden; /* Prevent horizontal overflow */
+  }
+  
+  /* Message container mobile constraints */
+  .w-full.max-w-3xl.px-4.mx-auto {
+    max-width: 100% !important; /* Override max-w-3xl on mobile */
+    padding-left: 0.75rem !important; /* Smaller side padding */
+    padding-right: 0.75rem !important;
+  }
+  
+  /* Chat message mobile fixes */
+  .chat-message {
+    max-width: 100%;
+    min-width: 0; /* Critical for flex shrinking */
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 0.125rem !important; /* Extremely minimal space between messages (2px) */
+  }
+  
+  /* Content area within messages */
+  .chat-message .flex-1.min-w-0 {
+    min-width: 0 !important; /* Ensure content can shrink */
+    max-width: calc(100vw - 4rem); /* Account for padding and avatar */
+  }
+  
+  /* Prose content mobile fixes - Better readability */
+  .prose {
+    font-size: 14px !important; /* Larger font for better readability */
+    line-height: 1.6 !important; /* Better line spacing */
+    max-width: 100% !important; /* Override any max-width */
+    word-wrap: break-word !important; /* Break long words */
+    overflow-wrap: break-word !important; /* Modern word wrapping */
+    hyphens: auto; /* Enable hyphenation */
+    color: #f5f5f5 !important; /* Slightly brighter text */
+  }
+  
+  /* CRITICAL: All prose content must wrap properly */
+  .prose * {
+    max-width: 100% !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+  
+  .prose p {
+    font-size: 14px !important; /* Larger font for better readability */
+    line-height: 1.6 !important; /* Better line spacing */
+    margin-top: 0.75em !important; /* Better spacing */
+    margin-bottom: 0.75em !important;
+  }
+  
+  /* Headings for mobile - Better hierarchy */
+  .prose h1 {
+    font-size: 1.75rem !important; /* 28px - Larger and more prominent */
+    margin-bottom: 0.75em !important;
+    line-height: 1.3 !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+  }
+  
+  .prose h2 {
+    font-size: 1.5rem !important; /* 24px - Better distinction */
+    margin-top: 1em !important;
+    margin-bottom: 0.75em !important;
+    line-height: 1.3 !important;
+    font-weight: 600 !important;
+    color: #f5f5f5 !important;
+  }
+  
+  .prose h3 {
+    font-size: 1.25rem !important; /* 20px - Clear hierarchy */
+    margin-top: 1em !important;
+    margin-bottom: 0.75em !important;
+    line-height: 1.3 !important;
+    font-weight: 600 !important;
+    color: #f0f0f0 !important;
+  }
+  
+  .prose h4 {
+    font-size: 1.125rem !important; /* 18px */
+    margin-top: 0.75em !important;
+    margin-bottom: 0.5em !important;
+    line-height: 1.3 !important;
+    font-weight: 500 !important;
+    color: #e8e8e8 !important;
+  }
+  
+  /* Code blocks for mobile - CRITICAL FOR OVERFLOW PREVENTION */
+  .prose code {
+    font-size: 0.75rem; /* 12px - smaller inline code */
+    padding: 0.15rem 0.3rem;
+    word-break: break-all !important; /* Break long code words */
+    overflow-wrap: break-word !important;
+  }
+  
+  .prose pre {
+    font-size: 0.75rem; /* 12px - smaller code blocks */
+    padding: 0.75rem;
+    margin: 0.75em 0;
+    border-radius: 0.375rem;
+    overflow-x: auto !important; /* Enable horizontal scrolling for long code */
+    max-width: 100% !important;
+    white-space: pre !important; /* Preserve formatting but allow scroll */
+  }
+  
+  .prose pre code {
+    font-size: 0.75rem; /* 12px */
+    white-space: pre !important; /* Preserve code formatting */
+    word-break: normal !important; /* Don't break code words in pre blocks */
+  }
+  
+  /* Links and URLs - prevent overflow */
+  .prose a {
+    word-break: break-all !important; /* Break long URLs */
+    overflow-wrap: break-word !important;
+  }
+  
+  /* Lists for mobile */
+  .prose ul, .prose ol {
+    font-size: 0.875rem; /* 14px */
+    margin-top: 0.75em;
+    margin-bottom: 0.75em;
+    padding-left: 1.25em;
+  }
+  
+  .prose li {
+    font-size: 0.875rem; /* 14px */
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+    line-height: 1.5;
+  }
+  
+  /* Blockquotes for mobile */
+  .prose blockquote {
+    font-size: 0.875rem; /* 14px */
+    padding: 0.75em;
+    margin: 0.75em 0;
+  }
+  
+  /* Links for mobile */
+  .prose a {
+    font-size: inherit; /* Inherit from parent */
+  }
+  
+  /* Strong and emphasis for mobile */
+  .prose strong {
+    font-size: inherit;
+  }
+  
+  .prose em {
+    font-size: inherit;
+  }
+  
+  /* Message container adjustments for mobile */
+  .chat-message {
+    padding: 0.375rem; /* Ultra compact padding - 6px */
+    gap: 0.375rem; /* Smaller gap between avatar and content - 6px */
+  }
+  
+    /* Avatar sizing for mobile - more compact */
+  .chat-message .flex-shrink-0 {
+    width: 1.75rem; /* 28px - even smaller */
+    height: 1.75rem;
+    font-size: 0.7rem; /* Smaller font in user avatar */
+  }
+
+  /* AI icon sizing for mobile - more compact */
+  .chat-message .w-12.h-12 {
+    width: 2rem !important; /* 32px instead of 40px */
+    height: 2rem !important;
+  }
+  
+  /* Overall message spacing for mobile */
+  .chat-message {
+    margin-bottom: 0.5rem; /* Smaller margin between messages */
+  }
+  
+  .chat-message .py-6 {
+    padding-top: 0.25rem !important; /* 4px - ultra compact */
+    padding-bottom: 0.25rem !important;
+  }
+  
+  /* CRITICAL: Prevent any element from exceeding screen width */
+  .chat-message .overflow-hidden {
+    overflow: hidden !important;
+    max-width: 100% !important;
+  }
+  
+  /* Table wrapper fits perfectly within message boundaries */
+  .chat-message .table-wrapper {
+    overflow: visible !important; /* No scrolling needed */
+    max-width: 100% !important;
+    margin-left: 0 !important; /* Keep within message boundaries */
+    margin-right: 0 !important;
+    width: 100% !important; /* Standard width */
+  }
+  
+  /* Ensure flex items don't grow beyond container */
+  .chat-message .flex-1 {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  
+  /* Fix for any markdown content that might be too wide */
+  .prose img,
+  .prose video {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  
+  /* Default table constraint for mobile */
+  .prose table {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  
+  /* EXCEPTION: Tables inside table-wrapper can extend beyond container */
+  .table-wrapper table {
+    max-width: none !important; /* Allow tables to be wider than container */
+    width: auto !important; /* Let table determine its own width */
+    min-width: 100% !important; /* Ensure table is at least full width */
+  }
+  
+  /* Long text content handling */
+  .prose p,
+  .prose li,
+  .prose div {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    max-width: 100% !important;
+  }
+  
+    /* Loading indicator mobile optimization - ULTRA COMPACT */
+  .loading-indicator {
+    padding: 0.5rem 0.75rem !important; /* Ultra compact padding: 8px 12px */
+  }
+
+  .loading-ai-icon {
+    width: 1.5rem !important; /* 24px - even smaller */
+    height: 1.5rem !important;
+    margin-left: 0.25rem !important; /* Minimal margin */
+  }
+
+  .loading-text {
+    font-size: 0.75rem !important; /* 12px - smaller text */
+    line-height: 1.2rem !important;
+  }
+  
+  .loading-dots {
+    gap: 0.375rem !important; /* Smaller gap between dots */
+  }
+  
+  .loading-dot {
+    width: 0.375rem !important; /* 6px instead of 8px */
+    height: 0.375rem !important;
+  }
+  
+  /* Reduce overall container gap */
+  .loading-indicator .flex.items-start {
+    gap: 0.75rem !important; /* 12px instead of 16px */
+  }
+  
+  /* Reduce gap between text and dots */
+  .loading-indicator .flex.items-center {
+    gap: 0.5rem !important; /* 8px instead of 12px */
+  }
+  
+  /* Optimized table wrapper for 3-column tables - NO SCROLLING */
+  .table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow: visible; /* No scrolling needed - table fits perfectly */
+    border-radius: 0.375rem;
+    background: rgba(20, 20, 20, 0.5);
+    padding: 0.5rem;
+    margin: 0.75rem 0;
+  }
+  
+  .table-wrapper::-webkit-scrollbar {
+    height: 8px; /* Slightly thicker for easier interaction */
+  }
+  
+  .table-wrapper::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+  
+  .table-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(185, 28, 28, 0.7);
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+  }
+  
+  .table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: rgba(185, 28, 28, 0.9);
+  }
+  
+  .table-wrapper table {
+    margin: 0 !important;
+    width: 100% !important; /* Full width for 3 columns */
+    font-size: 0.8rem; /* 12.8px - readable size */
+    border-collapse: collapse;
+    table-layout: fixed !important; /* Fixed layout for even column distribution */
+  }
+  
+  .table-wrapper th,
+  .table-wrapper td {
+    padding: 0.4rem 0.3rem !important; /* Optimized for 3 columns */
+    font-size: 0.8rem; /* 12.8px - readable */
+    white-space: normal !important; /* Allow text wrapping for better fit */
+    word-break: break-word !important; /* Break long words */
+    border: 1px solid rgba(185, 28, 28, 0.3);
+    color: #ffffff !important;
+    vertical-align: top;
+    text-align: center; /* Center align for better mobile presentation */
+    line-height: 1.3; /* Better line spacing for wrapped text */
+  }
+  
+  /* Even column distribution for 3-column tables */
+  .table-wrapper th:nth-child(1),
+  .table-wrapper td:nth-child(1) {
+    width: 33.33%; /* First column: 1/3 width */
+  }
+  
+  .table-wrapper th:nth-child(2),
+  .table-wrapper td:nth-child(2) {
+    width: 33.33%; /* Second column: 1/3 width */
+  }
+  
+  .table-wrapper th:nth-child(3),
+  .table-wrapper td:nth-child(3) {
+    width: 33.33%; /* Third column: 1/3 width */
+  }
+  
+  .table-wrapper th {
+    background-color: #b91c1c !important;
+    font-weight: 600;
+    font-size: 0.7rem; /* 11.2px */
+    position: sticky; /* Make headers stick during scroll */
+    top: 0;
+    z-index: 10;
+  }
+
+  /* Mobile-specific welcome screen styles */
+  .w-40 {
+    width: 120px !important; /* Even smaller logo on mobile */
+  }
+
+  /* Keep buttons side by side on mobile now that they're smaller */
+  .flex.items-center.justify-center.gap-4 {
+    flex-direction: row;
+    gap: 12px !important;
+  }
+
+  /* Target both direct button children AND buttons inside relative divs */
+  .flex.items-center.justify-center.gap-4 > button,
+  .flex.items-center.justify-center.gap-4 > div > button {
+    width: auto !important;
+    max-width: none !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+
+  /* Make sure the relative div container fits content */
+  .flex.items-center.justify-center.gap-4 > div.relative {
+    width: auto !important;
+    max-width: none !important;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Responsive text sizing */
+  .text-base {
+    font-size: 15px !important;
+  }
+
+  /* Move + button above chat input, positioned by language direction */
+  .fixed.bottom-\[114px\] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important; /* Subtle shadow for floating effect */
+    z-index: 9999 !important; /* Ensure button stays on top during questionnaire */
+  }
+
+  /* Icon sizing for the floating + button */
+  .fixed.bottom-\[114px\] .w-4.h-4 {
+    width: 1rem !important; /* 16px - perfect size for smaller button */
+    height: 1rem !important; /* 16px - perfect size for smaller button */
+  }
+
+  /* Enhanced button styling for better mobile UX */
+  .fixed.bottom-\[114px\].w-10.h-10 {
+    transition: all 0.2s ease !important;
+  }
+  
+  .fixed.bottom-\[114px\].w-10.h-10:hover {
+    transform: scale(1.05) !important;
+  }
+  
+  .fixed.bottom-\[114px\].w-10.h-10:active {
+    transform: scale(0.95) !important;
+  }
+
+  /* Ensure typing animation works on mobile */
+  .prose p,
+  .prose div {
+    animation: none !important; /* Disable conflicting animations */
+  }
+
+  /* Optimize typing cursor for mobile */
+  .animate-pulse {
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+  }
+
+  /* Ensure proper rendering on mobile */
+  .chat-message {
+    transform: translateZ(0); /* Force hardware acceleration */
+    will-change: auto; /* Optimize for changes */
+  }
+
+  /* Fix streaming message layout on mobile */
+  .chat-message.flex.items-start {
+    margin-bottom: 0.5rem !important; /* Even smaller spacing during streaming */
+    padding: 0.5rem !important; /* More compact padding */
+  }
+
+  /* Prevent layout shift during streaming */
+  .animate-fadeIn {
+    animation-duration: 0.2s !important; /* Faster animation on mobile */
+  }
+
+  /* Ensure chat doesn't get pushed down during streaming */
+  .w-full.max-w-3xl.px-4.mx-auto {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  /* Fixed input area positioning during streaming */
+  .fixed {
+    position: fixed !important;
+  }
+
+  /* Fix main content padding for mobile - ultra compact */
+  .pt-16 {
+    padding-top: 3.75rem !important; /* 60px - TopBar height */
+  }
+
+  .md\:pt-20 {
+    padding-top: 3.75rem !important; /* Same as mobile for consistency */
+  }
+  
+  /* Force main content container to not exceed viewport */
+  .flex.flex-col.flex-1.pt-16 {
+    height: calc(100dvh - 60px) !important; /* Full height minus TopBar */
+    max-height: calc(100dvh - 60px) !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  /* Ensure stable layout during streaming - prevent content hiding */
+  .flex.flex-col.flex-1 {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+  }
+
+  /* Ensure proper spacing for main content container */
+  .flex.flex-col.flex-1.pt-16 {
+    padding-top: 1rem !important; /* Reduce to 16px for more chat space */
+  }
+
+  /* Ensure chat area doesn't get hidden during responses */
+  .flex-1.pb-24.overflow-y-auto {
+    flex: 1 1 auto !important; /* Allow flexible sizing */
+    min-height: 0 !important; /* Allow shrinking below content size */
+    overflow-y: auto !important;
+  }
+
+  /* Input area fixes for mobile - Fixed positioning for keyboard handling */
+  .fixed.bottom-0 {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 40 !important; /* Below + button but above chat */
+    max-height: 120px !important; /* Allow reasonable input height */
+    min-height: 60px !important; /* Minimum height for input */
+    /* Ensure input stays above mobile keyboard and safe areas */
+    bottom: env(safe-area-inset-bottom, 0) !important;
+    /* Better keyboard handling */
+    transform: translateZ(0); /* Force hardware acceleration */
+    backface-visibility: hidden; /* Prevent flicker */
+  }
+
+  /* Prevent content from jumping during streaming */
+  .chat-message .prose {
+    min-height: 1.2rem !important; /* Smaller minimum height */
+  }
+
+  /* Special compact styling for fixed/initial messages */
+  .chat-message .prose p:first-child:last-child {
+    font-size: 0.7rem !important; /* 11.2px - extra small for fixed messages */
+    line-height: 1.3 !important;
+    margin: 0.25em 0 !important; /* Very tight margins */
+  }
+
+  /* Optimize scroll behavior during streaming */
+  .flex-1.pb-24.overflow-y-auto {
+    scroll-behavior: smooth !important;
+    overscroll-behavior: contain !important;
+  }
+  
+  /* Handle mobile keyboard appearance - using dvh for better adaptation */
+  @media (max-height: 500px) {
+    .flex-1.pb-24.overflow-y-auto {
+      height: calc(100dvh - 100px) !important;
+      max-height: calc(100dvh - 100px) !important;
+      padding-bottom: 20px !important; /* Reduced space when keyboard is open but still visible */
+    }
+  }
+  
+  /* Additional support for viewport changes */
+  @supports (height: 100dvh) {
+    .flex-1.pb-24.overflow-y-auto {
+      height: calc(100dvh - 120px) !important;
+      max-height: calc(100dvh - 120px) !important;
+    }
+  }
+  
+  /* Smooth transitions for keyboard appearance */
+  .flex-1.pb-24.overflow-y-auto {
+    transition: height 0.3s ease !important;
+  }
+  
+  /* Better keyboard handling for different browsers */
+  @supports (height: 100lvh) {
+    .flex.flex-col.flex-1 {
+      height: 100lvh !important; /* Large viewport height as fallback */
+    }
+  }
+  
+  /* iOS Safari address bar handling */
+  @supports (height: 100svh) {
+    .flex.flex-col.flex-1 {
+      height: 100svh !important; /* Small viewport height for iOS */
+    }
+  }
+}
+
+/* RTL layout adjustments */
+[dir='rtl'] .prose blockquote {
+  border-left: none;
+  border-right: 4px solid #ae1f23;
+  padding-left: 0;
+  padding-right: 1em;
+}
+
+[dir='rtl'] .prose ul, 
+[dir='rtl'] .prose ol {
+  padding-left: 0;
+  padding-right: 1.5em;
+}
+
+/* Ensure proper initial positioning for RTL */
+html[dir='rtl'] {
+  text-align: right;
+}
+
+html[dir='rtl'] body {
+  text-align: right;
+}
+
+/* Disable transitions on initial load to prevent animation flash */
+.no-transition * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Custom animations for better UX */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Improved focus styles */
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #ae1f23;
+  outline-offset: 2px;
+}
+
+/* TopBar positioning fixes to prevent overlap */
+.fixed.top-0 {
+  z-index: 30; /* Ensure TopBar is always on top */
+}
+
+/* Tablet-specific improvements - Better responsive design */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .pt-16 {
+    padding-top: 4rem !important; /* 64px for tablet sizes */
+  }
+
+  /* Tablet TopBar */
+  .fixed.top-0.left-0.right-0 {
+    height: 64px !important;
+  }
+
+  /* Tablet input improvements */
+  .fixed.bottom-0 textarea {
+    font-size: 16px !important;
+    min-height: 48px !important;
+    padding: 14px 55px 14px 18px !important;
+  }
+
+  /* Tablet chat messages */
+  .chat-message {
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Tablet prose content */
+  .prose {
+    font-size: 15px !important;
+    line-height: 1.6 !important;
+  }
+
+  .prose p {
+    font-size: 15px !important;
+  }
+}
+
+/* Small mobile devices - Ultra mobile-first approach */
+@media (max-width: 480px) {
+  /* Even more mobile-optimized typography */
+  .prose {
+    font-size: 15px !important;
+    line-height: 1.7 !important;
+  }
+
+  .prose p {
+    font-size: 15px !important;
+    line-height: 1.7 !important;
+    margin-top: 1em !important;
+    margin-bottom: 1em !important;
+  }
+
+  .prose h1 {
+    font-size: 1.6rem !important; /* Even smaller on tiny screens */
+  }
+
+  .prose h2 {
+    font-size: 1.35rem !important;
+  }
+
+  .prose h3 {
+    font-size: 1.15rem !important;
+  }
+
+  /* Small mobile chat input */
+  .fixed.bottom-0 {
+    padding: 12px !important;
+  }
+
+  .fixed.bottom-0 textarea {
+    min-height: 48px !important;
+    padding: 14px 50px 14px 14px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Small mobile buttons */
+  .flex.items-center.justify-center.gap-4 > button,
+  .flex.items-center.justify-center.gap-4 > div > button {
+    padding: 14px 24px !important;
+    font-size: 17px !important;
+    min-height: 48px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Override for welcome screen buttons - make them smaller on mobile */
+  .welcome-buttons button {
+    padding: 8px 16px !important;
+    font-size: 14px !important;
+    min-height: 40px !important;
+  }
+
+  @media (min-width: 768px) {
+    .welcome-buttons button {
+      padding: 12px 24px !important;
+      font-size: 16px !important;
+      min-height: auto !important;
+    }
+  }
+
+  /* Small mobile chat messages */
+  .chat-message {
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+    border-radius: 16px !important;
+  }
+
+     /* Small mobile floating button */
+   .fixed.bottom-\[114px\] {
+     width: 52px !important;
+     height: 52px !important;
+     bottom: 88px !important;
+   }
+
+  /* Mobile menu button visibility - ensure it shows on mobile in production */
+  button[aria-label="Toggle menu"] {
+    display: flex !important;
+  }
+  
+  @media (min-width: 769px) {
+    button[aria-label="Toggle menu"] {
+      display: none !important;
+    }
+  }
+
+  /* Force mobile drawer to work in production */
+  .fixed.inset-0.z-40 {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 40 !important;
+  }
+
+  /* Mobile drawer backdrop */
+  .fixed.inset-0.bg-black\/50 {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+  }
+}
+
+/* Ensure questionnaire doesn't interfere with floating button */
+.questionnaire-container {
+  margin-bottom: 120px !important; /* Ensure space for floating button */
+  position: relative !important;
+  z-index: 1 !important; /* Lower z-index than floating button */
+}
+
+/* Ensure floating button is always visible during questionnaire */
+.fixed.bottom-\[114px\].z-\[9999\] {
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* ==============================================
+   PRINT STYLES FOR PROFESSIONAL REPORTS
+   ============================================== */
+
+@media print {
+  /* Reset and base styles */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Page setup - A4 format */
+  @page {
+    size: A4 portrait;
+    margin: 20mm 15mm 20mm 15mm;
+    
+    @top-center {
+      content: "";
+    }
+    
+    @bottom-center {
+      content: counter(page) " \\/ " counter(pages);
+      font-size: 10pt;
+      color: #666;
+    }
+  }
+
+  /* Document structure */
+  html {
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-family: "Times New Roman", Times, serif;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Hide non-print elements */
+  .print\:hidden,
+  .no-print,
+  button,
+  .fixed,
+  nav,
+  .sidebar,
+  .floating-button,
+  .action-buttons {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Show print-specific elements */
+  .print\:block {
+    display: block !important;
+  }
+
+  .print\:inline {
+    display: inline !important;
+  }
+
+  .print\:flex {
+    display: flex !important;
+  }
+
+  /* Report content container */
+  #report-content {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+
+  /* Typography */
+  h1, h2, h3, h4, h5, h6 {
+    color: black !important;
+    page-break-after: avoid;
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    font-weight: bold;
+  }
+
+  h1 {
+    font-size: 24pt;
+    text-align: center;
+    margin-bottom: 1em;
+  }
+
+  h2 {
+    font-size: 18pt;
+    border-bottom: 1pt solid black;
+    padding-bottom: 0.2em;
+  }
+
+  h3 {
+    font-size: 14pt;
+  }
+
+  p {
+    color: black !important;
+    margin-bottom: 0.5em;
+    line-height: 1.4;
+    text-align: justify;
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Lists */
+  ul, ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+  }
+
+  li {
+    color: black !important;
+    margin-bottom: 0.2em;
+    page-break-inside: avoid;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    page-break-inside: avoid;
+  }
+
+  th, td {
+    border: 1pt solid black;
+    padding: 0.3em;
+    text-align: left;
+    color: black !important;
+    background: white !important;
+  }
+
+  th {
+    font-weight: bold;
+    background: #f0f0f0 !important;
+  }
+
+  /* Images and charts */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+    display: block;
+    margin: 1em auto;
+  }
+
+  /* Sections and page breaks */
+  section {
+    page-break-inside: avoid;
+    margin-bottom: 2em;
+  }
+
+  header {
+    page-break-after: avoid;
+    margin-bottom: 2em;
+    text-align: center;
+  }
+
+  footer {
+    page-break-before: avoid;
+    margin-top: 2em;
+    padding-top: 1em;
+    border-top: 1pt solid black;
+    text-align: center;
+    font-size: 10pt;
+  }
+
+  /* Dividers */
+  hr, .border-t, .border-gray-300 {
+    border: none !important;
+    border-top: 1pt solid black !important;
+    margin: 1em 0;
+    page-break-after: avoid;
+  }
+
+  /* Force page break for long content */
+  .page-break {
+    page-break-before: always;
+  }
+
+  .avoid-break {
+    page-break-inside: avoid;
+  }
+
+  /* RTL support for Arabic */
+  [dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+  }
+
+  [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3 {
+    text-align: right;
+  }
+
+  [dir="rtl"] header {
+    text-align: center;
+  }
+
+  [dir="rtl"] footer {
+    text-align: center;
+  }
+
+  [dir="rtl"] ul, [dir="rtl"] ol {
+    padding-right: 1.5em;
+    padding-left: 0;
+  }
+
+  /* Color fixes for print */
+  .text-gray-800,
+  .text-gray-700,
+  .text-gray-600,
+  .text-gray-500,
+  .print\:text-black {
+    color: black !important;
+  }
+
+  .bg-white {
+    background: white !important;
+  }
+
+  .shadow-lg, .shadow {
+    box-shadow: none !important;
+  }
+
+  /* Specific fixes for report components */
+  .prose {
+    color: black !important;
+    max-width: none !important;
+  }
+
+  .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+    color: black !important;
+  }
+
+  .prose p, .prose li, .prose span, .prose div {
+    color: black !important;
+  }
+
+  /* Ensure proper spacing */
+  .mb-12 {
+    margin-bottom: 2em !important;
+  }
+
+  .mt-16 {
+    margin-top: 2em !important;
+  }
+
+  .pt-8 {
+    padding-top: 1em !important;
+  }
+
+  .pb-8 {
+    padding-bottom: 1em !important;
+  }
+
+  /* Remove animations and transitions */
+  *, *::before, *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+}

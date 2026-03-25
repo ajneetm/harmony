@@ -1,0 +1,8 @@
+# Redirect all routes to index.html for SPA routing
+/*    /index.html   200
+
+# Chat route specifically (in case the above doesn't work)
+/chat   /index.html   200
+
+# Report route specifically
+/report /index.html   200

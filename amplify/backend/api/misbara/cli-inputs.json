@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "paths": {
+    "/ai-response": {
+      "name": "/ai-response",
+      "lambdaFunction": "misbara",
+      "permissions": {
+        "setting": "open"
+      }
+    }
+  }
+}

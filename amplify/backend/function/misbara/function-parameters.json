@@ -1,0 +1,13 @@
+{
+  "permissions": {},
+  "lambdaLayers": [],
+  "environmentVariableList": [
+    {
+      "cloudFormationParameterName": "viteOpenaiApiKey",
+      "environmentVariableName": "VITE_OPENAI_API_KEY"
+    }
+  ],
+  "secretNames": [
+    "VITE_OPENAI_API_KEY"
+  ]
+}

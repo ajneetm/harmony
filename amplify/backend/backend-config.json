@@ -1,0 +1,86 @@
+{
+  "api": {
+    "misbara": {
+      "dependsOn": [
+        {
+          "attributes": [
+            "Name",
+            "Arn"
+          ],
+          "category": "function",
+          "resourceName": "misbara"
+        }
+      ],
+      "providerPlugin": "awscloudformation",
+      "service": "API Gateway"
+    }
+  },
+  "auth": {
+    "misbara": {
+      "dependsOn": [],
+      "frontendAuthConfig": {
+        "mfaConfiguration": "OFF",
+        "mfaTypes": [
+          "SMS"
+        ],
+        "passwordProtectionSettings": {
+          "passwordPolicyCharacters": [],
+          "passwordPolicyMinLength": 8
+        },
+        "signupAttributes": [
+          "EMAIL"
+        ],
+        "socialProviders": [],
+        "usernameAttributes": [],
+        "verificationMechanisms": [
+          "EMAIL"
+        ]
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "Cognito",
+      "serviceType": "managed"
+    }
+  },
+  "function": {
+    "misbara": {
+      "build": true,
+      "dependsOn": [],
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    }
+  },
+  "parameters": {
+    "AMPLIFY_function_misbara_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "misbara"
+        }
+      ]
+    },
+    "AMPLIFY_function_misbara_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "misbara"
+        }
+      ]
+    },
+    "AMPLIFY_function_misbara_secretsPathAmplifyAppId": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "misbara"
+        }
+      ]
+    },
+    "AMPLIFY_function_misbara_viteOpenaiApiKey": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "misbara"
+        }
+      ]
+    }
+  }
+}
