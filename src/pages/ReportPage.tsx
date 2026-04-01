@@ -37,19 +37,30 @@ interface ChartData {
   value: number
 }
 
+interface DimensionData {
+  percentage: number
+  elements: ChartData[]
+}
+
 interface ReportChartData {
-  cognitive: ChartData[]
-  emotional: ChartData[]
-  behavioral: ChartData[]
+  mental: DimensionData
+  emotional: DimensionData
+  existential: DimensionData
+  harmony: number
+  overall: number
+  allElements: { name: string; score: number; dimension: string }[]
   typeLabels: {
+    mental: string
+    emotional: string
+    existential: string
+  }
+  radarCognitive: ChartData[]
+  radarEmotional: ChartData[]
+  radarBehavioral: ChartData[]
+  radarLabels: {
     cognitive: string
     emotional: string
     behavioral: string
-  }
-  overallAverages: {
-    cognitive: number
-    emotional: number
-    behavioral: number
   }
 }
 
@@ -520,58 +531,88 @@ export default function ReportPage() {
             {/* Charts Section */}
             {chartData && (
               <section className="mt-4 md:mt-6 mb-3 md:mb-4">
+
+                {/* Overall & Harmony Summary Row */}
+                <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6">
+                  {/* Overall */}
+                  <div className="flex-1 relative overflow-hidden rounded-2xl px-5 py-4"
+                    style={{ background: 'linear-gradient(135deg, #1c1a0e 0%, #2a2300 100%)', border: '1px solid #f59e0b44' }}>
+                    <div className="absolute top-0 right-0 w-16 h-16 rounded-full opacity-10"
+                      style={{ background: '#f59e0b', filter: 'blur(20px)', transform: 'translate(25%, -25%)' }} />
+                    <p className="text-xs text-gray-400 mb-1">
+                      {isArabic ? 'المستوى العام' : 'Overall Level'}
+                    </p>
+                    <p className="text-4xl font-bold leading-none" style={{ color: '#f59e0b' }}>
+                      {chartData.overall}%
+                    </p>
+                  </div>
+                  {/* Harmony */}
+                  <div className="flex-1 relative overflow-hidden rounded-2xl px-5 py-4"
+                    style={{ background: 'linear-gradient(135deg, #150d20 0%, #1e0a30 100%)', border: '1px solid #a855f744' }}>
+                    <div className="absolute top-0 right-0 w-16 h-16 rounded-full opacity-10"
+                      style={{ background: '#a855f7', filter: 'blur(20px)', transform: 'translate(25%, -25%)' }} />
+                    <p className="text-xs text-gray-400 mb-1">
+                      {isArabic ? 'التجانس بين الأبعاد' : 'Dimension Coherence'}
+                    </p>
+                    <p className="text-4xl font-bold leading-none" style={{ color: '#a855f7' }}>
+                      {chartData.harmony}%
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3 Radar Charts — original 9-axis style */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                   <div className="p-2 md:p-3 flex items-center justify-center chart-container h-40 md:h-52">
                     <div className="w-full h-full flex items-center justify-center">
                       <RadarChart
-                        title={chartData.typeLabels.cognitive}
+                        title={chartData.radarLabels.cognitive}
                         color="#22c55e"
-                        data={chartData.cognitive}
+                        data={chartData.radarCognitive}
                         language={questionnaireData.language}
                       />
                     </div>
                   </div>
-                  
+
                   <div className="p-2 md:p-3 flex items-center justify-center chart-container h-40 md:h-52">
                     <div className="w-full h-full flex items-center justify-center">
                       <RadarChart
-                        title={chartData.typeLabels.emotional}
+                        title={chartData.radarLabels.emotional}
                         color="#ae1f23"
-                        data={chartData.emotional}
+                        data={chartData.radarEmotional}
                         language={questionnaireData.language}
                       />
                     </div>
                   </div>
-                  
+
                   <div className="p-2 md:p-3 flex items-center justify-center chart-container h-40 md:h-52">
                     <div className="w-full h-full flex items-center justify-center">
                       <RadarChart
-                        title={chartData.typeLabels.behavioral}
+                        title={chartData.radarLabels.behavioral}
                         color="#3b82f6"
-                        data={chartData.behavioral}
+                        data={chartData.radarBehavioral}
                         language={questionnaireData.language}
                       />
                     </div>
                   </div>
                 </div>
-                
-                {/* Percentages Row - Below all charts */}
+
+                {/* Dimension Percentages Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-2">
                   <div className="text-center">
                     <span className="text-xl font-bold" style={{ color: '#22c55e' }}>
-                      {Math.round((chartData.overallAverages.cognitive / 5) * 100)}%
+                      {chartData.mental.percentage}%
                     </span>
                   </div>
-                  
+
                   <div className="text-center">
                     <span className="text-xl font-bold" style={{ color: '#ae1f23' }}>
-                      {Math.round((chartData.overallAverages.emotional / 5) * 100)}%
+                      {chartData.emotional.percentage}%
                     </span>
                   </div>
-                  
+
                   <div className="text-center">
                     <span className="text-xl font-bold" style={{ color: '#3b82f6' }}>
-                      {Math.round((chartData.overallAverages.behavioral / 5) * 100)}%
+                      {chartData.existential.percentage}%
                     </span>
                   </div>
                 </div>

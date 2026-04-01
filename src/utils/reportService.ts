@@ -23,19 +23,38 @@ interface ChartData {
   value: number
 }
 
-interface ReportChartData {
-  cognitive: ChartData[]
-  emotional: ChartData[]
-  behavioral: ChartData[]
+interface ElementData {
+  name: string
+  score: number
+  dimension: 'mental' | 'emotional' | 'existential'
+}
+
+interface DimensionData {
+  percentage: number
+  elements: ChartData[]
+}
+
+export interface ReportChartData {
+  // New dimensional scores (for numbers, AI, percentages display)
+  mental: DimensionData
+  emotional: DimensionData
+  existential: DimensionData
+  harmony: number
+  overall: number
+  allElements: ElementData[]
   typeLabels: {
+    mental: string
+    emotional: string
+    existential: string
+  }
+  // Original 9-axis chart data (for radar visualization)
+  radarCognitive: ChartData[]
+  radarEmotional: ChartData[]
+  radarBehavioral: ChartData[]
+  radarLabels: {
     cognitive: string
     emotional: string
     behavioral: string
-  }
-  overallAverages: {
-    cognitive: number
-    emotional: number
-    behavioral: number
   }
 }
 
@@ -47,102 +66,120 @@ interface ReportData {
 
 /**
  * Processes questionnaire data to generate chart data for visualization
- * @param data - Questionnaire data with answers
- * @returns Chart data for radar visualization
+ * 3 dimensions: Mental (Q1-9), Emotional (Q10-18), Existential (Q19-27)
+ * Each dimension score = sum / 45 * 100
+ * Harmony = 100 - (max_dim% - min_dim%)
+ * Overall = total_sum / 135 * 100
  */
 export const generateChartData = (data: QuestionnaireData): ReportChartData => {
   const { questions_with_answers, language } = data
+  const answers = questions_with_answers.map(q => q.user_answer)
 
-  // Helper function to map question to its category based on position
-  const mapQuestionToCategory = (question: QuestionWithAnswer, index: number) => {
-    // Based on the Harmony Model structure: 27 questions = 3 worlds × 3 elements × 3 types
-    // Questions 1-9: Inner World, 10-18: External World, 19-27: Perceptual World
-    // Within each world: 3 questions per element (cognitive, emotional, behavioral)
-    
-    const worldIndex = Math.floor(index / 9) // 0=inner, 1=external, 2=perceptual
-    const elementIndex = Math.floor((index % 9) / 3) // 0=first element, 1=second, 2=third
-    const typeIndex = index % 3 // 0=cognitive, 1=emotional, 2=behavioral
-    
-    const worlds = ['inner', 'external', 'perceptual']
-    const elements = ['perception', 'readiness', 'intention', 'action', 'interaction', 'response', 'reception', 'evolution', 'mentalImage']
-    const types = ['cognitive', 'emotional', 'behavioral']
-    
-    return {
-      world: worlds[worldIndex],
-      element: elements[worldIndex * 3 + elementIndex],
-      type: types[typeIndex],
-      score: question.user_answer
-    }
+  const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
+
+  // Split into 3 dimensions
+  const mentalAnswers = answers.slice(0, 9)
+  const emotionalAnswers = answers.slice(9, 18)
+  const existentialAnswers = answers.slice(18, 27)
+
+  // Dimension percentages (max 45 per dimension)
+  const mentalPct = Math.round(sum(mentalAnswers) / 45 * 100)
+  const emotionalPct = Math.round(sum(emotionalAnswers) / 45 * 100)
+  const existentialPct = Math.round(sum(existentialAnswers) / 45 * 100)
+
+  // Harmony: 100 - (max - min)
+  const maxPct = Math.max(mentalPct, emotionalPct, existentialPct)
+  const minPct = Math.min(mentalPct, emotionalPct, existentialPct)
+  const harmony = 100 - (maxPct - minPct)
+
+  // Overall: total / 135 * 100
+  const overall = Math.round(sum(answers) / 135 * 100)
+
+  // Element names per language
+  const elementNames = language === 'ar'
+    ? {
+        mental: ['الإدراك', 'الجاهزية', 'النية'],
+        emotional: ['الفعل', 'التفاعل', 'الناتج'],
+        existential: ['الاستقبال', 'التطور', 'التشكل'],
+      }
+    : {
+        mental: ['Perception', 'Readiness', 'Intention'],
+        emotional: ['Action', 'Interaction', 'Outcome'],
+        existential: ['Reception', 'Evolution', 'Formation'],
+      }
+
+  // Calculate element averages (3 questions per element)
+  const calcElements = (dimAnswers: number[], names: string[]): ChartData[] =>
+    names.map((name, i) => ({
+      dimension: name,
+      value: (dimAnswers[i * 3] + dimAnswers[i * 3 + 1] + dimAnswers[i * 3 + 2]) / 3,
+    }))
+
+  const mentalElements = calcElements(mentalAnswers, elementNames.mental)
+  const emotionalElements = calcElements(emotionalAnswers, elementNames.emotional)
+  const existentialElements = calcElements(existentialAnswers, elementNames.existential)
+
+  // All elements ranked by score
+  const allElements: ElementData[] = [
+    ...mentalElements.map(e => ({ name: e.dimension, score: e.value, dimension: 'mental' as const })),
+    ...emotionalElements.map(e => ({ name: e.dimension, score: e.value, dimension: 'emotional' as const })),
+    ...existentialElements.map(e => ({ name: e.dimension, score: e.value, dimension: 'existential' as const })),
+  ].sort((a, b) => b.score - a.score)
+
+  const typeLabels = {
+    mental: language === 'ar' ? 'الذهني' : 'Mental',
+    emotional: language === 'ar' ? 'المشاعري / التفاعلي' : 'Emotional / Interactive',
+    existential: language === 'ar' ? 'الوجودي' : 'Existential',
   }
-  
-  // Process questions and group by type
-  const processedData = questions_with_answers.map(mapQuestionToCategory)
-  
-  // Group by type and calculate averages for each subdimension
-  const groupedData = {
-    cognitive: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
-    emotional: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
-    behavioral: Array(9).fill(0).map(() => ({ total: 0, count: 0 }))
-  }
-  
-  // Element mapping to array indices
-  const elementToIndex = {
-    perception: 0, readiness: 1, intention: 2,
-    action: 3, interaction: 4, response: 5,
-    reception: 6, evolution: 7, mentalImage: 8
-  }
-  
-  // Dimension names in order
-  const dimensions = [
+
+  // ── Original 9-axis radar data (cognitive / emotional / behavioral) ──
+  // Structure: 27 questions = 3 worlds × 3 elements × 3 types
+  // typeIndex = question index % 3  (0=cognitive, 1=emotional, 2=behavioral)
+  // elementIndex within each world = Math.floor((index % 9) / 3)
+  const radarDimensions = [
     'Perception', 'Readiness', 'Intention',
     'Action', 'Interaction', 'Response',
-    'Reception', 'Evolution', 'Mental Image'
+    'Reception', 'Evolution', 'Mental Image',
   ]
-  
-  processedData.forEach((item) => {
-    const index = elementToIndex[item.element as keyof typeof elementToIndex]
-    if (index !== undefined) {
-      groupedData[item.type as keyof typeof groupedData][index].total += item.score
-      groupedData[item.type as keyof typeof groupedData][index].count += 1
-    }
+
+  const radarGroups = {
+    cognitive: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
+    emotional: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
+    behavioral: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
+  }
+
+  questions_with_answers.forEach((q, index) => {
+    const worldIndex = Math.floor(index / 9)
+    const elementIndex = Math.floor((index % 9) / 3)
+    const typeIndex = index % 3
+    const globalElementIndex = worldIndex * 3 + elementIndex
+    const types = ['cognitive', 'emotional', 'behavioral'] as const
+    radarGroups[types[typeIndex]][globalElementIndex].total += q.user_answer
+    radarGroups[types[typeIndex]][globalElementIndex].count += 1
   })
-  
-  // Calculate averages and prepare radar chart data
-  const prepareRadarData = (typeData: { total: number; count: number }[]) => {
-    return dimensions.map((dimension, index) => ({
+
+  const buildRadarData = (group: { total: number; count: number }[]): ChartData[] =>
+    radarDimensions.map((dimension, i) => ({
       dimension,
-      value: typeData[index].count > 0 ? typeData[index].total / typeData[index].count : 0
+      value: group[i].count > 0 ? group[i].total / group[i].count : 0,
     }))
-  }
-  
-  const cognitiveData = prepareRadarData(groupedData.cognitive)
-  const emotionalData = prepareRadarData(groupedData.emotional)
-  const behavioralData = prepareRadarData(groupedData.behavioral)
-  
-  // Calculate overall averages for summary
-  const calculateOverallAverage = (data: ChartData[]) => {
-    const total = data.reduce((sum, item) => sum + item.value, 0)
-    return data.length > 0 ? total / data.length : 0
-  }
-  
-  const overallAverages = {
-    cognitive: calculateOverallAverage(cognitiveData),
-    emotional: calculateOverallAverage(emotionalData),
-    behavioral: calculateOverallAverage(behavioralData)
-  }
-  
-  const typeLabels = {
-    cognitive: language === 'ar' ? 'الذهني' : 'Cognitive',
-    emotional: language === 'ar' ? 'الحسي' : 'Emotional',
-    behavioral: language === 'ar' ? 'السلوكي' : 'Behavioral'
-  }
-  
+
   return {
-    cognitive: cognitiveData,
-    emotional: emotionalData,
-    behavioral: behavioralData,
+    mental: { percentage: mentalPct, elements: mentalElements },
+    emotional: { percentage: emotionalPct, elements: emotionalElements },
+    existential: { percentage: existentialPct, elements: existentialElements },
+    harmony,
+    overall,
+    allElements,
     typeLabels,
-    overallAverages
+    radarCognitive: buildRadarData(radarGroups.cognitive),
+    radarEmotional: buildRadarData(radarGroups.emotional),
+    radarBehavioral: buildRadarData(radarGroups.behavioral),
+    radarLabels: {
+      cognitive: language === 'ar' ? 'الذهني' : 'Cognitive',
+      emotional: language === 'ar' ? 'المشاعري' : 'Emotional',
+      behavioral: language === 'ar' ? 'الوجودي' : 'Existential',
+    },
   }
 }
 
@@ -188,11 +225,11 @@ export const generateAndOpenReport = async (
     
     // 🐛 DEBUG LOG: Show the 3 charts data
     console.log('=== 🐛 DEBUG: 3 CHARTS DATA ===');
-    console.log('COGNITIVE CHART:', chartData.cognitive);
-    console.log('EMOTIONAL CHART:', chartData.emotional);
-    console.log('BEHAVIORAL CHART:', chartData.behavioral);
-    console.log('OVERALL AVERAGES:', chartData.overallAverages);
-    console.log('TYPE LABELS:', chartData.typeLabels);
+    console.log('MENTAL:', chartData.mental);
+    console.log('EMOTIONAL:', chartData.emotional);
+    console.log('EXISTENTIAL:', chartData.existential);
+    console.log('OVERALL:', chartData.overall, '% | HARMONY:', chartData.harmony, '%');
+    console.log('ALL ELEMENTS RANKED:', chartData.allElements);
     console.log('=== END CHARTS DATA ===');
     
     // Step 3: Prepare complete report data

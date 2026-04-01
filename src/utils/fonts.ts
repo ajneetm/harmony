@@ -8,8 +8,8 @@
  * @returns CSS font-family string
  */
 export const getFontFamily = (locale: 'ar' | 'en'): string => {
-  return locale === 'ar' 
-    ? '"Tajawal", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
+  return locale === 'ar'
+    ? '"Montserrat Arabic", "Tajawal", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
     : '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif';
 };
 
@@ -20,12 +20,7 @@ export const getFontFamily = (locale: 'ar' | 'en'): string => {
  * @returns CSS font-weight value
  */
 export const getFontWeight = (locale: 'ar' | 'en', weight: '400' | '500' | '600' | '700'): string => {
-  // Tajawal supports 400, 500, 700
-  // Inter supports 400, 500, 600, 700
-  if (locale === 'ar') {
-    // Map 600 to 700 for Tajawal since it doesn't have 600
-    return weight === '600' ? '700' : weight;
-  }
+  // Montserrat Arabic supports all weights (100–900)
   return weight;
 };
 

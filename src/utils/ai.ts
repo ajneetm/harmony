@@ -281,71 +281,55 @@ Only return the complete JSON object, do not return any commands, comments, or a
 export const generateReport = async (answersData: any, chartData: any, language: 'ar' | 'en' = 'ar') => {
   try {
     console.log('Generating report from questionnaire answers with chart data...');
-    
+
     // Import the report prompts
     const { getReportPrompt } = await import('./report_prompts');
-    
+
     // Get the appropriate report prompt based on language
     const reportPrompt = getReportPrompt(language);
-    
-    // Format chart data as structured JSON for better AI processing
-    const averages = chartData.overallAverages;
-    
-    // Find highest and lowest dimensions
+
+    // Extract new dimension-based data
+    const { mental, emotional, existential, harmony, overall, allElements } = chartData;
+
+    // Dimension descriptors
     const dimensionData = [
-      { key: 'cognitive', value: averages.cognitive, label_ar: 'الذهني', label_en: 'Cognitive' },
-      { key: 'emotional', value: averages.emotional, label_ar: 'الحسي', label_en: 'Emotional' },
-      { key: 'behavioral', value: averages.behavioral, label_ar: 'السلوكي', label_en: 'Behavioral' }
+      { key: 'mental', value: mental.percentage, label_ar: 'الذهني', label_en: 'Mental', desc_ar: 'جانب التفكير والتحليل', desc_en: 'the side of thinking and analysis' },
+      { key: 'emotional', value: emotional.percentage, label_ar: 'المشاعري', label_en: 'Emotional', desc_ar: 'جانب المشاعر والتفاعل الداخلي', desc_en: 'the side of emotions and inner interaction' },
+      { key: 'existential', value: existential.percentage, label_ar: 'الوجودي', label_en: 'Existential', desc_ar: 'جانب الهوية والتشكل الداخلي', desc_en: 'the side of identity and inner formation' },
     ];
-    
-    dimensionData.sort((a, b) => b.value - a.value); // Sort by value descending
+
+    dimensionData.sort((a, b) => b.value - a.value);
     const highest = dimensionData[0];
     const lowest = dimensionData[dimensionData.length - 1];
-    
-    // Find strongest and weakest individual elements across all dimensions
-    const allElements = [
-      ...chartData.cognitive.map((item: any) => ({ ...item, type: 'cognitive', type_ar: 'ذهني' })),
-      ...chartData.emotional.map((item: any) => ({ ...item, type: 'emotional', type_ar: 'حسي' })),
-      ...chartData.behavioral.map((item: any) => ({ ...item, type: 'behavioral', type_ar: 'سلوكي' }))
-    ];
-    
-    allElements.sort((a, b) => b.value - a.value);
-    const strongestElement = allElements[0];
-    const weakestElement = allElements[allElements.length - 1];
-    
-    // Calculate balance gap
-    const values = Object.values(averages);
-    const balance_gap = Number((Math.max(...values) - Math.min(...values)).toFixed(2));
-    
+
+    // Top 3 and bottom 3 elements
+    const top3 = allElements.slice(0, 3);
+    const bottom3 = [...allElements].slice(-3).reverse();
+
+    const balance_gap = Math.max(mental.percentage, emotional.percentage, existential.percentage)
+      - Math.min(mental.percentage, emotional.percentage, existential.percentage);
+
     const chartDataText = JSON.stringify({
-      averages: {
-        cognitive: Number(averages.cognitive.toFixed(2)),
-        emotional: Number(averages.emotional.toFixed(2)),
-        behavioral: Number(averages.behavioral.toFixed(2))
-      },
+      overall_percentage: overall,
+      harmony_percentage: harmony,
+      mental_percentage: mental.percentage,
+      emotional_percentage: emotional.percentage,
+      existential_percentage: existential.percentage,
       highest_dimension: {
         label_ar: highest.label_ar,
         label_en: highest.label_en,
-        value: Number(highest.value.toFixed(2))
+        desc_ar: highest.desc_ar,
+        desc_en: highest.desc_en,
+        value: highest.value,
       },
       lowest_dimension: {
         label_ar: lowest.label_ar,
         label_en: lowest.label_en,
-        value: Number(lowest.value.toFixed(2))
+        value: lowest.value,
       },
-      strongest_element: {
-        dimension: strongestElement.dimension,
-        type_ar: strongestElement.type_ar,
-        type_en: strongestElement.type,
-        value: Number(strongestElement.value.toFixed(2))
-      },
-      weakest_element: {
-        dimension: weakestElement.dimension,
-        type_ar: weakestElement.type_ar,
-        type_en: weakestElement.type,
-        value: Number(weakestElement.value.toFixed(2))
-      },
-      balance_gap: balance_gap
+      top_3_functions: top3.map((e: any) => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
+      bottom_3_functions: bottom3.map((e: any) => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
+      balance_gap: Number(balance_gap.toFixed(1)),
     }, null, 2);
     
     // 🐛 DEBUG LOG: Show the chart data being sent instead of raw answers
