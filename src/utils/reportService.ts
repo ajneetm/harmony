@@ -129,7 +129,7 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
   const typeLabels = {
     mental: language === 'ar' ? 'الذهني' : 'Mental',
     emotional: language === 'ar' ? 'المشاعري / التفاعلي' : 'Emotional / Interactive',
-    existential: language === 'ar' ? 'الوجودي' : 'Existential',
+    existential: language === 'ar' ? 'السلوكي' : 'Existential',
   }
 
   // ── Original 9-axis radar data (cognitive / emotional / behavioral) ──
@@ -178,7 +178,7 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
     radarLabels: {
       cognitive: language === 'ar' ? 'الذهني' : 'Cognitive',
       emotional: language === 'ar' ? 'المشاعري' : 'Emotional',
-      behavioral: language === 'ar' ? 'الوجودي' : 'Existential',
+      behavioral: language === 'ar' ? 'السلوكي' : 'Existential',
     },
   }
 }

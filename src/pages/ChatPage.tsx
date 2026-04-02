@@ -774,7 +774,8 @@ const handleCrisisQuestionnaire = useCallback(async () => {
       console.log('handleCrisisQuestionnaire called');
       
       const defaultTitle = language === 'ar' ? 'التعامل مع الأحداث الكبرى' : 'Dealing with Major Events'
-      
+      sessionStorage.setItem('reportTopic', language === 'ar' ? 'الأحداث الكبرى' : 'Major Events')
+
       console.log('Creating new conversation for Crisis questionnaire...');
       const id = await createNewConversation(defaultTitle)
       console.log('New conversation created with ID:', id);
@@ -859,7 +860,8 @@ const handleCrisisQuestionnaire = useCallback(async () => {
       console.log('handleLifeQuestionnaire called');
       
       const defaultTitle = language === 'ar' ? 'علاقتي بالحياة' : 'My Relationship with Life'
-      
+      sessionStorage.setItem('reportTopic', language === 'ar' ? 'الحياة العامة' : 'Life')
+
       console.log('Creating new conversation for Life questionnaire...');
       const id = await createNewConversation(defaultTitle)
       console.log('New conversation created with ID:', id);
@@ -903,7 +905,8 @@ const handleCrisisQuestionnaire = useCallback(async () => {
       console.log('handleFamilyQuestionnaire called');
       
       const defaultTitle = language === 'ar' ? 'علاقتي بالأسرة' : 'My Relationship with Family'
-      
+      sessionStorage.setItem('reportTopic', language === 'ar' ? 'الشؤون الأسرية' : 'Family')
+
       console.log('Creating new conversation for Family questionnaire...');
       const id = await createNewConversation(defaultTitle)
       console.log('New conversation created with ID:', id);
@@ -947,6 +950,7 @@ const handleCrisisQuestionnaire = useCallback(async () => {
       console.log('handleRomanticQuestionnaire called');
       
       const defaultTitle = language === 'ar' ? 'علاقتي بالشريك ' : 'My Relationship with Emotions'
+      sessionStorage.setItem('reportTopic', language === 'ar' ? 'العلاقات العاطفية' : 'Emotions')
 
       console.log('Creating new conversation for Emotions questionnaire...');
       const id = await createNewConversation(defaultTitle)
@@ -991,7 +995,8 @@ const handleCrisisQuestionnaire = useCallback(async () => {
       console.log('handleWorkQuestionnaire called');
       
       const defaultTitle = language === 'ar' ? 'علاقتي بالعمل' : 'My Relationship with Work'
-      
+      sessionStorage.setItem('reportTopic', language === 'ar' ? 'المسار المهني' : 'Work')
+
       console.log('Creating new conversation for Work questionnaire...');
       const id = await createNewConversation(defaultTitle)
       console.log('New conversation created with ID:', id);

@@ -6,7 +6,6 @@ import jsPDF from 'jspdf'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
-import rehypeSanitize from 'rehype-sanitize'
 import rehypeHighlight from 'rehype-highlight'
 import RadarChart from '../components/RadarChart'
 import misbaraLogo from '../components/icons/misbara_original_logo.svg'
@@ -77,6 +76,7 @@ export default function ReportPage() {
   const [error, setError] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
   const [isDownloaded, setIsDownloaded] = useState(false)
+  const reportTopic = sessionStorage.getItem('reportTopic') || ''
   
   const navigate = (path: string) => {
     if (typeof window !== 'undefined' && (window as any).navigateTo) {
@@ -255,6 +255,29 @@ export default function ReportPage() {
     }
   }
 
+  // Color the first word after "N) " green (top3) or orange (bottom3)
+  // Handles both: **1) الإدراك** and plain: 1) الإدراك لديك...
+  const colorFunctionNames = (content: string): string => {
+    const lines = content.split('\n')
+    let inTop3 = false
+    let inBottom3 = false
+    return lines.map(line => {
+      if (/أقوى 3 وظائف|Top 3 Functions/.test(line)) { inTop3 = true; inBottom3 = false }
+      else if (/أضعف 3 وظائف|Areas for Development/.test(line)) { inTop3 = false; inBottom3 = true }
+      else if (/^## /.test(line) && !/أقوى|أضعف|Top 3|Areas for/.test(line)) { inTop3 = false; inBottom3 = false }
+
+      if ((inTop3 || inBottom3) && /\d+\)/.test(line)) {
+        const color = inTop3 ? '#22c55e' : '#f97316'
+        // Match the first Arabic/Latin word after "N) " — skips any ** markers
+        return line.replace(
+          /(\*{0,2}\d+\)\s*\*{0,2})([\u0600-\u06FFa-zA-ZÀ-ÿ\u0610-\u061A\u064B-\u065F]+)/,
+          `$1<span style="color:${color};font-weight:700">$2</span>`
+        )
+      }
+      return line
+    }).join('\n')
+  }
+
   const renderMarkdownContent = (content: string) => {
     // Clean the content to remove any markdown code block wrapping
     let cleanContent = content.trim();
@@ -264,35 +287,38 @@ export default function ReportPage() {
     
     // Remove any remaining code block patterns
     cleanContent = cleanContent.replace(/^```\s*/gm, '').replace(/\s*```$/gm, '');
-    
+
+    // Color function names
+    cleanContent = colorFunctionNames(cleanContent)
+
     return (
       <div className="prose prose-sm prose-invert max-w-none text-white print:text-black">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeHighlight]}
+          rehypePlugins={[rehypeRaw, rehypeHighlight]}
           components={{
           h1: ({ children, ...props }) => (
-            <h1 {...props} className="text-2xl font-bold mt-5 mb-4 text-white print:text-black">
+            <h1 {...props} className="text-xl font-semibold mt-5 mb-3 text-white print:text-black">
               {children}
             </h1>
           ),
           h2: ({ children, ...props }) => (
-            <h2 {...props} className="text-xl font-bold mt-5 mb-3 text-white print:text-black">
+            <h2 {...props} className="font-semibold mt-4 mb-2 text-white print:text-black" style={{ fontSize: 'clamp(14px, 1.1vw, 16px)' }}>
               {children}
             </h2>
           ),
           h3: ({ children, ...props }) => (
-            <h3 {...props} className="text-lg font-bold mt-4 mb-3 text-white print:text-black">
+            <h3 {...props} className="text-base font-semibold mt-3 mb-2 text-white print:text-black">
               {children}
             </h3>
           ),
           p: ({ children, ...props }) => (
-            <p {...props} className="mb-3 text-white print:text-black leading-relaxed text-base">
+            <p {...props} className="mb-3 text-gray-200 print:text-black leading-relaxed text-sm font-normal">
               {children}
             </p>
           ),
           strong: ({ children, ...props }) => (
-            <strong {...props} className="font-bold text-white print:text-black">
+            <strong {...props} className="font-semibold text-white print:text-black">
               {children}
             </strong>
           ),
@@ -507,18 +533,22 @@ export default function ReportPage() {
           >
             {/* Main content area */}
             <div className="flex-1">
-            {/* Header SVG - At the very top */}
-            <div className="w-full mb-1 md:mb-2">
-              <img 
-                src={headerSvg} 
-                alt="Header" 
-                className="w-full h-auto object-contain"
-                style={{
-                  maxHeight: '100px',
-                  objectFit: 'contain',
-                  objectPosition: 'center'
-                }}
-              />
+            {/* Report Title Header */}
+            <div className="w-full px-4 md:px-[20mm] pt-6 pb-4 flex items-center gap-3" dir={isArabic ? 'rtl' : 'ltr'}>
+              <img src={misbaraLogo} alt="Logo" className="h-8 w-auto opacity-80" />
+              <div>
+                <p className="text-xs text-gray-400 leading-none mb-1">
+                  {isArabic ? 'تقرير' : 'Report'}
+                </p>
+                <p className="text-base font-semibold text-white leading-snug">
+                  {isArabic ? 'تحليل الذات وارتباطها بـ' : 'Self-Analysis related to'}
+                </p>
+                {reportTopic && (
+                  <p className="text-sm font-bold leading-none mt-0.5" style={{ color: '#f59e0b' }}>
+                    {reportTopic}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Header separator line */}
@@ -532,33 +562,48 @@ export default function ReportPage() {
             {chartData && (
               <section className="mt-4 md:mt-6 mb-3 md:mb-4">
 
-                {/* Overall & Harmony Summary Row */}
-                <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6">
-                  {/* Overall */}
-                  <div className="flex-1 relative overflow-hidden rounded-2xl px-5 py-4"
-                    style={{ background: 'linear-gradient(135deg, #1c1a0e 0%, #2a2300 100%)', border: '1px solid #f59e0b44' }}>
-                    <div className="absolute top-0 right-0 w-16 h-16 rounded-full opacity-10"
-                      style={{ background: '#f59e0b', filter: 'blur(20px)', transform: 'translate(25%, -25%)' }} />
-                    <p className="text-xs text-gray-400 mb-1">
-                      {isArabic ? 'المستوى العام' : 'Overall Level'}
-                    </p>
-                    <p className="text-4xl font-bold leading-none" style={{ color: '#f59e0b' }}>
-                      {chartData.overall}%
-                    </p>
-                  </div>
-                  {/* Harmony */}
-                  <div className="flex-1 relative overflow-hidden rounded-2xl px-5 py-4"
-                    style={{ background: 'linear-gradient(135deg, #150d20 0%, #1e0a30 100%)', border: '1px solid #a855f744' }}>
-                    <div className="absolute top-0 right-0 w-16 h-16 rounded-full opacity-10"
-                      style={{ background: '#a855f7', filter: 'blur(20px)', transform: 'translate(25%, -25%)' }} />
-                    <p className="text-xs text-gray-400 mb-1">
-                      {isArabic ? 'التجانس بين الأبعاد' : 'Dimension Coherence'}
-                    </p>
-                    <p className="text-4xl font-bold leading-none" style={{ color: '#a855f7' }}>
-                      {chartData.harmony}%
-                    </p>
-                  </div>
-                </div>
+                {/* Summary Row — 3 cards */}
+                {(() => {
+                  const dims = [
+                    { key: 'mental', pct: chartData.mental.percentage, label: chartData.typeLabels.mental },
+                    { key: 'emotional', pct: chartData.emotional.percentage, label: chartData.typeLabels.emotional },
+                    { key: 'existential', pct: chartData.existential.percentage, label: chartData.typeLabels.existential },
+                  ]
+                  const dominant = dims.reduce((a, b) => a.pct >= b.pct ? a : b)
+                  return (
+                    <div className="flex flex-col sm:flex-row justify-center gap-3 mb-6">
+                      {/* Overall */}
+                      <div className="flex-1 rounded-2xl px-5 py-4" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+                        <p className="text-xs text-gray-400 mb-2">
+                          {isArabic ? 'المستوى العام' : 'Overall Level'}
+                        </p>
+                        <p className="text-4xl font-bold leading-none text-white">
+                          {chartData.overall}%
+                        </p>
+                      </div>
+                      {/* Harmony */}
+                      <div className="flex-1 rounded-2xl px-5 py-4" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+                        <p className="text-xs text-gray-400 mb-2">
+                          {isArabic ? 'التجانس بين الأبعاد' : 'Dimension Coherence'}
+                        </p>
+                        <p className="text-4xl font-bold leading-none text-white">
+                          {chartData.harmony}%
+                        </p>
+                      </div>
+                      {/* Driven by */}
+                      <div className="flex-1 rounded-2xl px-5 py-4" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+                        <p className="text-xs text-gray-400 mb-2">
+                          {isArabic
+                            ? `يقودك الجانب ${dominant.label.split('/')[0].trim()}`
+                            : `Driven by ${dominant.label.split('/')[0].trim()}`}
+                        </p>
+                        <p className="text-4xl font-bold leading-none text-white">
+                          {dominant.pct}%
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* 3 Radar Charts — original 9-axis style */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
@@ -627,23 +672,12 @@ export default function ReportPage() {
             </section>
             </div>
             
-            {/* Footer area - outside the padded content, always at bottom */}
-            <div className="mt-auto px-4 md:px-[20mm] pb-2 md:pb-[10mm]">
-              {/* Footer separator line */}
-              <div className="w-full border-b border-gray-400 mb-1"></div>
-
-              {/* Footer SVG */}
-              <div className="w-full">
-                <img 
-                  src={footerSvg} 
-                  alt="Footer" 
-                  className="w-full h-auto object-contain"
-                  style={{
-                    maxHeight: '60px',
-                    objectFit: 'contain',
-                    objectPosition: 'center'
-                  }}
-                />
+            {/* Footer — minimal */}
+            <div className="mt-auto px-4 md:px-[20mm] pb-4 md:pb-[10mm]">
+              <div className="w-full border-b border-gray-700 mb-3"></div>
+              <div className="flex items-center justify-between" dir={isArabic ? 'rtl' : 'ltr'}>
+                <img src={misbaraLogo} alt="Logo" className="h-5 w-auto opacity-40" />
+                <p className="text-xs text-gray-600">harmony</p>
               </div>
             </div>
           </div>

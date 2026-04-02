@@ -295,7 +295,7 @@ export const generateReport = async (answersData: any, chartData: any, language:
     const dimensionData = [
       { key: 'mental', value: mental.percentage, label_ar: 'الذهني', label_en: 'Mental', desc_ar: 'جانب التفكير والتحليل', desc_en: 'the side of thinking and analysis' },
       { key: 'emotional', value: emotional.percentage, label_ar: 'المشاعري', label_en: 'Emotional', desc_ar: 'جانب المشاعر والتفاعل الداخلي', desc_en: 'the side of emotions and inner interaction' },
-      { key: 'existential', value: existential.percentage, label_ar: 'الوجودي', label_en: 'Existential', desc_ar: 'جانب الهوية والتشكل الداخلي', desc_en: 'the side of identity and inner formation' },
+      { key: 'existential', value: existential.percentage, label_ar: 'السلوكي', label_en: 'Existential', desc_ar: 'جانب الهوية والتشكل الداخلي', desc_en: 'the side of identity and inner formation' },
     ];
 
     dimensionData.sort((a, b) => b.value - a.value);
