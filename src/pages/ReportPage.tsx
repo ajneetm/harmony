@@ -178,10 +178,25 @@ export default function ReportPage() {
       // Wait for layout to settle
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Capture the full report at its actual height (no fixed height limit)
+      // Measure hard page-break markers AFTER layout settles (scale:2 canvas)
+      const CANVAS_SCALE = 2
+      const hardBreaksPx: number[] = []
+      const markers = reportElement.querySelectorAll('[data-pdf-newpage]')
+      markers.forEach(marker => {
+        const el = marker as HTMLElement
+        let offsetTop = 0
+        let cur: HTMLElement | null = el
+        while (cur && cur !== reportElement) {
+          offsetTop += cur.offsetTop
+          cur = cur.offsetParent as HTMLElement
+        }
+        hardBreaksPx.push(offsetTop * CANVAS_SCALE)
+      })
+
+      // Capture the full report at its actual height
       const canvas = await html2canvas(reportElement, {
         backgroundColor: '#000000',
-        scale: 2,
+        scale: CANVAS_SCALE,
         useCORS: true,
         allowTaint: true,
         scrollX: 0,
@@ -193,113 +208,62 @@ export default function ReportPage() {
       // Restore all original styles
       reportElement.style.cssText = originalStyle
       reportElement.className = originalClassList
-
-      // Restore chart container styles
       chartContainers.forEach((container, index) => {
-        const element = container as HTMLElement
-        element.style.cssText = originalChartStyles[index]
+        (container as HTMLElement).style.cssText = originalChartStyles[index]
       })
-
-      // Restore grid class
       if (gridContainer && originalGridClass) {
         gridContainer.className = originalGridClass
       }
 
-      // Create PDF - split across multiple pages if content is taller than one page
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      })
+      // Build PDF
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pdfWidth = 210
+      const pdfPageHeight = 297
+      const contentPerPage = 285
 
-      const pdfWidth = 210       // A4 width in mm
-      const pdfPageHeight = 297  // A4 full height in mm
-      // Use slightly less than full height per page so cuts fall in margins, not mid-line
-      const contentPerPage = 285 // mm of content shown per page (12mm bottom breathing room)
-
-      // Calculate image height in mm based on aspect ratio
       const imgWidthPx = canvas.width
       const imgHeightPx = canvas.height
       const imgHeightMm = (imgHeightPx / imgWidthPx) * pdfWidth
 
-      // Helper: find the nearest "safe" cut point in the canvas (a mostly-dark row)
-      const findSafeCutPx = (startPx: number, rangePx: number): number => {
-        const ctx2 = document.createElement('canvas').getContext('2d')
-        if (!ctx2) return startPx
-        // Sample a thin horizontal strip at startPx ± rangePx/2
-        const scanY = Math.max(0, Math.min(imgHeightPx - 1, startPx))
-        const tempCanvas = document.createElement('canvas')
-        tempCanvas.width = Math.min(imgWidthPx, 100) // sample width
-        tempCanvas.height = rangePx
-        const tCtx = tempCanvas.getContext('2d')
-        if (!tCtx) return startPx
-        tCtx.drawImage(canvas, 0, Math.max(0, scanY - rangePx / 2), imgWidthPx, rangePx, 0, 0, tempCanvas.width, rangePx)
-        const data = tCtx.getImageData(0, 0, tempCanvas.width, rangePx).data
-        // Find darkest row (lowest average brightness = black background = safe to cut)
-        let bestRow = 0
-        let bestBrightness = Infinity
-        for (let row = 0; row < rangePx; row++) {
-          let rowBrightness = 0
-          for (let col = 0; col < tempCanvas.width; col++) {
-            const idx = (row * tempCanvas.width + col) * 4
-            rowBrightness += (data[idx] + data[idx + 1] + data[idx + 2]) / 3
+      // Convert hard break pixels → mm
+      const hardBreaksMm = hardBreaksPx.map(px => (px / imgHeightPx) * imgHeightMm)
+
+      // Build ordered list of segments: [start, end] in mm
+      // Each hard break starts a new page; within a segment use auto-splitting if > 297mm
+      const segmentStartsMm = [0, ...hardBreaksMm]
+      const segmentEndsMm = [...hardBreaksMm, imgHeightMm]
+
+      const addPageFromCanvas = (startMm: number, endMm: number, firstOfSegment: boolean, pageCount: number) => {
+        let yMm = startMm
+        let localCount = pageCount
+        while (yMm < endMm) {
+          if (localCount > 0) pdf.addPage()
+          pdf.setFillColor(0, 0, 0)
+          pdf.rect(0, 0, pdfWidth, pdfPageHeight, 'F')
+
+          const remainingMm = endMm - yMm
+          const sliceMm = Math.min(contentPerPage, remainingMm)
+          const sourceYPx = Math.round((yMm / imgHeightMm) * imgHeightPx)
+          const sliceHeightPx = Math.round((sliceMm / imgHeightMm) * imgHeightPx)
+
+          const sliceCanvas = document.createElement('canvas')
+          sliceCanvas.width = imgWidthPx
+          sliceCanvas.height = Math.max(1, sliceHeightPx)
+          const ctx = sliceCanvas.getContext('2d')
+          if (ctx) {
+            ctx.drawImage(canvas, 0, sourceYPx, imgWidthPx, sliceCanvas.height, 0, 0, imgWidthPx, sliceCanvas.height)
           }
-          rowBrightness /= tempCanvas.width
-          if (rowBrightness < bestBrightness) {
-            bestBrightness = rowBrightness
-            bestRow = row
-          }
+          pdf.addImage(sliceCanvas.toDataURL('image/png', 0.92), 'PNG', 0, 0, pdfWidth, sliceMm)
+
+          yMm += sliceMm
+          localCount++
         }
-        return Math.max(0, scanY - rangePx / 2 + bestRow)
+        return localCount
       }
 
-      let yPosMm = 0
       let pageCount = 0
-
-      while (yPosMm < imgHeightMm) {
-        if (pageCount > 0) pdf.addPage()
-
-        // Fill page with black first
-        pdf.setFillColor(0, 0, 0)
-        pdf.rect(0, 0, pdfWidth, pdfPageHeight, 'F')
-
-        const remainingMm = imgHeightMm - yPosMm
-        const rawSliceMm = Math.min(contentPerPage, remainingMm)
-
-        // Try to find a smarter cut point near the natural page boundary
-        let sliceMm = rawSliceMm
-        if (remainingMm > contentPerPage) {
-          // Only smart-cut if there is a next page
-          const idealCutPx = Math.round((yPosMm + rawSliceMm) / imgHeightMm * imgHeightPx)
-          const searchRangePx = Math.round(20 / imgHeightMm * imgHeightPx) // search ±20mm worth
-          const safeCutPx = findSafeCutPx(idealCutPx, searchRangePx)
-          sliceMm = (safeCutPx / imgHeightPx) * imgHeightMm - yPosMm
-          sliceMm = Math.max(rawSliceMm - 20, Math.min(rawSliceMm + 5, sliceMm)) // clamp
-        }
-
-        const sourceYPx = Math.round(yPosMm / imgHeightMm * imgHeightPx)
-        const sliceHeightPx = Math.round(sliceMm / imgHeightMm * imgHeightPx)
-
-        const sliceCanvas = document.createElement('canvas')
-        sliceCanvas.width = imgWidthPx
-        sliceCanvas.height = Math.max(1, sliceHeightPx)
-
-        const ctx = sliceCanvas.getContext('2d')
-        if (ctx) {
-          ctx.drawImage(
-            canvas,
-            0, sourceYPx,
-            imgWidthPx, sliceCanvas.height,
-            0, 0,
-            imgWidthPx, sliceCanvas.height
-          )
-        }
-
-        const sliceImgData = sliceCanvas.toDataURL('image/png', 0.92)
-        pdf.addImage(sliceImgData, 'PNG', 0, 0, pdfWidth, sliceMm)
-
-        yPosMm += sliceMm
-        pageCount++
+      for (let i = 0; i < segmentStartsMm.length; i++) {
+        pageCount = addPageFromCanvas(segmentStartsMm[i], segmentEndsMm[i], i === 0, pageCount)
       }
 
       // Generate filename
@@ -366,8 +330,19 @@ export default function ReportPage() {
 
       await new Promise(resolve => setTimeout(resolve, 500))
 
+      // Measure hard page-break markers
+      const CANVAS_SCALE_V = 2
+      const hardBreaksPxV: number[] = []
+      reportElement.querySelectorAll('[data-pdf-newpage]').forEach(marker => {
+        const el = marker as HTMLElement
+        let offsetTop = 0
+        let cur: HTMLElement | null = el
+        while (cur && cur !== reportElement) { offsetTop += cur.offsetTop; cur = cur.offsetParent as HTMLElement }
+        hardBreaksPxV.push(offsetTop * CANVAS_SCALE_V)
+      })
+
       const canvas = await html2canvas(reportElement, {
-        backgroundColor: '#000000', scale: 2, useCORS: true, allowTaint: true,
+        backgroundColor: '#000000', scale: CANVAS_SCALE_V, useCORS: true, allowTaint: true,
         scrollX: 0, scrollY: 0, windowWidth: 1200,
         windowHeight: reportElement.scrollHeight + 200
       })
@@ -387,24 +362,30 @@ export default function ReportPage() {
       const imgHeightPx = canvas.height
       const imgHeightMm = (imgHeightPx / imgWidthPx) * pdfWidth
 
-      let yPosMm = 0
+      const hardBreaksMmV = hardBreaksPxV.map(px => (px / imgHeightPx) * imgHeightMm)
+      const segStarts = [0, ...hardBreaksMmV]
+      const segEnds = [...hardBreaksMmV, imgHeightMm]
+
       let pageCount = 0
-      while (yPosMm < imgHeightMm) {
-        if (pageCount > 0) pdf.addPage()
-        pdf.setFillColor(0, 0, 0)
-        pdf.rect(0, 0, pdfWidth, pdfPageHeight, 'F')
-        const remainingMm = imgHeightMm - yPosMm
-        const sliceMm = Math.min(contentPerPage, remainingMm)
-        const sourceYPx = Math.round(yPosMm / imgHeightMm * imgHeightPx)
-        const sliceHeightPx = Math.round(sliceMm / imgHeightMm * imgHeightPx)
-        const sliceCanvas = document.createElement('canvas')
-        sliceCanvas.width = imgWidthPx
-        sliceCanvas.height = Math.max(1, sliceHeightPx)
-        const ctx = sliceCanvas.getContext('2d')
-        if (ctx) ctx.drawImage(canvas, 0, sourceYPx, imgWidthPx, sliceCanvas.height, 0, 0, imgWidthPx, sliceCanvas.height)
-        pdf.addImage(sliceCanvas.toDataURL('image/png', 0.92), 'PNG', 0, 0, pdfWidth, sliceMm)
-        yPosMm += sliceMm
-        pageCount++
+      for (let s = 0; s < segStarts.length; s++) {
+        let yMm = segStarts[s]
+        const endMm = segEnds[s]
+        while (yMm < endMm) {
+          if (pageCount > 0) pdf.addPage()
+          pdf.setFillColor(0, 0, 0)
+          pdf.rect(0, 0, pdfWidth, pdfPageHeight, 'F')
+          const sliceMm = Math.min(contentPerPage, endMm - yMm)
+          const sourceYPx = Math.round((yMm / imgHeightMm) * imgHeightPx)
+          const sliceHeightPx = Math.round((sliceMm / imgHeightMm) * imgHeightPx)
+          const sliceCanvas = document.createElement('canvas')
+          sliceCanvas.width = imgWidthPx
+          sliceCanvas.height = Math.max(1, sliceHeightPx)
+          const ctx = sliceCanvas.getContext('2d')
+          if (ctx) ctx.drawImage(canvas, 0, sourceYPx, imgWidthPx, sliceCanvas.height, 0, 0, imgWidthPx, sliceCanvas.height)
+          pdf.addImage(sliceCanvas.toDataURL('image/png', 0.92), 'PNG', 0, 0, pdfWidth, sliceMm)
+          yMm += sliceMm
+          pageCount++
+        }
       }
 
       const blob = pdf.output('blob')
@@ -417,6 +398,39 @@ export default function ReportPage() {
       alert(isAr ? 'فشل في عرض PDF.' : 'Failed to generate PDF view.')
     } finally {
       setIsDownloading(false)
+    }
+  }
+
+  // Split AI response into: intro | strengths+weaknesses | rest
+  const splitAiResponse = (content: string) => {
+    const clean = content
+      .trim()
+      .replace(/```(?:markdown|md)?\s*/gi, '')
+      .replace(/\s*```/g, '')
+      .replace(/^```\s*/gm, '')
+      .replace(/\s*```$/gm, '')
+
+    const startPattern = isArabic ? /^##\s*أقوى 3 وظائف/m : /^##\s*Top 3 Functions/m
+    const startMatch = startPattern.exec(clean)
+    if (!startMatch) return { intro: clean, sw: '', after: '' }
+
+    const before = clean.slice(0, startMatch.index).trim()
+    const rest = clean.slice(startMatch.index)
+
+    // Find next section after "أضعف 3 وظائف" / "Areas for Development"
+    const weaknessPattern = isArabic ? /^##\s*أضعف 3 وظائف/m : /^##\s*Areas for Development/m
+    const weaknessMatch = weaknessPattern.exec(rest)
+    if (!weaknessMatch) return { intro: before, sw: rest.trim(), after: '' }
+
+    const afterWeakness = rest.slice(weaknessMatch.index + 1)
+    const nextSectionMatch = /^## /m.exec(afterWeakness)
+    if (!nextSectionMatch) return { intro: before, sw: rest.trim(), after: '' }
+
+    const swEnd = weaknessMatch.index + 1 + nextSectionMatch.index
+    return {
+      intro: before,
+      sw: rest.slice(0, swEnd).trim(),
+      after: rest.slice(swEnd).trim()
     }
   }
 
@@ -786,12 +800,49 @@ export default function ReportPage() {
               </section>
             )}
 
-            {/* AI Report Section */}
-            <section className="flex-1 mb-2" style={{overflow: 'hidden', minHeight: 0}}>
-              <div className="prose prose-lg max-w-none overflow-hidden">
-                {renderMarkdownContent(aiResponse)}
-              </div>
-            </section>
+            {/* AI Report Section — split: intro | strengths/weaknesses | rest */}
+            {(() => {
+              const split = splitAiResponse(aiResponse)
+              return (
+                <>
+                  {/* Intro section */}
+                  {split.intro && (
+                    <section className="mb-2">
+                      <div className="prose prose-lg max-w-none">
+                        {renderMarkdownContent(split.intro)}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Hard page-break marker for PDF */}
+                  {split.sw && (
+                    <div
+                      data-pdf-newpage="true"
+                      id="pdf-page-2-start"
+                      style={{ height: 0, overflow: 'hidden' }}
+                    />
+                  )}
+
+                  {/* Strengths & Weaknesses — lands on page 2 in PDF */}
+                  {split.sw && (
+                    <section className="mb-2">
+                      <div className="prose prose-lg max-w-none">
+                        {renderMarkdownContent(split.sw)}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Remaining content */}
+                  {split.after && (
+                    <section className="mb-2">
+                      <div className="prose prose-lg max-w-none">
+                        {renderMarkdownContent(split.after)}
+                      </div>
+                    </section>
+                  )}
+                </>
+              )
+            })()}
             </div>
             
             {/* Footer — minimal */}
