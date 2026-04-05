@@ -461,7 +461,7 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant' as const,
-          content: `Sorry, I encountered an error: ${error}`,
+          content: language === 'ar' ? `عذراً، حدث خطأ: ${error}` : `Sorry, I encountered an error: ${error}`,
         }
         addMessage(conversationId, errorMessage)
         setIsResponseComplete(false) // Mark response as incomplete
@@ -483,7 +483,7 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
     const errorMessage: Message = {
       id: (Date.now() + 1).toString(),
       role: 'assistant' as const,
-      content: 'Sorry, I encountered an error generating a response. Please try again.',
+      content: language === 'ar' ? 'عذراً، حدث خطأ أثناء توليد الرد. يرجى المحاولة مرة أخرى.' : 'Sorry, I encountered an error generating a response. Please try again.',
     }
     await addMessage(conversationId, errorMessage)
     setIsResponseComplete(false) // Mark response as incomplete
@@ -525,7 +525,7 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
       }
     } catch (error) {
       console.error('Failed to generate questions:', error)
-      setError('Failed to generate questionnaire questions. Please try again.')
+      setError(language === 'ar' ? 'فشل في توليد أسئلة الاستبيان. يرجى المحاولة مرة أخرى.' : 'Failed to generate questionnaire questions. Please try again.')
       
       // Remove the loading message on error as well
       if (currentConversationId) {
@@ -574,11 +574,11 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
             4: language === 'ar' ? 'موافق' : 'Agree',
             5: language === 'ar' ? 'موافق بشدة' : 'Strongly Agree'
           },
-          user_answer_text: answers[question.id] ? 
-            (language === 'ar' ? 
+          user_answer_text: answers[question.id] ?
+            (language === 'ar' ?
               ['غير موافق بشدة', 'غير موافق', 'لا أعرف', 'موافق', 'موافق بشدة'][answers[question.id] - 1] :
               ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'][answers[question.id] - 1]
-            ) : 'No Answer'
+            ) : (language === 'ar' ? 'لا إجابة' : 'No Answer')
         }))
         .filter(q => q.user_answer > 0), // Only include answered questions
       total_questions: questions.length,
@@ -716,7 +716,7 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant' as const,
-        content: 'Sorry, I encountered an error processing your request.',
+        content: language === 'ar' ? 'عذراً، حدث خطأ أثناء معالجة طلبك.' : 'Sorry, I encountered an error processing your request.',
       }
       if (currentConversationId) {
         await addMessage(currentConversationId, errorMessage)
@@ -725,7 +725,7 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
         if (error instanceof Error) {
           setError(error.message)
         } else {
-          setError('An unknown error occurred.')
+          setError(language === 'ar' ? 'حدث خطأ غير معروف.' : 'An unknown error occurred.')
         }
       }
       // Re-enable input on error so user can try again
@@ -808,7 +808,7 @@ const handleCrisisQuestionnaire = useCallback(async () => {
       console.log('Crisis questionnaire started with', randomizedQuestions.length, 'questions');
     } catch (error) {
       console.error('Error in handleCrisisQuestionnaire:', error);
-      setError('Failed to create Crisis questionnaire. Please try again.');
+      setError(language === 'ar' ? 'فشل في إنشاء استبيان الأحداث الكبرى. يرجى المحاولة مرة أخرى.' : 'Failed to create Crisis questionnaire. Please try again.');
     }
   }, [language, createNewConversation, setCurrentConversationId, setPendingMessage, setError])
   const handleDefineProblem = useCallback(async () => {
@@ -849,7 +849,7 @@ const handleCrisisQuestionnaire = useCallback(async () => {
       setPendingMessage(typingMessage)
     } catch (error) {
       console.error('Error in handleDefineProblem:', error);
-      setError('Failed to create new conversation. Please try again.');
+      setError(language === 'ar' ? 'فشل في إنشاء محادثة جديدة. يرجى المحاولة مرة أخرى.' : 'Failed to create new conversation. Please try again.');
     }
   }, [language, createNewConversation, setCurrentConversationId, setPendingMessage, setError, setInputDisabled])
 
@@ -894,7 +894,7 @@ const handleCrisisQuestionnaire = useCallback(async () => {
       console.log('Life questionnaire started with', randomizedQuestions.length, 'questions');
     } catch (error) {
       console.error('Error in handleLifeQuestionnaire:', error);
-      setError('Failed to create Life questionnaire. Please try again.');
+      setError(language === 'ar' ? 'فشل في إنشاء استبيان الحياة. يرجى المحاولة مرة أخرى.' : 'Failed to create Life questionnaire. Please try again.');
     }
   }, [language, createNewConversation, setCurrentConversationId, setPendingMessage, setError])
 
@@ -939,7 +939,7 @@ const handleCrisisQuestionnaire = useCallback(async () => {
       console.log('Family questionnaire started with', randomizedQuestions.length, 'questions');
     } catch (error) {
       console.error('Error in handleFamilyQuestionnaire:', error);
-      setError('Failed to create Family questionnaire. Please try again.');
+      setError(language === 'ar' ? 'فشل في إنشاء استبيان الأسرة. يرجى المحاولة مرة أخرى.' : 'Failed to create Family questionnaire. Please try again.');
     }
   }, [language, createNewConversation, setCurrentConversationId, setPendingMessage, setError])
 
@@ -984,7 +984,7 @@ const handleCrisisQuestionnaire = useCallback(async () => {
       console.log('Romantic questionnaire started with', randomizedQuestions.length, 'questions');
     } catch (error) {
       console.error('Error in handleRomanticQuestionnaire:', error);
-      setError('Failed to create Romantic questionnaire. Please try again.');
+      setError(language === 'ar' ? 'فشل في إنشاء الاستبيان العاطفي. يرجى المحاولة مرة أخرى.' : 'Failed to create Romantic questionnaire. Please try again.');
     }
   }, [language, createNewConversation, setCurrentConversationId, setPendingMessage, setError])
 
@@ -1029,7 +1029,7 @@ const handleCrisisQuestionnaire = useCallback(async () => {
       console.log('Work questionnaire started with', randomizedQuestions.length, 'questions');
     } catch (error) {
       console.error('Error in handleWorkQuestionnaire:', error);
-      setError('Failed to create Work questionnaire. Please try again.');
+      setError(language === 'ar' ? 'فشل في إنشاء استبيان العمل. يرجى المحاولة مرة أخرى.' : 'Failed to create Work questionnaire. Please try again.');
     }
   }, [language, createNewConversation, setCurrentConversationId, setPendingMessage, setError])
 

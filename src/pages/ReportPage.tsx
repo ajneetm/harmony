@@ -75,7 +75,6 @@ export default function ReportPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
-  const [isDownloaded, setIsDownloaded] = useState(false)
   const reportTopic = sessionStorage.getItem('reportTopic') || ''
   
   const navigate = (path: string) => {
@@ -114,11 +113,13 @@ export default function ReportPage() {
             console.log(`ReportPage: Applied font class: ${fontClass} for language: ${data.questionnaireData.language}`)
           }
         } else {
-          setError('No report data found')
+          const storedLang = (() => { try { return JSON.parse(localStorage.getItem('language') || '"en"') } catch { return 'en' } })()
+          setError(storedLang === 'ar' ? 'لم يتم العثور على بيانات التقرير' : 'No report data found')
         }
       } catch (err) {
         console.error('Error loading report data:', err)
-        setError('Failed to load report data')
+        const storedLang = (() => { try { return JSON.parse(localStorage.getItem('language') || '"en"') } catch { return 'en' } })()
+        setError(storedLang === 'ar' ? 'فشل في تحميل بيانات التقرير' : 'Failed to load report data')
       } finally {
         setIsLoading(false)
       }
@@ -127,23 +128,11 @@ export default function ReportPage() {
     loadReportData()
   }, [])
 
-  // Auto-download PDF after report loads
-  useEffect(() => {
-    if (reportData && !isLoading && !error) {
-      // Small delay to ensure content is fully rendered
-      const autoDownloadTimer = setTimeout(() => {
-        console.log('Auto-downloading PDF...')
-        handleDownloadPDF()
-      }, 1500) // 1.5 second delay
-
-      return () => clearTimeout(autoDownloadTimer)
-    }
-  }, [reportData, isLoading, error])
 
 
   const handleDownloadPDF = async () => {
     if (!reportData) return
-    
+
     setIsDownloading(true)
     try {
       const reportElement = document.getElementById('report-content')
@@ -152,34 +141,33 @@ export default function ReportPage() {
       // Temporarily adjust styles for PDF generation - force desktop layout
       const originalStyle = reportElement.style.cssText
       const originalClassList = reportElement.className
-      
+
       // Apply consistent PDF-friendly styles for all devices
-      reportElement.style.width = '210mm'
-      reportElement.style.maxWidth = '210mm'
-      reportElement.style.minHeight = '297mm'
-      reportElement.style.padding = '18mm'
+      reportElement.style.width = '794px' // A4 width in px at 96dpi
+      reportElement.style.maxWidth = '794px'
+      reportElement.style.minHeight = 'auto'
+      reportElement.style.padding = '40px'
       reportElement.style.fontSize = '12pt'
       reportElement.style.lineHeight = '1.6'
       reportElement.style.backgroundColor = '#000000'
       reportElement.style.color = '#ffffff'
       reportElement.style.margin = '0 auto'
-      reportElement.style.display = 'flex'
-      reportElement.style.flexDirection = 'column'
-      
+      reportElement.style.display = 'block'
+
       // Override responsive classes temporarily to force desktop layout
-      reportElement.className = 'bg-black text-white print:bg-white print:text-black shadow-2xl'
-      
+      reportElement.className = 'bg-black text-white shadow-2xl'
+
       // Force all chart containers to desktop size
       const chartContainers = reportElement.querySelectorAll('.chart-container')
       const originalChartStyles: string[] = []
       chartContainers.forEach((container, index) => {
         const element = container as HTMLElement
         originalChartStyles[index] = element.style.cssText
-        element.style.height = '220px'
-        element.style.minHeight = '220px'
-        element.style.padding = '12px'
+        element.style.height = '200px'
+        element.style.minHeight = '200px'
+        element.style.padding = '8px'
       })
-      
+
       // Force grid layout to desktop version
       const gridContainer = reportElement.querySelector('.grid')
       const originalGridClass = gridContainer?.className
@@ -188,68 +176,245 @@ export default function ReportPage() {
       }
 
       // Wait for layout to settle
-      await new Promise(resolve => setTimeout(resolve, 300))
+      await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Capture the report as an image with consistent settings
+      // Capture the full report at its actual height (no fixed height limit)
       const canvas = await html2canvas(reportElement, {
         backgroundColor: '#000000',
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        width: 210 * 3.78,  // A4 width in pixels
-        height: 297 * 3.78, // A4 height in pixels
         scrollX: 0,
         scrollY: 0,
-        windowWidth: 1200,  // Force desktop viewport
-        windowHeight: 1600
+        windowWidth: 1200,
+        windowHeight: reportElement.scrollHeight + 200
       })
 
       // Restore all original styles
       reportElement.style.cssText = originalStyle
       reportElement.className = originalClassList
-      
+
       // Restore chart container styles
       chartContainers.forEach((container, index) => {
         const element = container as HTMLElement
         element.style.cssText = originalChartStyles[index]
       })
-      
+
       // Restore grid class
       if (gridContainer && originalGridClass) {
         gridContainer.className = originalGridClass
       }
 
-      // Create PDF
+      // Create PDF - split across multiple pages if content is taller than one page
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       })
 
-      const imgData = canvas.toDataURL('image/png', 0.95)
-      const imgWidth = 210 // A4 width in mm
-      const imgHeight = 297 // A4 height in mm
-      
-      // Add image to PDF
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
+      const pdfWidth = 210       // A4 width in mm
+      const pdfPageHeight = 297  // A4 full height in mm
+      // Use slightly less than full height per page so cuts fall in margins, not mid-line
+      const contentPerPage = 285 // mm of content shown per page (12mm bottom breathing room)
+
+      // Calculate image height in mm based on aspect ratio
+      const imgWidthPx = canvas.width
+      const imgHeightPx = canvas.height
+      const imgHeightMm = (imgHeightPx / imgWidthPx) * pdfWidth
+
+      // Helper: find the nearest "safe" cut point in the canvas (a mostly-dark row)
+      const findSafeCutPx = (startPx: number, rangePx: number): number => {
+        const ctx2 = document.createElement('canvas').getContext('2d')
+        if (!ctx2) return startPx
+        // Sample a thin horizontal strip at startPx ± rangePx/2
+        const scanY = Math.max(0, Math.min(imgHeightPx - 1, startPx))
+        const tempCanvas = document.createElement('canvas')
+        tempCanvas.width = Math.min(imgWidthPx, 100) // sample width
+        tempCanvas.height = rangePx
+        const tCtx = tempCanvas.getContext('2d')
+        if (!tCtx) return startPx
+        tCtx.drawImage(canvas, 0, Math.max(0, scanY - rangePx / 2), imgWidthPx, rangePx, 0, 0, tempCanvas.width, rangePx)
+        const data = tCtx.getImageData(0, 0, tempCanvas.width, rangePx).data
+        // Find darkest row (lowest average brightness = black background = safe to cut)
+        let bestRow = 0
+        let bestBrightness = Infinity
+        for (let row = 0; row < rangePx; row++) {
+          let rowBrightness = 0
+          for (let col = 0; col < tempCanvas.width; col++) {
+            const idx = (row * tempCanvas.width + col) * 4
+            rowBrightness += (data[idx] + data[idx + 1] + data[idx + 2]) / 3
+          }
+          rowBrightness /= tempCanvas.width
+          if (rowBrightness < bestBrightness) {
+            bestBrightness = rowBrightness
+            bestRow = row
+          }
+        }
+        return Math.max(0, scanY - rangePx / 2 + bestRow)
+      }
+
+      let yPosMm = 0
+      let pageCount = 0
+
+      while (yPosMm < imgHeightMm) {
+        if (pageCount > 0) pdf.addPage()
+
+        // Fill page with black first
+        pdf.setFillColor(0, 0, 0)
+        pdf.rect(0, 0, pdfWidth, pdfPageHeight, 'F')
+
+        const remainingMm = imgHeightMm - yPosMm
+        const rawSliceMm = Math.min(contentPerPage, remainingMm)
+
+        // Try to find a smarter cut point near the natural page boundary
+        let sliceMm = rawSliceMm
+        if (remainingMm > contentPerPage) {
+          // Only smart-cut if there is a next page
+          const idealCutPx = Math.round((yPosMm + rawSliceMm) / imgHeightMm * imgHeightPx)
+          const searchRangePx = Math.round(20 / imgHeightMm * imgHeightPx) // search ±20mm worth
+          const safeCutPx = findSafeCutPx(idealCutPx, searchRangePx)
+          sliceMm = (safeCutPx / imgHeightPx) * imgHeightMm - yPosMm
+          sliceMm = Math.max(rawSliceMm - 20, Math.min(rawSliceMm + 5, sliceMm)) // clamp
+        }
+
+        const sourceYPx = Math.round(yPosMm / imgHeightMm * imgHeightPx)
+        const sliceHeightPx = Math.round(sliceMm / imgHeightMm * imgHeightPx)
+
+        const sliceCanvas = document.createElement('canvas')
+        sliceCanvas.width = imgWidthPx
+        sliceCanvas.height = Math.max(1, sliceHeightPx)
+
+        const ctx = sliceCanvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(
+            canvas,
+            0, sourceYPx,
+            imgWidthPx, sliceCanvas.height,
+            0, 0,
+            imgWidthPx, sliceCanvas.height
+          )
+        }
+
+        const sliceImgData = sliceCanvas.toDataURL('image/png', 0.92)
+        pdf.addImage(sliceImgData, 'PNG', 0, 0, pdfWidth, sliceMm)
+
+        yPosMm += sliceMm
+        pageCount++
+      }
 
       // Generate filename
       const timestamp = new Date().toISOString().split('T')[0]
       const filename = `misbara-report-${timestamp}.pdf`
-      
-      pdf.save(filename)
+
+      // Use blob URL for universal download compatibility (works on mobile + desktop + iOS)
+      const blob = pdf.output('blob')
+      const blobUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = filename
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000)
 
       console.log('PDF generated successfully:', filename)
-      
-      // Check if on mobile and set downloaded state
-      const isMobile = window.innerWidth < 768
-      if (isMobile) {
-        setIsDownloaded(true)
-      }
-      
+
     } catch (error) {
       console.error('Error generating PDF:', error)
-      alert('Failed to generate PDF. Please try again.')
+      const isAr = reportData?.questionnaireData.language === 'ar'
+      alert(isAr ? 'فشل في توليد PDF. يرجى المحاولة مرة أخرى.' : 'Failed to generate PDF. Please try again.')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
+  const handleViewPDF = async () => {
+    if (!reportData) return
+    setIsDownloading(true)
+    try {
+      const reportElement = document.getElementById('report-content')
+      if (!reportElement) throw new Error('Report content not found')
+
+      const originalStyle = reportElement.style.cssText
+      const originalClassList = reportElement.className
+      reportElement.style.width = '794px'
+      reportElement.style.maxWidth = '794px'
+      reportElement.style.minHeight = 'auto'
+      reportElement.style.padding = '40px'
+      reportElement.style.fontSize = '12pt'
+      reportElement.style.lineHeight = '1.6'
+      reportElement.style.backgroundColor = '#000000'
+      reportElement.style.color = '#ffffff'
+      reportElement.style.margin = '0 auto'
+      reportElement.style.display = 'block'
+      reportElement.className = 'bg-black text-white shadow-2xl'
+
+      const chartContainers = reportElement.querySelectorAll('.chart-container')
+      const originalChartStyles: string[] = []
+      chartContainers.forEach((container, index) => {
+        const element = container as HTMLElement
+        originalChartStyles[index] = element.style.cssText
+        element.style.height = '200px'
+        element.style.minHeight = '200px'
+        element.style.padding = '8px'
+      })
+
+      const gridContainer = reportElement.querySelector('.grid')
+      const originalGridClass = gridContainer?.className
+      if (gridContainer) gridContainer.className = 'grid grid-cols-3 gap-4'
+
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      const canvas = await html2canvas(reportElement, {
+        backgroundColor: '#000000', scale: 2, useCORS: true, allowTaint: true,
+        scrollX: 0, scrollY: 0, windowWidth: 1200,
+        windowHeight: reportElement.scrollHeight + 200
+      })
+
+      reportElement.style.cssText = originalStyle
+      reportElement.className = originalClassList
+      chartContainers.forEach((container, index) => {
+        (container as HTMLElement).style.cssText = originalChartStyles[index]
+      })
+      if (gridContainer && originalGridClass) gridContainer.className = originalGridClass
+
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pdfWidth = 210
+      const pdfPageHeight = 297
+      const contentPerPage = 285
+      const imgWidthPx = canvas.width
+      const imgHeightPx = canvas.height
+      const imgHeightMm = (imgHeightPx / imgWidthPx) * pdfWidth
+
+      let yPosMm = 0
+      let pageCount = 0
+      while (yPosMm < imgHeightMm) {
+        if (pageCount > 0) pdf.addPage()
+        pdf.setFillColor(0, 0, 0)
+        pdf.rect(0, 0, pdfWidth, pdfPageHeight, 'F')
+        const remainingMm = imgHeightMm - yPosMm
+        const sliceMm = Math.min(contentPerPage, remainingMm)
+        const sourceYPx = Math.round(yPosMm / imgHeightMm * imgHeightPx)
+        const sliceHeightPx = Math.round(sliceMm / imgHeightMm * imgHeightPx)
+        const sliceCanvas = document.createElement('canvas')
+        sliceCanvas.width = imgWidthPx
+        sliceCanvas.height = Math.max(1, sliceHeightPx)
+        const ctx = sliceCanvas.getContext('2d')
+        if (ctx) ctx.drawImage(canvas, 0, sourceYPx, imgWidthPx, sliceCanvas.height, 0, 0, imgWidthPx, sliceCanvas.height)
+        pdf.addImage(sliceCanvas.toDataURL('image/png', 0.92), 'PNG', 0, 0, pdfWidth, sliceMm)
+        yPosMm += sliceMm
+        pageCount++
+      }
+
+      const blob = pdf.output('blob')
+      const blobUrl = URL.createObjectURL(blob)
+      window.open(blobUrl, '_blank')
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000)
+    } catch (error) {
+      console.error('Error generating PDF for view:', error)
+      const isAr = reportData?.questionnaireData.language === 'ar'
+      alert(isAr ? 'فشل في عرض PDF.' : 'Failed to generate PDF view.')
     } finally {
       setIsDownloading(false)
     }
@@ -411,71 +576,28 @@ export default function ReportPage() {
 
   const { aiResponse, questionnaireData, chartData } = reportData
 
-  // Show download success screen on mobile after download
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
-  if (isMobile && isDownloaded) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="text-center max-w-md mx-auto">
-          <div className="mb-6">
-            <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-white mb-3">
-              {isArabic ? 'تم تحميل التقرير بنجاح!' : 'Report Downloaded Successfully!'}
-            </h1>
-            <p className="text-gray-300 text-lg leading-relaxed">
-              {isArabic 
-                ? 'تم حفظ تقرير التطوير الذاتي الخاص بك على جهازك. يمكنك الآن العودة للمحادثة أو الصفحة الرئيسية.'
-                : 'Your self-development assessment report has been saved to your device. You can now return to the chat or home page.'
-              }
-            </p>
-          </div>
-          
-          <div className="space-y-3">
-            <button
-              onClick={() => {
-                console.log('New chat button clicked!');
-                navigate('/chat');
-              }}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-base font-medium"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              <span>
-                {isArabic ? 'محادثة جديدة' : 'New Chat'}
-              </span>
-            </button>
-            
-            <button
-              onClick={() => {
-                console.log('Home button clicked!');
-                navigate('/');
-              }}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-base font-medium"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              <span>
-                {isArabic ? 'الصفحة الرئيسية' : 'Home Page'}
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <>
       {/* Main container with black background */}
       <div className="min-h-screen bg-black">
-        {/* Header with action buttons - Desktop only */}
-        <div className="hidden md:flex w-full px-2 sm:px-4 py-2 sm:py-4 flex-col sm:flex-row justify-end gap-2">
+        {/* Header with action buttons - all devices */}
+        <div className="flex w-full px-2 sm:px-4 py-2 sm:py-4 flex-wrap justify-end gap-2">
+          <button
+            onClick={handleViewPDF}
+            disabled={isDownloading}
+            className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            <span className="truncate">
+              {isDownloading
+                ? (isArabic ? 'جاري التحضير...' : 'Preparing...')
+                : (isArabic ? 'عرض PDF' : 'View PDF')
+              }
+            </span>
+          </button>
           <button
             onClick={handleDownloadPDF}
             disabled={isDownloading}

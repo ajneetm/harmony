@@ -9,44 +9,54 @@ export default function HeroSection() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [isLangOpen, setIsLangOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const dropdownRefDesktop = useRef<HTMLDivElement>(null)
+  const langRef = useRef<HTMLDivElement>(null)
 
-  const t = translations[language].hero
+  const t = translations[language]
+  const hero = t.hero
+  const isAr = language === 'ar'
+  const qMark = isAr ? '؟' : '?'
 
   const menuItems = [
-    { id: 'who', title: t.whoWeAre, content: t.whoWeAreContent, short: t.aboutShort },
-    { id: 'vision', title: t.ourVision, content: t.ourVisionContent, short: t.ourVisionContent },
-    { id: 'mission', title: t.ourMission, content: t.ourMissionContent, short: t.ourMissionContent },
-    { id: 'platform', title: t.aboutPlatform, content: t.aboutPlatformContent, short: t.aboutPlatformContent },
-    { id: 'why', title: t.whyChooseUs, content: t.whyChooseUsContent, short: t.whyChooseUsContent },
-    { id: 'services', title: t.ourServices, content: t.ourServicesContent, short: t.ourServicesContent }
+    { id: 'who',      title: hero.whoWeAre,      content: hero.whoWeAreContent },
+    { id: 'vision',   title: hero.ourVision,     content: hero.ourVisionContent },
+    { id: 'mission',  title: hero.ourMission,    content: hero.ourMissionContent },
+    { id: 'platform', title: hero.aboutPlatform, content: hero.aboutPlatformContent },
+    { id: 'why',      title: hero.whyChooseUs,   content: hero.whyChooseUsContent },
+    { id: 'services', title: hero.ourServices,   content: hero.ourServicesContent },
   ]
 
   const [activeTab, setActiveTab] = useState(menuItems[0])
 
   useEffect(() => {
-    const current = menuItems.find(item => item.id === activeTab.id)
-    if (current) setActiveTab(current)
+    const found = menuItems.find(item => item.id === activeTab.id)
+    if (found) setActiveTab(found)
   }, [language])
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10)
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    const handler = () => setScrolled(window.scrollY > 10)
+    window.addEventListener('scroll', handler)
+    return () => window.removeEventListener('scroll', handler)
   }, [])
 
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr'
-      document.documentElement.lang = language
-      const fontProps = getFontCSSProperties(language)
-      Object.entries(fontProps).forEach(([property, value]) => {
-        document.documentElement.style.setProperty(property, value)
-      })
-      const fontClass = language === 'ar' ? 'font-tajawal' : 'font-inter'
-      document.documentElement.classList.remove('font-tajawal', 'font-inter')
-      document.documentElement.classList.add(fontClass)
+    const handler = (e: MouseEvent) => {
+      if (langRef.current && !langRef.current.contains(e.target as Node))
+        setIsLangOpen(false)
     }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    document.documentElement.dir = isAr ? 'rtl' : 'ltr'
+    document.documentElement.lang = language
+    const fontProps = getFontCSSProperties(language)
+    Object.entries(fontProps).forEach(([p, v]) =>
+      document.documentElement.style.setProperty(p, v)
+    )
+    document.documentElement.classList.remove('font-tajawal', 'font-inter')
+    document.documentElement.classList.add(isAr ? 'font-tajawal' : 'font-inter')
   }, [language])
 
   const handleLanguageSelect = (lang: 'en' | 'ar') => {
@@ -55,32 +65,71 @@ export default function HeroSection() {
   }
 
   const handleChatRedirect = () => {
-    localStorage.removeItem('currentConversationId');
-    sessionStorage.removeItem('reportData');
-    sessionStorage.setItem('mrHarmonyFreshStart', 'true');
+    localStorage.removeItem('currentConversationId')
+    sessionStorage.removeItem('reportData')
+    sessionStorage.setItem('mrHarmonyFreshStart', 'true')
     if (typeof window !== 'undefined' && (window as any).navigateTo) {
-      (window as any).navigateTo('/chat');
+      (window as any).navigateTo('/chat')
     }
   }
 
+  /* ─────────────────── LANGUAGE DROPDOWN (shared) ─────────────────── */
+  const LangDropdown = () => (
+    <div className="relative" ref={langRef}>
+      <button
+        onClick={() => setIsLangOpen(!isLangOpen)}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] border border-red-600/40 rounded-full text-red-500 font-bold uppercase hover:bg-red-600/10 transition"
+      >
+        <Globe className="w-3.5 h-3.5" />
+        <span>{language}</span>
+        <ChevronDown size={12} className={`transition-transform ${isLangOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isLangOpen && (
+        <div className={`absolute top-full mt-2 bg-gray-900 border border-red-600/20 rounded-xl shadow-2xl overflow-hidden min-w-[110px] z-[110] ${isAr ? 'left-0' : 'right-0'}`}>
+          <button
+            onClick={() => handleLanguageSelect('ar')}
+            className={`w-full px-4 py-2.5 text-sm hover:bg-red-600 text-white transition text-right ${language === 'ar' ? 'bg-red-600/20' : ''}`}
+          >
+            العربية
+          </button>
+          <button
+            onClick={() => handleLanguageSelect('en')}
+            className={`w-full px-4 py-2.5 text-sm hover:bg-red-600 text-white transition text-left ${language === 'en' ? 'bg-red-600/20' : ''}`}
+          >
+            English
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div className="h-screen bg-black text-white font-sans relative overflow-hidden">
-      
-      {/* --- Navbar --- */}
+
+      {/* ════════════════════ NAVBAR ════════════════════ */}
       <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
-        scrolled ? 'bg-black/90 backdrop-blur-md py-2' : 'bg-transparent py-4 md:py-6'
+        scrolled ? 'bg-black/90 backdrop-blur-md' : 'bg-transparent'
       }`}>
-        <div className="max-w-[1440px] mx-auto px-6 flex items-center justify-between h-14 md:h-16">
-          
-          {/* Desktop Menu */}
-          <div className="flex-1 hidden xl:flex items-center gap-1">
-            {menuItems.map((item) => (
+
+        {/* ── Desktop Navbar (xl+) ── */}
+        <div className="hidden xl:flex items-center h-16 max-w-[1440px] mx-auto px-8 gap-4" dir="ltr">
+          {/* Always left: User + Language */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button className="p-2 bg-red-600 rounded-full shadow-lg shadow-red-600/20">
+              <User size={16} className="text-white" />
+            </button>
+            <LangDropdown />
+          </div>
+
+          {/* Always right: Nav items */}
+          <div className="flex-1 flex items-center justify-end gap-1">
+            {menuItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item)}
                 className={`text-[13px] px-4 py-2 rounded-full transition-all whitespace-nowrap ${
-                  activeTab.id === item.id 
-                    ? 'bg-red-600 text-white font-bold' 
+                  activeTab.id === item.id
+                    ? 'bg-red-600 text-white font-bold'
                     : 'text-gray-400 hover:bg-red-600/10'
                 }`}
               >
@@ -88,90 +137,156 @@ export default function HeroSection() {
               </button>
             ))}
           </div>
+        </div>
 
-          {/* Tools */}
-          <div className="flex items-center gap-3 ms-auto">
-            <div className="relative">
-              <button
-                onClick={() => setIsLangOpen(!isLangOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 text-[11px] border border-red-600/30 rounded-full text-red-600 font-bold uppercase"
-              >
-                <Globe className="w-3.5 h-3.5" />
-                <span>{language}</span>
-                <ChevronDown size={12} className={`transition-transform ${isLangOpen ? 'rotate-180' : ''}`} />
-              </button>
-              
-              {isLangOpen && (
-                <div className="absolute top-full mt-2 bg-gray-900 border border-red-600/20 rounded-lg shadow-2xl overflow-hidden min-w-[100px] z-[110]">
-                  <button onClick={() => handleLanguageSelect('ar')} className="w-full px-4 py-2 text-right text-xs hover:bg-red-600 text-white">العربية</button>
-                  <button onClick={() => handleLanguageSelect('en')} className="w-full px-4 py-2 text-left text-xs hover:bg-red-600 text-white">English</button>
-                </div>
-              )}
-            </div>
-
+        {/* ── Mobile Navbar (<xl) ── */}
+        <div
+          className="flex xl:hidden items-center h-14 px-4 gap-2"
+          dir={isAr ? 'rtl' : 'ltr'}
+        >
+          {/* Start side: Hamburger + User */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="p-2 rounded-full hover:bg-white/5 transition"
+            >
+              {menuOpen
+                ? <X size={22} className="text-red-500" />
+                : <Menu size={22} className="text-red-500" />}
+            </button>
             <button className="p-2 bg-red-600 rounded-full shadow-lg shadow-red-600/20">
               <User size={16} className="text-white" />
             </button>
-
-            <button className="xl:hidden" onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? <X size={24} className="text-red-600" /> : <Menu size={24} className="text-red-600" />}
-            </button>
           </div>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* End side: Language */}
+          <LangDropdown />
         </div>
-
-        {/* Mobile Dropdown Menu */}
-        {menuOpen && (
-          <div className="xl:hidden bg-black/98 absolute w-full left-0 p-6 border-b border-red-600/20 flex flex-col gap-4 animate-slideIn">
-            {menuItems.map((item) => (
-              <button key={item.id} onClick={() => { setActiveTab(item); setMenuOpen(false); }} className={`text-right text-lg py-1 ${activeTab.id === item.id ? 'text-red-600 font-bold' : 'text-gray-500'}`}>
-                {item.title}
-              </button>
-            ))}
-          </div>
-        )}
       </nav>
 
-      {/* --- Main Content Section (Optimized for Mobile Viewport) --- */}
-      <main className="h-full flex flex-col items-center justify-center px-6 pt-20 pb-8 overflow-hidden">
-        <div className="max-w-md w-full flex flex-col items-center text-center h-full justify-between" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-          
-          {/* 1. Logo */}
-          <div className="flex-shrink-0 animate-fadeIn pt-2">
-            <img 
-              src="/misbara_full_logo.svg" 
-              alt="Misbara Logo" 
-              className="h-20 md:h-28 object-contain" 
-            />
+      {/* ── Mobile slide-down menu ── */}
+      {menuOpen && (
+        <div className="xl:hidden fixed inset-0 z-[90]" onClick={() => setMenuOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div
+            className="absolute top-[56px] left-0 right-0 bg-[#0f0f0f] border-b border-red-600/20 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+            dir={isAr ? 'rtl' : 'ltr'}
+          >
+            <div className="px-5 py-4 grid grid-cols-2 gap-2">
+              {menuItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => { setActiveTab(item); setMenuOpen(false) }}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    activeTab.id === item.id
+                      ? 'bg-red-600 text-white shadow-md'
+                      : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60 flex-shrink-0" />
+                  {item.title}
+                </button>
+              ))}
+            </div>
           </div>
-          
-          {/* 2. Text Content */}
-          <div className="flex flex-col items-center space-y-2 flex-shrink-0">
-            <h3 className="text-xl md:text-2xl font-bold text-[#FFBD00]">
-              {activeTab.title}؟
+        </div>
+      )}
+
+      {/* ════════════════════ MOBILE MAIN (< xl) ════════════════════ */}
+      <main
+        className="xl:hidden h-full flex flex-col items-center justify-center px-6 pt-16 pb-6 overflow-hidden"
+        dir={isAr ? 'rtl' : 'ltr'}
+      >
+        <div className="max-w-md w-full flex flex-col items-center text-center h-full justify-between">
+
+          {/* Logo */}
+          <button className="flex-shrink-0 pt-2" onClick={() => { if ((window as any).navigateTo) (window as any).navigateTo('/') }}>
+            <img src="/misbara_full_logo.svg" alt="Logo" className="h-20 object-contain" />
+          </button>
+
+          {/* Active tab content */}
+          <div className="flex flex-col items-center space-y-2 flex-shrink-0 px-2 mt-4">
+            <h3 className="text-xl font-bold text-[#FFBD00]">
+              {activeTab.title}{qMark}
             </h3>
-            <p className="text-[14px] md:text-lg font-light text-gray-300 leading-relaxed max-w-[280px] md:max-w-xl line-clamp-3 md:line-clamp-none">
-              {activeTab.short}
+            <p className="text-[13px] font-light text-gray-300 leading-relaxed max-w-[300px] line-clamp-3">
+              {activeTab.content}
             </p>
           </div>
 
-          {/* 3. Faces Image (Fills remaining space) */}
-          <div className="relative flex-grow flex items-center justify-center w-full min-h-0 py-4">
-            <div className="absolute inset-0 bg-red-600/5 blur-[80px] rounded-full"></div>
-            <img 
-              src="/faces.png" 
-              alt="Harmony Faces" 
-              className="max-h-full max-w-full object-contain grayscale brightness-90 transition-transform duration-700" 
+          {/* Faces image */}
+          <div className="relative flex-grow flex items-center justify-center w-full min-h-0 py-3">
+            <div className="absolute inset-0 bg-red-600/5 blur-[80px] rounded-full" />
+            <img
+              src="/faces.png"
+              alt="Harmony Faces"
+              className="max-h-full max-w-full object-contain grayscale brightness-90"
             />
           </div>
 
-          {/* 4. Action Button */}
-          <div className="w-full flex-shrink-0 pb-4">
+          {/* CTA */}
+          <div className="w-full flex-shrink-0 pb-3">
             <button
               onClick={handleChatRedirect}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl text-lg font-bold transition-all shadow-[0_10px_35px_rgba(220,38,38,0.35)] active:scale-95 transform"
+              className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl text-lg font-bold transition-all shadow-[0_10px_35px_rgba(220,38,38,0.35)] active:scale-95"
             >
-              {language === 'ar' ? 'دردش مع السيد هارموني' : 'Chat with Mr. Harmony'}
+              {isAr ? 'دردش مع السيد هارموني' : 'Chat with Mr. Harmony'}
             </button>
+          </div>
+        </div>
+      </main>
+
+      {/* ════════════════════ DESKTOP MAIN (xl+) ════════════════════ */}
+      <main className="hidden xl:flex h-full pt-16" dir="ltr">
+        {/* Constrained container — same as navbar */}
+        <div className="w-full max-w-[1440px] mx-auto px-8 flex h-full">
+
+          {/* Left: Faces image */}
+          <div className="w-[55%] flex items-center justify-center overflow-hidden">
+            <img
+              src="/faces.png"
+              alt="Harmony Faces"
+              className="h-[72%] w-auto object-contain grayscale brightness-75"
+            />
+          </div>
+
+          {/* Right: Info panel */}
+          <div className="w-[45%] flex flex-col items-end text-right justify-center gap-8">
+            {/* Logo */}
+            <button onClick={() => { if ((window as any).navigateTo) (window as any).navigateTo('/') }}>
+              <img
+                src="/misbara_full_logo.svg"
+                alt="Harmony Logo"
+                className="h-28 object-contain"
+              />
+            </button>
+
+            {/* Active tab title + content */}
+            <div className="flex flex-col gap-2 w-full">
+              <h2 className="text-2xl font-bold text-[#FFBD00]">
+                {activeTab.title}{qMark}
+              </h2>
+              <p className="text-base text-gray-300 leading-relaxed">
+                {activeTab.content}
+              </p>
+            </div>
+
+            {/* Subtitle + CTA */}
+            <div className="flex flex-col gap-3 w-full items-end">
+              <p className="text-xl font-bold text-white leading-snug">
+                {t.welcomeSubtitle}
+              </p>
+              <button
+                onClick={handleChatRedirect}
+                className="bg-red-600 hover:bg-red-700 text-white px-10 py-3 rounded-2xl text-base font-bold transition-all shadow-[0_10px_35px_rgba(220,38,38,0.35)] active:scale-95"
+              >
+                {hero.talkToHarmony}
+              </button>
+            </div>
           </div>
 
         </div>

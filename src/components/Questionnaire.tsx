@@ -1,4 +1,4 @@
-import { useState, memo } from 'react'
+import { useState, useRef, memo } from 'react'
 import { useAppState } from '../store'
 import { translations } from '../utils'
 
@@ -17,6 +17,7 @@ export const Questionnaire = memo(({ questions, onComplete }: QuestionnaireProps
   const t = translations[language]
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [currentQuestion, setCurrentQuestion] = useState(0)
+  const completedRef = useRef(false)
 
   const scaleOptions = [
     { value: 5, label: language === 'ar' ? 'موافق بشدة' : 'Strongly Agree' },
@@ -28,36 +29,42 @@ export const Questionnaire = memo(({ questions, onComplete }: QuestionnaireProps
 
   const handleAnswerSelect = (value: number) => {
     if (!questions[currentQuestion]) return
-    
-    console.log('Answer selected:', { value, questionId: questions[currentQuestion].id, currentQuestion })
-    
+
+    const questionId = questions[currentQuestion].id
+
+    // Prevent double-firing (label onClick + radio onChange both trigger)
+    if (answers[questionId] === value) return
+
     const updatedAnswers = {
       ...answers,
-      [questions[currentQuestion].id]: value
+      [questionId]: value
     }
-    
+
     setAnswers(updatedAnswers)
-    
+
     // Auto-advance to next question after a short delay for visual feedback
     setTimeout(() => {
       if (currentQuestion < questions.length - 1) {
         setCurrentQuestion(prev => prev + 1)
       } else {
         // All questions answered, complete the questionnaire
-        console.log('Calling onComplete with answers:', updatedAnswers)
-        onComplete(updatedAnswers)
+        if (!completedRef.current) {
+          completedRef.current = true
+          onComplete(updatedAnswers)
+        }
       }
     }, 300) // 300ms delay for smooth transition
   }
 
   const handleNext = () => {
-    console.log('handleNext called:', { currentQuestion, questionsLength: questions.length })
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(prev => prev + 1)
     } else {
       // All questions answered, complete the questionnaire
-      console.log('Calling onComplete with answers:', answers)
-      onComplete(answers)
+      if (!completedRef.current) {
+        completedRef.current = true
+        onComplete(answers)
+      }
     }
   }
 
@@ -135,11 +142,7 @@ export const Questionnaire = memo(({ questions, onComplete }: QuestionnaireProps
                 name={`question-${questions[currentQuestion]?.id}`}
                 value={option.value}
                 checked={answers[questions[currentQuestion]?.id] === option.value}
-                onChange={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  handleAnswerSelect(option.value)
-                }}
+                onChange={() => {}} // handled by label onClick
                 className="sr-only"
               />
               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${

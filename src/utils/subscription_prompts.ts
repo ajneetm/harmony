@@ -117,7 +117,7 @@ const subscription_AR_PROMPT = `
 
 const subscription_EN_PROMPT = `
 
-**Prompt for Generating a Harmony Diagnostic Questionnaire of 27 Statements in Arabic**
+**Prompt for Generating a Harmony Diagnostic Questionnaire of 27 Statements in English**
 
 **Purpose:**
 To build a diagnostic questionnaire of 27 evaluative statements based on the Harmony Model, which is built on three domains (Internal – External – Perceptual). Each domain contains three functions, and each function is analyzed through the human triangle: cognitive, emotional, and behavioral.
