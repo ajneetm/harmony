@@ -7,9 +7,11 @@ import { translations } from '../utils/translations'
 export default function HeroSection() {
   const { language, setLanguage } = useAppState()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [isLangOpen, setIsLangOpen] = useState(false)
+  const [isDesktopLangOpen, setIsDesktopLangOpen] = useState(false)
+  const [isMobileLangOpen, setIsMobileLangOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const langRef = useRef<HTMLDivElement>(null)
+  const desktopLangRef = useRef<HTMLDivElement>(null)
+  const mobileLangRef = useRef<HTMLDivElement>(null)
 
   const t = translations[language]
   const hero = t.hero
@@ -40,8 +42,10 @@ export default function HeroSection() {
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (langRef.current && !langRef.current.contains(e.target as Node))
-        setIsLangOpen(false)
+      if (desktopLangRef.current && !desktopLangRef.current.contains(e.target as Node))
+        setIsDesktopLangOpen(false)
+      if (mobileLangRef.current && !mobileLangRef.current.contains(e.target as Node))
+        setIsMobileLangOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -61,7 +65,8 @@ export default function HeroSection() {
 
   const handleLanguageSelect = (lang: 'en' | 'ar') => {
     setLanguage(lang)
-    setIsLangOpen(false)
+    setIsDesktopLangOpen(false)
+    setIsMobileLangOpen(false)
   }
 
   const handleChatRedirect = () => {
@@ -73,31 +78,38 @@ export default function HeroSection() {
     }
   }
 
-  /* ─────────────────── LANGUAGE DROPDOWN (shared) ─────────────────── */
-  const LangDropdown = () => (
-    <div className="relative" ref={langRef}>
+  /* ─────────────────── LANGUAGE DROPDOWN ─────────────────── */
+  const LangDropdown = ({ isOpen, setOpen, refProp }: {
+    isOpen: boolean
+    setOpen: (v: boolean) => void
+    refProp: React.RefObject<HTMLDivElement>
+  }) => (
+    <div className="relative" ref={refProp}>
       <button
-        onClick={() => setIsLangOpen(!isLangOpen)}
+        onClick={() => setOpen(!isOpen)}
         className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] border border-red-600/40 rounded-full text-red-500 font-bold uppercase hover:bg-red-600/10 transition"
       >
         <Globe className="w-3.5 h-3.5" />
         <span>{language}</span>
-        <ChevronDown size={12} className={`transition-transform ${isLangOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={12} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
-      {isLangOpen && (
-        <div className={`absolute top-full mt-2 bg-gray-900 border border-red-600/20 rounded-xl shadow-2xl overflow-hidden min-w-[110px] z-[110] ${isAr ? 'left-0' : 'right-0'}`}>
-          <button
-            onClick={() => handleLanguageSelect('ar')}
-            className={`w-full px-4 py-2.5 text-sm hover:bg-red-600 text-white transition text-right ${language === 'ar' ? 'bg-red-600/20' : ''}`}
-          >
-            العربية
-          </button>
-          <button
-            onClick={() => handleLanguageSelect('en')}
-            className={`w-full px-4 py-2.5 text-sm hover:bg-red-600 text-white transition text-left ${language === 'en' ? 'bg-red-600/20' : ''}`}
-          >
-            English
-          </button>
+      {isOpen && (
+        <div className={`absolute top-full mt-2 bg-gray-900 border border-red-600/20 rounded-xl shadow-2xl overflow-hidden z-[110] ${isAr ? 'left-0' : 'right-0'}`}>
+          <div className="flex" dir="ltr">
+            <button
+              onClick={() => handleLanguageSelect('en')}
+              className={`px-5 py-2.5 text-sm hover:bg-red-600 text-white transition text-left ${language === 'en' ? 'bg-red-600/20' : ''}`}
+            >
+              EN
+            </button>
+            <div className="w-px bg-red-600/20" />
+            <button
+              onClick={() => handleLanguageSelect('ar')}
+              className={`px-5 py-2.5 text-sm hover:bg-red-600 text-white transition text-right ${language === 'ar' ? 'bg-red-600/20' : ''}`}
+            >
+              AR
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -112,17 +124,9 @@ export default function HeroSection() {
       }`}>
 
         {/* ── Desktop Navbar (xl+) ── */}
-        <div className="hidden xl:flex items-center h-16 max-w-[1440px] mx-auto px-8 gap-4" dir="ltr">
-          {/* Always left: User + Language */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button className="p-2 bg-red-600 rounded-full shadow-lg shadow-red-600/20">
-              <User size={16} className="text-white" />
-            </button>
-            <LangDropdown />
-          </div>
-
-          {/* Always right: Nav items */}
-          <div className="flex-1 flex items-center justify-end gap-1">
+        <div className="hidden xl:flex items-center h-16 max-w-[1440px] mx-auto px-8 gap-4" dir={isAr ? 'rtl' : 'ltr'}>
+          {/* Nav items — first in DOM = appears at start side (right in AR, left in EN) */}
+          <div className="flex-1 flex items-center justify-start gap-1">
             {menuItems.map(item => (
               <button
                 key={item.id}
@@ -137,12 +141,20 @@ export default function HeroSection() {
               </button>
             ))}
           </div>
+
+          {/* User + Language — second in DOM = appears at end side (left in AR, right in EN) */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button className="p-2 bg-red-600 rounded-full shadow-lg shadow-red-600/20">
+              <User size={16} className="text-white" />
+            </button>
+            <LangDropdown isOpen={isDesktopLangOpen} setOpen={setIsDesktopLangOpen} refProp={desktopLangRef} />
+          </div>
         </div>
 
         {/* ── Mobile Navbar (<xl) ── */}
         <div
           className="flex xl:hidden items-center h-14 px-4 gap-2"
-          dir={isAr ? 'rtl' : 'ltr'}
+          dir="ltr"
         >
           {/* Start side: Hamburger + User */}
           <div className="flex items-center gap-2">
@@ -163,7 +175,7 @@ export default function HeroSection() {
           <div className="flex-1" />
 
           {/* End side: Language */}
-          <LangDropdown />
+          <LangDropdown isOpen={isMobileLangOpen} setOpen={setIsMobileLangOpen} refProp={mobileLangRef} />
         </div>
       </nav>
 
