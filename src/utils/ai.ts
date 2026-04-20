@@ -29,10 +29,20 @@ const cleanArabicReport = (text: string): string => {
   return text.trim()
 }
 
-// ─── Gemini config (OpenAI-compatible endpoint) ───────────────────────────────
-const DEEPSEEK_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string
-const DEEPSEEK_BASE    = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
-const DEEPSEEK_MODEL   = 'gemini-2.0-flash'
+// ─── Providers ───────────────────────────────────────────────────────────────
+const GEMINI_KEY   = import.meta.env.VITE_GEMINI_API_KEY as string
+const GEMINI_BASE  = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
+const GEMINI_MODEL = 'gemini-2.0-flash'
+
+const GROQ_KEY   = import.meta.env.VITE_GROQ_API_KEY as string
+const GROQ_BASE  = 'https://api.groq.com/openai/v1/chat/completions'
+const GROQ_MODEL = 'llama-3.3-70b-versatile'
+
+// Active provider — starts with Gemini, falls back to Groq on 429
+let activeProvider: 'gemini' | 'groq' = 'gemini'
+const getProvider = () => activeProvider === 'gemini'
+  ? { key: GEMINI_KEY, base: GEMINI_BASE, model: GEMINI_MODEL }
+  : { key: GROQ_KEY,   base: GROQ_BASE,   model: GROQ_MODEL   }
 
 type DSMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
@@ -53,17 +63,27 @@ const buildMessages = (
   return result
 }
 
-// ─── Retry helper ────────────────────────────────────────────────────────────
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
-const fetchWithRetry = async (url: string, options: RequestInit, retries = 3): Promise<Response> => {
-  for (let i = 0; i < retries; i++) {
-    const res = await fetch(url, options)
-    if (res.status !== 429) return res
-    const delay = (i + 1) * 15000 // 15s, 30s, 45s
-    await sleep(delay)
+// ─── Fetch with provider fallback ────────────────────────────────────────────
+const fetchWithFallback = async (body: object): Promise<Response> => {
+  const p = getProvider()
+  const opts: RequestInit = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${p.key}` },
+    body: JSON.stringify({ ...body, model: p.model }),
   }
-  return fetch(url, options)
+  const res = await fetch(p.base, opts)
+  if (res.status === 429 && activeProvider === 'gemini') {
+    console.warn('Gemini rate limited — switching to Groq')
+    activeProvider = 'groq'
+    const p2 = getProvider()
+    const opts2: RequestInit = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${p2.key}` },
+      body: JSON.stringify({ ...body, model: p2.model }),
+    }
+    return fetch(p2.base, opts2)
+  }
+  return res
 }
 
 // ─── Streaming ───────────────────────────────────────────────────────────────
@@ -79,20 +99,29 @@ export const genAIResponseStream = async (
 ) => {
   const controller = abortController || new AbortController()
   try {
-    const response = await fetch(DEEPSEEK_BASE, {
+    const streamBody = {
+      messages: buildMessages(data.messages, data.systemPrompt),
+      stream: true,
+      max_tokens: 2000,
+    }
+    let p = getProvider()
+    let response = await fetch(p.base, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
-        messages: buildMessages(data.messages, data.systemPrompt),
-        stream: true,
-        max_tokens: 2000,
-      }),
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${p.key}` },
+      body: JSON.stringify({ ...streamBody, model: p.model }),
       signal: controller.signal,
     })
+    if (response.status === 429 && activeProvider === 'gemini') {
+      console.warn('Gemini rate limited on stream — switching to Groq')
+      activeProvider = 'groq'
+      p = getProvider()
+      response = await fetch(p.base, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${p.key}` },
+        body: JSON.stringify({ ...streamBody, model: p.model }),
+        signal: controller.signal,
+      })
+    }
 
     if (!response.ok) {
       const errText = await response.text()
@@ -138,17 +167,9 @@ export const genAIResponse = async (data: {
   messages: Message[]
   systemPrompt?: { value: string; enabled: boolean }
 }) => {
-  const response = await fetchWithRetry(DEEPSEEK_BASE, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: DEEPSEEK_MODEL,
-      messages: buildMessages(data.messages, data.systemPrompt),
-      max_tokens: 1500,
-    }),
+  const response = await fetchWithFallback({
+    messages: buildMessages(data.messages, data.systemPrompt),
+    max_tokens: 1500,
   })
 
   if (!response.ok) {
@@ -206,21 +227,13 @@ Only return the complete JSON object, do not return any commands, comments, or a
       ? 'أنت خبير في نموذج هارموني. قم بإنشاء 27 سؤالاً بالضبط. أرجع JSON فقط مع حقلي "problem" و "questions".'
       : 'You are a Harmony model expert. Generate exactly 27 questions. Return valid JSON only with "problem" and "questions" fields.'
 
-    const response = await fetchWithRetry(DEEPSEEK_BASE, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
-        messages: [
-          { role: 'system', content: systemText },
-          { role: 'user',   content: combinedPrompt },
-        ],
-        max_tokens: 4000,
-        response_format: { type: 'json_object' },
-      }),
+    const response = await fetchWithFallback({
+      messages: [
+        { role: 'system', content: systemText },
+        { role: 'user',   content: combinedPrompt },
+      ],
+      max_tokens: 4000,
+      response_format: { type: 'json_object' },
     })
 
     if (!response.ok) {
@@ -305,20 +318,12 @@ export const generateReport = async (_answersData: any, chartData: any, language
       ? 'أنت خبير في نموذج هارموني. قم بكتابة تقرير نفسي موجز وإنساني باللغة العربية الفصحى حصراً بناءً على إجابات الاستبيان المقدمة. ممنوع منعاً باتاً استخدام أي كلمات أو أحرف من لغات أخرى غير العربية.'
       : 'You are a Harmony model expert. Write a brief and humane psychological report in English based on the provided questionnaire answers. Use only English words and characters.'
 
-    const response = await fetchWithRetry(DEEPSEEK_BASE, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
-        messages: [
-          { role: 'system', content: systemText },
-          { role: 'user',   content: fullPrompt },
-        ],
-        max_tokens: 2500,
-      }),
+    const response = await fetchWithFallback({
+      messages: [
+        { role: 'system', content: systemText },
+        { role: 'user',   content: fullPrompt },
+      ],
+      max_tokens: 2500,
     })
 
     if (!response.ok) {
