@@ -254,8 +254,8 @@ export const generateReport = async (_answersData: any, chartData: any, language
     const fullPrompt = reportPrompt.replace('{CHART_DATA_PLACEHOLDER}', chartDataText)
 
     const systemText = language === 'ar'
-      ? 'أنت خبير في نموذج هارموني. قم بكتابة تقرير نفسي موجز وإنساني باللغة العربية بناءً على إجابات الاستبيان المقدمة.'
-      : 'You are a Harmony model expert. Write a brief and humane psychological report in English based on the provided questionnaire answers.'
+      ? 'أنت خبير في نموذج هارموني. قم بكتابة تقرير نفسي موجز وإنساني باللغة العربية الفصحى حصراً بناءً على إجابات الاستبيان المقدمة. ممنوع منعاً باتاً استخدام أي كلمات أو أحرف من لغات أخرى غير العربية.'
+      : 'You are a Harmony model expert. Write a brief and humane psychological report in English based on the provided questionnaire answers. Use only English words and characters.'
 
     const response = await fetch(DEEPSEEK_BASE, {
       method: 'POST',
