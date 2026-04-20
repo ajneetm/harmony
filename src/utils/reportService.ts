@@ -87,10 +87,6 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
   const emotionalPct = Math.round(sum(emotionalAnswers) / 45 * 100)
   const existentialPct = Math.round(sum(existentialAnswers) / 45 * 100)
 
-  // Harmony: 100 - (max - min)
-  const maxPct = Math.max(mentalPct, emotionalPct, existentialPct)
-  const minPct = Math.min(mentalPct, emotionalPct, existentialPct)
-  const harmony = 100 - (maxPct - minPct)
 
   // Overall: total / 135 * 100
   const overall = Math.round(sum(answers) / 135 * 100)
@@ -125,6 +121,13 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
     ...emotionalElements.map(e => ({ name: e.dimension, score: e.value, dimension: 'emotional' as const })),
     ...existentialElements.map(e => ({ name: e.dimension, score: e.value, dimension: 'existential' as const })),
   ].sort((a, b) => b.score - a.score)
+
+  // True harmony: spread across all 9 element scores (each 0–5 → 0–100%)
+  // A person with some elements at 80% and others at 20% is NOT harmonious
+  const elementPcts = allElements.map(e => e.score / 5 * 100)
+  const maxElPct = Math.max(...elementPcts)
+  const minElPct = Math.min(...elementPcts)
+  const harmony = Math.max(0, Math.round(100 - (maxElPct - minElPct)))
 
   const typeLabels = {
     mental: language === 'ar' ? 'الذهني' : 'Mental',

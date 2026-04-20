@@ -255,18 +255,31 @@ export const generateReport = async (_answersData: any, chartData: any, language
     const balance_gap = Math.max(mental.percentage, emotional.percentage, existential.percentage)
       - Math.min(mental.percentage, emotional.percentage, existential.percentage)
 
-    const chartDataText = JSON.stringify({
-      overall_percentage:     overall,
-      harmony_percentage:     harmony,
-      mental_percentage:      mental.percentage,
-      emotional_percentage:   emotional.percentage,
-      existential_percentage: existential.percentage,
-      highest_dimension: { label_ar: highest.label_ar, label_en: highest.label_en, desc_ar: highest.desc_ar, desc_en: highest.desc_en, value: highest.value },
-      lowest_dimension:  { label_ar: lowest.label_ar,  label_en: lowest.label_en,  value: lowest.value },
-      top_3_functions:    top3.map((e: any)    => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
-      bottom_3_functions: bottom3.map((e: any) => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
-      balance_gap: Number(balance_gap.toFixed(1)),
-    }, null, 2)
+    const chartDataText = language === 'ar'
+      ? JSON.stringify({
+          'النسبة_العامة':      overall,
+          'نسبة_التجانس':       harmony,
+          'نسبة_الذهني':        mental.percentage,
+          'نسبة_المشاعري':      emotional.percentage,
+          'نسبة_السلوكي':       existential.percentage,
+          'البعد_الأعلى':       { الاسم: highest.label_ar, الوصف: highest.desc_ar, القيمة: highest.value },
+          'البعد_الأدنى':       { الاسم: lowest.label_ar,  القيمة: lowest.value },
+          'أقوى_3_وظائف':       top3.map((e: any)    => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
+          'أضعف_3_وظائف':       bottom3.map((e: any) => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
+          'فجوة_التوازن':       Number(balance_gap.toFixed(1)),
+        }, null, 2)
+      : JSON.stringify({
+          overall_percentage:     overall,
+          harmony_percentage:     harmony,
+          mental_percentage:      mental.percentage,
+          emotional_percentage:   emotional.percentage,
+          existential_percentage: existential.percentage,
+          highest_dimension: { label: highest.label_en, description: highest.desc_en, value: highest.value },
+          lowest_dimension:  { label: lowest.label_en,  value: lowest.value },
+          top_3_functions:    top3.map((e: any)    => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
+          bottom_3_functions: bottom3.map((e: any) => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
+          balance_gap: Number(balance_gap.toFixed(1)),
+        }, null, 2)
 
     const fullPrompt = reportPrompt.replace('{CHART_DATA_PLACEHOLDER}', chartDataText)
 
