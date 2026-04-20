@@ -15,9 +15,14 @@ const cleanArabicReport = (text: string): string => {
   text = text.replace(/[\u0400-\u04FF]/g, '')
   // Remove Korean
   text = text.replace(/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, '')
-  // Remove isolated Latin words surrounded by Arabic (not Markdown syntax chars)
+  // Remove Latin chars glued directly to Arabic text (e.g. "المahrungen" → "الم")
+  text = text.replace(/(?<=[\u0600-\u06FF])[A-Za-z]+/g, '')
+  text = text.replace(/[A-Za-z]+(?=[\u0600-\u06FF])/g, '')
+  // Remove Latin words between Arabic words (with spaces around them)
+  text = text.replace(/([\u0600-\u06FF])\s+[A-Za-z]{2,}\s+([\u0600-\u06FF])/g, '$1 $2')
+  // Remove any remaining isolated Latin words surrounded by non-ASCII
   text = text.replace(/(?<=[^\x00-\x7F\s])\s*[A-Za-z]{2,}\s*(?=[^\x00-\x7F])/g, ' ')
-  // Clean leftover punctuation artifacts (، followed by non-Arabic)
+  // Clean leftover punctuation artifacts
   text = text.replace(/[、。・]/g, '،')
   // Collapse multiple spaces/newlines
   text = text.replace(/[ \t]{2,}/g, ' ')
