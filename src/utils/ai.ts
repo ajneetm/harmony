@@ -9,40 +9,22 @@ export interface Message {
 
 // ─── Arabic report cleaner ────────────────────────────────────────────────────
 const cleanArabicReport = (text: string): string => {
-  // Remove CJK (Chinese, Japanese)
   text = text.replace(/[\u4E00-\u9FFF\u3400-\u4DBF\u3040-\u30FF\u31F0-\u31FF\uFF65-\uFF9F]/g, '')
-  // Remove Cyrillic (Russian)
   text = text.replace(/[\u0400-\u04FF]/g, '')
-  // Remove Korean
   text = text.replace(/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, '')
-  // Remove Latin chars glued directly to Arabic text (e.g. "المahrungen" → "الم")
   text = text.replace(/(?<=[\u0600-\u06FF])[A-Za-z]+/g, '')
   text = text.replace(/[A-Za-z]+(?=[\u0600-\u06FF])/g, '')
-  // Remove Latin words between Arabic words (with spaces around them)
   text = text.replace(/([\u0600-\u06FF])\s+[A-Za-z]{2,}\s+([\u0600-\u06FF])/g, '$1 $2')
-  // Remove any remaining isolated Latin words surrounded by non-ASCII
   text = text.replace(/(?<=[^\x00-\x7F\s])\s*[A-Za-z]{2,}\s*(?=[^\x00-\x7F])/g, ' ')
-  // Clean leftover punctuation artifacts
   text = text.replace(/[、。・]/g, '،')
-  // Collapse multiple spaces/newlines
   text = text.replace(/[ \t]{2,}/g, ' ')
   return text.trim()
 }
 
-// ─── Providers ───────────────────────────────────────────────────────────────
-const GEMINI_KEY   = import.meta.env.VITE_GEMINI_API_KEY as string
-const GEMINI_BASE  = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
-const GEMINI_MODEL = 'gemini-2.0-flash'
-
-const GROQ_KEY   = import.meta.env.VITE_GROQ_API_KEY as string
-const GROQ_BASE  = 'https://api.groq.com/openai/v1/chat/completions'
-const GROQ_MODEL = 'llama-3.3-70b-versatile'
-
-// Active provider — starts with Gemini, falls back to Groq on 429
-let activeProvider: 'gemini' | 'groq' = 'gemini'
-const getProvider = () => activeProvider === 'gemini'
-  ? { key: GEMINI_KEY, base: GEMINI_BASE, model: GEMINI_MODEL }
-  : { key: GROQ_KEY,   base: GROQ_BASE,   model: GROQ_MODEL   }
+// ─── Gemini config ────────────────────────────────────────────────────────────
+const API_KEY   = import.meta.env.VITE_GEMINI_API_KEY as string
+const API_BASE  = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
+const API_MODEL = 'gemini-2.0-flash'
 
 type DSMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
@@ -51,40 +33,21 @@ const buildMessages = (
   systemPrompt?: { value: string; enabled: boolean }
 ): DSMessage[] => {
   const result: DSMessage[] = []
-
   if (systemPrompt?.enabled && systemPrompt.value) {
     result.push({ role: 'system', content: systemPrompt.value })
   }
-
   messages
     .filter(m => !m.isTyping && !m.isInitialInstruction && !m.isLoadingQuestionnaire)
     .forEach(m => result.push({ role: m.role, content: m.content }))
-
   return result
 }
 
-// ─── Fetch with provider fallback ────────────────────────────────────────────
-const fetchWithFallback = async (body: object): Promise<Response> => {
-  const p = getProvider()
-  const opts: RequestInit = {
+const gemini = (body: object): Promise<Response> =>
+  fetch(API_BASE, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${p.key}` },
-    body: JSON.stringify({ ...body, model: p.model }),
-  }
-  const res = await fetch(p.base, opts)
-  if (res.status === 429 && activeProvider === 'gemini') {
-    console.warn('Gemini rate limited — switching to Groq')
-    activeProvider = 'groq'
-    const p2 = getProvider()
-    const opts2: RequestInit = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${p2.key}` },
-      body: JSON.stringify({ ...body, model: p2.model }),
-    }
-    return fetch(p2.base, opts2)
-  }
-  return res
-}
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+    body: JSON.stringify({ ...body, model: API_MODEL }),
+  })
 
 // ─── Streaming ───────────────────────────────────────────────────────────────
 export const genAIResponseStream = async (
@@ -99,33 +62,21 @@ export const genAIResponseStream = async (
 ) => {
   const controller = abortController || new AbortController()
   try {
-    const streamBody = {
-      messages: buildMessages(data.messages, data.systemPrompt),
-      stream: true,
-      max_tokens: 2000,
-    }
-    let p = getProvider()
-    let response = await fetch(p.base, {
+    const response = await fetch(API_BASE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${p.key}` },
-      body: JSON.stringify({ ...streamBody, model: p.model }),
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+      body: JSON.stringify({
+        model: API_MODEL,
+        messages: buildMessages(data.messages, data.systemPrompt),
+        stream: true,
+        max_tokens: 2000,
+      }),
       signal: controller.signal,
     })
-    if (response.status === 429 && activeProvider === 'gemini') {
-      console.warn('Gemini rate limited on stream — switching to Groq')
-      activeProvider = 'groq'
-      p = getProvider()
-      response = await fetch(p.base, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${p.key}` },
-        body: JSON.stringify({ ...streamBody, model: p.model }),
-        signal: controller.signal,
-      })
-    }
 
     if (!response.ok) {
       const errText = await response.text()
-      throw new Error(`DeepSeek error ${response.status}: ${errText}`)
+      throw new Error(`Gemini error ${response.status}: ${errText}`)
     }
 
     if (!response.body) throw new Error('No response body')
@@ -167,14 +118,14 @@ export const genAIResponse = async (data: {
   messages: Message[]
   systemPrompt?: { value: string; enabled: boolean }
 }) => {
-  const response = await fetchWithFallback({
+  const response = await gemini({
     messages: buildMessages(data.messages, data.systemPrompt),
     max_tokens: 1500,
   })
 
   if (!response.ok) {
     const errText = await response.text()
-    throw new Error(`DeepSeek error ${response.status}: ${errText}`)
+    throw new Error(`Gemini error ${response.status}: ${errText}`)
   }
 
   const json = await response.json()
@@ -227,7 +178,7 @@ Only return the complete JSON object, do not return any commands, comments, or a
       ? 'أنت خبير في نموذج هارموني. قم بإنشاء 27 سؤالاً بالضبط. أرجع JSON فقط مع حقلي "problem" و "questions".'
       : 'You are a Harmony model expert. Generate exactly 27 questions. Return valid JSON only with "problem" and "questions" fields.'
 
-    const response = await fetchWithFallback({
+    const response = await gemini({
       messages: [
         { role: 'system', content: systemText },
         { role: 'user',   content: combinedPrompt },
@@ -238,7 +189,7 @@ Only return the complete JSON object, do not return any commands, comments, or a
 
     if (!response.ok) {
       const errText = await response.text()
-      throw new Error(`DeepSeek error ${response.status}: ${errText}`)
+      throw new Error(`Gemini error ${response.status}: ${errText}`)
     }
 
     const json    = await response.json()
@@ -288,16 +239,16 @@ export const generateReport = async (_answersData: any, chartData: any, language
 
     const chartDataText = language === 'ar'
       ? JSON.stringify({
-          'النسبة_العامة':      overall,
-          'نسبة_التجانس':       harmony,
-          'نسبة_الذهني':        mental.percentage,
-          'نسبة_المشاعري':      emotional.percentage,
-          'نسبة_السلوكي':       existential.percentage,
-          'البعد_الأعلى':       { الاسم: highest.label_ar, الوصف: highest.desc_ar, القيمة: highest.value },
-          'البعد_الأدنى':       { الاسم: lowest.label_ar,  القيمة: lowest.value },
-          'أقوى_3_وظائف':       top3.map((e: any)    => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
-          'أضعف_3_وظائف':       bottom3.map((e: any) => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
-          'فجوة_التوازن':       Number(balance_gap.toFixed(1)),
+          'النسبة_العامة':  overall,
+          'نسبة_التجانس':   harmony,
+          'نسبة_الذهني':    mental.percentage,
+          'نسبة_المشاعري':  emotional.percentage,
+          'نسبة_السلوكي':   existential.percentage,
+          'البعد_الأعلى':   { الاسم: highest.label_ar, الوصف: highest.desc_ar, القيمة: highest.value },
+          'البعد_الأدنى':   { الاسم: lowest.label_ar,  القيمة: lowest.value },
+          'أقوى_3_وظائف':   top3.map((e: any)    => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
+          'أضعف_3_وظائف':   bottom3.map((e: any) => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
+          'فجوة_التوازن':   Number(balance_gap.toFixed(1)),
         }, null, 2)
       : JSON.stringify({
           overall_percentage:     overall,
@@ -318,7 +269,7 @@ export const generateReport = async (_answersData: any, chartData: any, language
       ? 'أنت خبير في نموذج هارموني. قم بكتابة تقرير نفسي موجز وإنساني باللغة العربية الفصحى حصراً بناءً على إجابات الاستبيان المقدمة. ممنوع منعاً باتاً استخدام أي كلمات أو أحرف من لغات أخرى غير العربية.'
       : 'You are a Harmony model expert. Write a brief and humane psychological report in English based on the provided questionnaire answers. Use only English words and characters.'
 
-    const response = await fetchWithFallback({
+    const response = await gemini({
       messages: [
         { role: 'system', content: systemText },
         { role: 'user',   content: fullPrompt },
@@ -333,7 +284,7 @@ export const generateReport = async (_answersData: any, chartData: any, language
           ? 'تم تجاوز الحد المسموح به للطلبات. حاول مرة أخرى بعد دقيقة.'
           : 'Request limit reached. Please try again in a moment.')
       }
-      throw new Error(`DeepSeek error ${response.status}: ${errText}`)
+      throw new Error(`Gemini error ${response.status}: ${errText}`)
     }
 
     const json    = await response.json()
