@@ -28,7 +28,10 @@ const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as stri
 const MODEL  = 'gemini-1.5-flash'
 
 const getModel = (systemInstruction?: string) =>
-  genAI.getGenerativeModel({ model: MODEL, ...(systemInstruction ? { systemInstruction } : {}) })
+  genAI.getGenerativeModel(
+    { model: MODEL, ...(systemInstruction ? { systemInstruction } : {}) },
+    { apiVersion: 'v1' }
+  )
 
 // Convert our Message[] to Gemini content format
 const toGeminiContents = (messages: Message[]) =>
