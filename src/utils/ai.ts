@@ -26,7 +26,7 @@ const cleanArabicReport = (text: string): string => {
 
 // ─── Gemini client ────────────────────────────────────────────────────────────
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as string)
-const MODEL  = 'gemini-1.5-flash'
+const MODEL  = 'gemini-2.0-flash'
 
 // Convert our Message[] → Gemini history format (excludes last message)
 const toHistory = (messages: Message[]): Content[] =>
