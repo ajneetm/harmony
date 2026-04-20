@@ -91,28 +91,40 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
   // Overall: total / 135 * 100
   const overall = Math.round(sum(answers) / 135 * 100)
 
-  // Element names per language
-  const elementNames = language === 'ar'
-    ? {
-        mental: ['الإدراك', 'الجاهزية', 'النية'],
-        emotional: ['الفعل', 'التفاعل', 'الناتج'],
-        existential: ['الاستقبال', 'التطور', 'التشكل'],
-      }
-    : {
-        mental: ['Perception', 'Readiness', 'Intention'],
-        emotional: ['Action', 'Interaction', 'Outcome'],
-        existential: ['Reception', 'Evolution', 'Formation'],
-      }
+  // Function names per language (9 functions total)
+  const functionNames = language === 'ar'
+    ? ['الإدراك', 'الجاهزية', 'النية', 'الفعل', 'التفاعل', 'الاستجابة', 'الاستقبال', 'التطور', 'الأثر']
+    : ['Perception', 'Readiness', 'Intention', 'Action', 'Interaction', 'Response', 'Reception', 'Evolution', 'Effect']
 
-  // Calculate element averages (3 questions per element)
+  // Each function has 3 indicators: answers[i*3]=Mental, [i*3+1]=Emotional, [i*3+2]=Behavioral
+  // Function average = mean of 3 indicators
+  // Function harmony = 100 - (gap × 25), where gap = max - min of 3 indicators
+  const functions = functionNames.map((name, i) => {
+    const a = answers[i * 3], b = answers[i * 3 + 1], c = answers[i * 3 + 2]
+    const score = (a + b + c) / 3
+    const gap = Math.max(a, b, c) - Math.min(a, b, c)
+    const functionHarmony = Math.max(0, 100 - gap * 25)
+    return { name, score, functionHarmony }
+  })
+
+  // Overall harmony = average of all 9 function harmonies
+  const harmony = Math.round(functions.reduce((s, f) => s + f.functionHarmony, 0) / 9)
+
+  // Map functions back to dimensions for radar charts
+  const elementNames = {
+    mental:      functionNames.slice(0, 3),
+    emotional:   functionNames.slice(3, 6),
+    existential: functionNames.slice(6, 9),
+  }
+
   const calcElements = (dimAnswers: number[], names: string[]): ChartData[] =>
     names.map((name, i) => ({
       dimension: name,
       value: (dimAnswers[i * 3] + dimAnswers[i * 3 + 1] + dimAnswers[i * 3 + 2]) / 3,
     }))
 
-  const mentalElements = calcElements(mentalAnswers, elementNames.mental)
-  const emotionalElements = calcElements(emotionalAnswers, elementNames.emotional)
+  const mentalElements     = calcElements(mentalAnswers,      elementNames.mental)
+  const emotionalElements  = calcElements(emotionalAnswers,   elementNames.emotional)
   const existentialElements = calcElements(existentialAnswers, elementNames.existential)
 
   // All elements ranked by score
@@ -121,13 +133,6 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
     ...emotionalElements.map(e => ({ name: e.dimension, score: e.value, dimension: 'emotional' as const })),
     ...existentialElements.map(e => ({ name: e.dimension, score: e.value, dimension: 'existential' as const })),
   ].sort((a, b) => b.score - a.score)
-
-  // True harmony: spread across all 9 element scores (each 0–5 → 0–100%)
-  // A person with some elements at 80% and others at 20% is NOT harmonious
-  const elementPcts = allElements.map(e => e.score / 5 * 100)
-  const maxElPct = Math.max(...elementPcts)
-  const minElPct = Math.min(...elementPcts)
-  const harmony = Math.max(0, Math.round(100 - (maxElPct - minElPct)))
 
   const typeLabels = {
     mental: language === 'ar' ? 'الذهني' : 'Mental',
@@ -139,11 +144,7 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
   // Structure: 27 questions = 3 worlds × 3 elements × 3 types
   // typeIndex = question index % 3  (0=cognitive, 1=emotional, 2=behavioral)
   // elementIndex within each world = Math.floor((index % 9) / 3)
-  const radarDimensions = [
-    'Perception', 'Readiness', 'Intention',
-    'Action', 'Interaction', 'Response',
-    'Reception', 'Evolution', 'Mental Image',
-  ]
+  const radarDimensions = functionNames
 
   const radarGroups = {
     cognitive: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
