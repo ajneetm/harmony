@@ -7,7 +7,24 @@ export interface Message {
   isLoadingQuestionnaire?: boolean
 }
 
-// ─── DeepSeek config ──────────────────────────────────────────────────────────
+// ─── Arabic report cleaner ────────────────────────────────────────────────────
+const cleanArabicReport = (text: string): string => {
+  // Remove CJK (Chinese, Japanese)
+  text = text.replace(/[\u4E00-\u9FFF\u3400-\u4DBF\u3040-\u30FF\u31F0-\u31FF\uFF65-\uFF9F]/g, '')
+  // Remove Cyrillic (Russian)
+  text = text.replace(/[\u0400-\u04FF]/g, '')
+  // Remove Korean
+  text = text.replace(/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, '')
+  // Remove isolated Latin words surrounded by Arabic (not Markdown syntax chars)
+  text = text.replace(/(?<=[^\x00-\x7F\s])\s*[A-Za-z]{2,}\s*(?=[^\x00-\x7F])/g, ' ')
+  // Clean leftover punctuation artifacts (، followed by non-Arabic)
+  text = text.replace(/[、。・]/g, '،')
+  // Collapse multiple spaces/newlines
+  text = text.replace(/[ \t]{2,}/g, ' ')
+  return text.trim()
+}
+
+// ─── Groq config ──────────────────────────────────────────────────────────────
 const DEEPSEEK_API_KEY = import.meta.env.VITE_GROQ_API_KEY as string
 const DEEPSEEK_BASE    = 'https://api.groq.com/openai/v1/chat/completions'
 const DEEPSEEK_MODEL   = 'llama-3.3-70b-versatile'
@@ -279,9 +296,10 @@ export const generateReport = async (_answersData: any, chartData: any, language
     }
 
     const json    = await response.json()
-    const content = json?.choices?.[0]?.message?.content ?? ''
+    let   content = json?.choices?.[0]?.message?.content ?? ''
     if (!content?.trim()) throw new Error('Empty AI response received')
 
+    if (language === 'ar') content = cleanArabicReport(content)
     return content.trim()
 
   } catch (error) {
