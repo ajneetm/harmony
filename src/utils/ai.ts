@@ -45,7 +45,7 @@ const buildMessages = (
 const gemini = async (body: object, retries = 3): Promise<Response> => {
   const opts: RequestInit = {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}`, 'x-goog-api-key': API_KEY },
     body: JSON.stringify({ ...body, model: API_MODEL }),
   }
   for (let i = 0; i < retries; i++) {
@@ -71,7 +71,7 @@ export const genAIResponseStream = async (
   try {
     const response = await fetch(API_BASE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}`, 'x-goog-api-key': API_KEY },
       body: JSON.stringify({
         model: API_MODEL,
         messages: buildMessages(data.messages, data.systemPrompt),
