@@ -4,9 +4,11 @@ import { ConvexClientProvider } from './convex'
 import HeroSection from './pages/HeroSection'
 import ChatPage from './pages/ChatPage'
 import ReportPage from './pages/ReportPage'
+import AuthPage from './pages/AuthPage'
 import NotFound from './pages/NotFound'
 import { FontProvider } from './components'
 import { getFontCSSProperties } from './utils/fonts'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import './styles.css'
 
 // Initialize Sentry if DSN is available
@@ -51,6 +53,32 @@ if (import.meta.env.VITE_SENTRY_DSN) {
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
+function AppRouter({ currentPath }: { currentPath: string }) {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  // Protected routes
+  if ((currentPath === '/chat' || currentPath === '/report') && !user) {
+    ;(window as any).navigateTo('/auth')
+    return null
+  }
+
+  switch (currentPath) {
+    case '/':      return <HeroSection />
+    case '/chat':  return <ChatPage />
+    case '/report':return <ReportPage />
+    case '/auth':  return user ? ((() => { (window as any).navigateTo('/chat'); return null })()) : <AuthPage />
+    default:       return <NotFound />
+  }
+}
+
 const App = () => {
   const [currentPath, setCurrentPath] = useState('/')
   
@@ -60,8 +88,9 @@ const App = () => {
       const params = new URLSearchParams(window.location.search)
       const page = params.get('page')
       
-      if (page === 'chat') return '/chat'
+      if (page === 'chat')   return '/chat'
       if (page === 'report') return '/report'
+      if (page === 'auth')   return '/auth'
       return '/'
     }
     
@@ -128,27 +157,13 @@ const App = () => {
     console.log('Current URL:', window.location.href)
   }, [currentPath])
   
-  // Render the appropriate component
-  let component
-  switch(currentPath) {
-    case '/':
-      component = <HeroSection />
-      break
-    case '/chat':
-      component = <ChatPage />
-      break
-    case '/report':
-      component = <ReportPage />
-      break
-    default:
-      component = <NotFound />
-  }
-  
   return (
     <ConvexClientProvider>
-      <FontProvider>
-        {component}
-      </FontProvider>
+      <AuthProvider>
+        <FontProvider>
+          <AppRouter currentPath={currentPath} />
+        </FontProvider>
+      </AuthProvider>
     </ConvexClientProvider>
   )
 }
