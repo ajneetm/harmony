@@ -29,10 +29,10 @@ const cleanArabicReport = (text: string): string => {
   return text.trim()
 }
 
-// ─── Groq config ──────────────────────────────────────────────────────────────
-const DEEPSEEK_API_KEY = import.meta.env.VITE_GROQ_API_KEY as string
-const DEEPSEEK_BASE    = 'https://api.groq.com/openai/v1/chat/completions'
-const DEEPSEEK_MODEL   = 'llama-3.3-70b-versatile'
+// ─── Gemini config (OpenAI-compatible endpoint) ───────────────────────────────
+const DEEPSEEK_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string
+const DEEPSEEK_BASE    = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
+const DEEPSEEK_MODEL   = 'gemini-2.0-flash'
 
 type DSMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
@@ -311,11 +311,9 @@ export const generateReport = async (_answersData: any, chartData: any, language
     if (!response.ok) {
       const errText = await response.text()
       if (response.status === 429) {
-        const retryMatch = errText.match(/try again in ([^"]+)\./i)
-        const wait = retryMatch ? retryMatch[1] : 'بضع دقائق'
         throw new Error(language === 'ar'
-          ? `تم تجاوز الحد اليومي للطلبات. حاول مرة أخرى بعد ${wait}.`
-          : `Daily request limit reached. Please try again in ${wait}.`)
+          ? 'تم تجاوز الحد المسموح به للطلبات. حاول مرة أخرى بعد دقيقة.'
+          : 'Request limit reached. Please try again in a moment.')
       }
       throw new Error(`DeepSeek error ${response.status}: ${errText}`)
     }
