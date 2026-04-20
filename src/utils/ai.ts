@@ -304,12 +304,19 @@ export const generateReport = async (_answersData: any, chartData: any, language
           { role: 'system', content: systemText },
           { role: 'user',   content: fullPrompt },
         ],
-        max_tokens: 8192,
+        max_tokens: 2500,
       }),
     })
 
     if (!response.ok) {
       const errText = await response.text()
+      if (response.status === 429) {
+        const retryMatch = errText.match(/try again in ([^"]+)\./i)
+        const wait = retryMatch ? retryMatch[1] : 'بضع دقائق'
+        throw new Error(language === 'ar'
+          ? `تم تجاوز الحد اليومي للطلبات. حاول مرة أخرى بعد ${wait}.`
+          : `Daily request limit reached. Please try again in ${wait}.`)
+      }
       throw new Error(`DeepSeek error ${response.status}: ${errText}`)
     }
 
