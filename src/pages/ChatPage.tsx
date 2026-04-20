@@ -118,11 +118,13 @@ function ChatPage() {
     if (chatIdFromUrl && chatIdFromUrl !== currentConversationId) {
       console.log('Restoring conversation from URL:', chatIdFromUrl)
       setCurrentConversationId(chatIdFromUrl)
-      
-      // Clear the chatId from URL to keep it clean
-      navigate('/chat')
+
+      // Remove chatId from URL without triggering re-render
+      const url = new URL(window.location.href)
+      url.searchParams.delete('chatId')
+      window.history.replaceState({}, '', url.toString())
     }
-  }, [chatIdFromUrl, currentConversationId, setCurrentConversationId, navigate])
+  }, [chatIdFromUrl, currentConversationId, setCurrentConversationId])
 
   // Memoize messages to prevent unnecessary re-renders
   const messages = useMemo(
