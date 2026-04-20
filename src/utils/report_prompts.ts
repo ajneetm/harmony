@@ -22,6 +22,8 @@ export const report_AR_prompt = `
 ## التجانس بين الأبعاد
 بلغت درجة التجانس بين البعد الذهني والبعد المشاعري والبعد السلوكي [harmony_percentage]%، وهي [تفسير درجة التجانس وفق الجدول أدناه].
 
+[قاعدة التجانس الفعلي: إذا كان هناك تباعد ملحوظ بين درجات الأبعاد الثلاثة (ذهني، مشاعري، سلوكي) داخل الوظائف الأقوى أو الأضعف — أي أن بُعدًا واحدًا يهيمن بوضوح بينما يتراجع الآخران — فلا يمكن اعتبار النتائج متجانسة حتى لو بلغت نسبة التجانس الحسابية قيمةً مرتفعة. في هذه الحالة أشر إلى هذا التفاوت في الفقرة بوضوح وبأسلوب مهني.]
+
 ## ما الذي يقود الشخص؟
 [فقرة توضح البُعد الأكثر حضورًا وأثره على طريقة استجابة المشارك. لا تذكر اسم البعد صراحةً، بل استخدم وصفًا يعكسه:
   - الذهني → "التفكير والتحليل"
@@ -65,6 +67,14 @@ export const report_AR_prompt = `
 ## الخلاصة
 [فقرة ختامية تربط المستوى العام بالتجانس بين الأبعاد، وتذكر نقاط القوة الثلاث وجوانب التطوير الثلاثة بأسلوب إنساني ودافئ، مع دعوة للتواصل والبناء على هذه النتائج.]
 
+## التوصيات
+
+**الأهداف التطويرية:**
+[اذكر 3 أهداف واضحة وقابلة للتطبيق يجب أن يعمل عليها المشارك لتحسين درجة التجانس بين أبعاده، مستنبطةً من نقاط الضعف المحددة في التقرير. اكتب كل هدف في سطر مستقل بأسلوب عملي وتحفيزي.]
+
+**الدورات والاستشارات الموصى بها:**
+[اقترح ما لا يقل عن 3 دورات تدريبية أو استشارات متخصصة تتناسب مع جوانب التطوير المحددة لهذا المشارك تحديدًا. لكل مقترح: اذكر اسم الدورة أو نوع الاستشارة، وسبب توصيتك بها في جملة واحدة.]
+
 ---
 
 📊 **جداول التفسير**:
@@ -95,6 +105,8 @@ export const report_AR_prompt = `
 - اكتب بلغة إنسانية دافئة ومهنية
 - الوظائف تُؤخذ من: top_3_functions (الأقوى) و bottom_3_functions (الأضعف)
 - لا تشرح النموذج أو تذكر "نموذج الهارموني" في نص التقرير
+- إذا كان balance_gap أكبر من 20 نقطة، أشر صراحةً في قسم التجانس إلى عدم الاتساق حتى لو كانت harmony_percentage مرتفعة
+- لا تقل التوصيات عن 3 أهداف و3 دورات أو استشارات
 
 ---
 
@@ -127,6 +139,8 @@ The participant's overall level reached [overall_percentage]%, indicating [level
 
 ## Coherence Between Dimensions
 The coherence score between the Mental, Emotional, and Existential dimensions reached [harmony_percentage]%, which is [harmony interpretation from table below].
+
+[Coherence rule: If there is a notable gap between the three dimension scores (Mental, Emotional, Existential) within the top or bottom functions — meaning one dimension clearly dominates while the others fall behind — the results cannot be considered truly coherent even if the calculated harmony percentage is high. In this case, clearly note this imbalance in a professional tone.]
 
 ## What Drives This Person?
 [A paragraph clarifying the most dominant dimension and its effect on how the participant responds. Do not name the dimension explicitly — use descriptive phrasing that reflects it:
@@ -171,6 +185,14 @@ It also suggests [...]
 ## Summary
 [A closing paragraph connecting the overall level with the coherence between dimensions, mentioning the three strengths and the three development areas in a warm, human tone, with an invitation to build on these findings.]
 
+## Recommendations
+
+**Development Goals:**
+[List 3 clear, actionable goals the participant should work on to improve their dimensional coherence, derived specifically from the weaknesses identified in this report. Write each goal on a separate line in a practical and motivating tone.]
+
+**Recommended Courses & Consultations:**
+[Suggest at least 3 training courses or specialized consultations that match this participant's specific development areas. For each: state the course name or consultation type, and briefly explain why it is recommended in one sentence.]
+
 ---
 
 📊 **Interpretation Tables**:
@@ -201,6 +223,8 @@ Coherence Score:
 - Write in warm, professional, human-centered language
 - Functions are taken from: top_3_functions (strongest) and bottom_3_functions (weakest)
 - Do not explain the model or mention "Harmony Model" in the report text
+- If balance_gap is greater than 20 points, explicitly note the incoherence in the coherence section even if harmony_percentage appears high
+- Recommendations must include at least 3 goals and at least 3 courses or consultations
 
 ---
 
