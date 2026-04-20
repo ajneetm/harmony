@@ -93,7 +93,7 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
 
   // Function names per language (9 functions total)
   const functionNames = language === 'ar'
-    ? ['الإدراك', 'الجاهزية', 'النية', 'الفعل', 'التفاعل', 'الاستجابة', 'الاستقبال', 'التطور', 'الأثر']
+    ? ['الإدراك', 'الجاهزية', 'النية', 'الفعل', 'التفاعل', 'الاستجابة', 'الاستقبال', 'التطور', 'التشكل']
     : ['Perception', 'Readiness', 'Intention', 'Action', 'Interaction', 'Response', 'Reception', 'Evolution', 'Effect']
 
   // Each function has 3 indicators: answers[i*3]=Mental, [i*3+1]=Emotional, [i*3+2]=Behavioral
