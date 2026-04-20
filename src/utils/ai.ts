@@ -42,12 +42,19 @@ const buildMessages = (
   return result
 }
 
-const gemini = (body: object): Promise<Response> =>
-  fetch(API_BASE, {
+const gemini = async (body: object, retries = 3): Promise<Response> => {
+  const opts: RequestInit = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
     body: JSON.stringify({ ...body, model: API_MODEL }),
-  })
+  }
+  for (let i = 0; i < retries; i++) {
+    const res = await fetch(API_BASE, opts)
+    if (res.status !== 429) return res
+    await new Promise(r => setTimeout(r, (i + 1) * 10000)) // 10s, 20s, 30s
+  }
+  return fetch(API_BASE, opts)
+}
 
 // ─── Streaming ───────────────────────────────────────────────────────────────
 export const genAIResponseStream = async (
