@@ -144,7 +144,7 @@ export default function HeroSection() {
 
           {/* User + Language — second in DOM = appears at end side (left in AR, right in EN) */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button className="p-2 bg-red-600 rounded-full shadow-lg shadow-red-600/20">
+            <button onClick={() => (window as any).navigateTo('/auth')} className="p-2 bg-red-600 rounded-full shadow-lg shadow-red-600/20">
               <User size={16} className="text-white" />
             </button>
             <LangDropdown isOpen={isDesktopLangOpen} setOpen={setIsDesktopLangOpen} refProp={desktopLangRef} />
@@ -166,7 +166,7 @@ export default function HeroSection() {
                 ? <X size={22} className="text-red-500" />
                 : <Menu size={22} className="text-red-500" />}
             </button>
-            <button className="p-2 bg-red-600 rounded-full shadow-lg shadow-red-600/20">
+            <button onClick={() => (window as any).navigateTo('/auth')} className="p-2 bg-red-600 rounded-full shadow-lg shadow-red-600/20">
               <User size={16} className="text-white" />
             </button>
           </div>

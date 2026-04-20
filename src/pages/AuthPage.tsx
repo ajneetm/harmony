@@ -80,7 +80,7 @@ export default function AuthPage() {
     if (mode === 'login') {
       const { error } = await signIn(email, password)
       if (error) setError(error)
-      else (window as any).navigateTo('/chat')
+      else (window as any).navigateTo('/dashboard')
     } else {
       const { error } = await signUp(email, password, name)
       if (error) setError(error)

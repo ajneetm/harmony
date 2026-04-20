@@ -5,6 +5,7 @@ import HeroSection from './pages/HeroSection'
 import ChatPage from './pages/ChatPage'
 import ReportPage from './pages/ReportPage'
 import AuthPage from './pages/AuthPage'
+import DashboardPage from './pages/DashboardPage'
 import NotFound from './pages/NotFound'
 import { FontProvider } from './components'
 import { getFontCSSProperties } from './utils/fonts'
@@ -65,17 +66,18 @@ function AppRouter({ currentPath }: { currentPath: string }) {
   }
 
   // Protected routes
-  if ((currentPath === '/chat' || currentPath === '/report') && !user) {
+  if ((currentPath === '/chat' || currentPath === '/report' || currentPath === '/dashboard') && !user) {
     ;(window as any).navigateTo('/auth')
     return null
   }
 
   switch (currentPath) {
-    case '/':      return <HeroSection />
-    case '/chat':  return <ChatPage />
-    case '/report':return <ReportPage />
-    case '/auth':  return user ? ((() => { (window as any).navigateTo('/chat'); return null })()) : <AuthPage />
-    default:       return <NotFound />
+    case '/':           return <HeroSection />
+    case '/chat':       return <ChatPage />
+    case '/report':     return <ReportPage />
+    case '/dashboard':  return <DashboardPage />
+    case '/auth':       return user ? ((() => { (window as any).navigateTo('/dashboard'); return null })()) : <AuthPage />
+    default:            return <NotFound />
   }
 }
 
@@ -88,9 +90,10 @@ const App = () => {
       const params = new URLSearchParams(window.location.search)
       const page = params.get('page')
       
-      if (page === 'chat')   return '/chat'
-      if (page === 'report') return '/report'
-      if (page === 'auth')   return '/auth'
+      if (page === 'chat')      return '/chat'
+      if (page === 'report')    return '/report'
+      if (page === 'auth')      return '/auth'
+      if (page === 'dashboard') return '/dashboard'
       return '/'
     }
     

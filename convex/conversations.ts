@@ -1,14 +1,22 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-// Get all conversations
 export const list = query({
   handler: async (ctx) => {
     return await ctx.db.query("conversations").collect();
   },
 });
 
-// Get a specific conversation
+export const listByUser = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("conversations")
+      .withIndex("by_user", q => q.eq("userId", args.userId))
+      .collect();
+  },
+});
+
 export const get = query({
   args: { id: v.id("conversations") },
   handler: async (ctx, args) => {
@@ -16,10 +24,10 @@ export const get = query({
   },
 });
 
-// Create a new conversation
 export const create = mutation({
   args: {
     title: v.string(),
+    userId: v.optional(v.string()),
     messages: v.optional(
       v.array(
         v.object({
@@ -33,23 +41,19 @@ export const create = mutation({
   handler: async (ctx, args) => {
     return await ctx.db.insert("conversations", {
       title: args.title,
+      userId: args.userId,
       messages: args.messages || [],
     });
   },
 });
 
-// Update conversation title
 export const updateTitle = mutation({
-  args: {
-    id: v.id("conversations"),
-    title: v.string(),
-  },
+  args: { id: v.id("conversations"), title: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db.patch(args.id, { title: args.title });
   },
 });
 
-// Add a message to a conversation
 export const addMessage = mutation({
   args: {
     conversationId: v.id("conversations"),
@@ -61,18 +65,13 @@ export const addMessage = mutation({
   },
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
-    if (!conversation) {
-      throw new Error("Conversation not found");
-    }
-    
-    const updatedMessages = [...conversation.messages, args.message];
-    return await ctx.db.patch(args.conversationId, { 
-      messages: updatedMessages 
+    if (!conversation) throw new Error("Conversation not found");
+    return await ctx.db.patch(args.conversationId, {
+      messages: [...conversation.messages, args.message],
     });
   },
 });
 
-// Delete a conversation
 export const remove = mutation({
   args: { id: v.id("conversations") },
   handler: async (ctx, args) => {

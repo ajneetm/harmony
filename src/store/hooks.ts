@@ -6,6 +6,7 @@ import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import type { Message } from '../utils/ai';
 import { useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 // Check if Convex URL is provided
 const isConvexAvailable = Boolean(import.meta.env.VITE_CONVEX_URL);
@@ -66,6 +67,9 @@ export function useAppState() {
 
 // Hook for Convex integration with fallback to local state
 export function useConversations() {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
   // Local state for UI reactivity
   const conversations = useStore(store, s => selectors.getConversations(s));
   const currentConversationId = useStore(store, s => selectors.getCurrentConversationId(s));
@@ -162,6 +166,7 @@ export function useConversations() {
           const convexId = await createConversation({
             title,
             messages: [],
+            ...(userId ? { userId } : {}),
           });
           
           // Update the local conversation with the Convex ID

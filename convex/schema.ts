@@ -4,6 +4,7 @@ import { v } from "convex/values";
 export default defineSchema({
   conversations: defineTable({
     title: v.string(),
+    userId: v.optional(v.string()),
     messages: v.array(
       v.object({
         id: v.string(),
@@ -11,5 +12,5 @@ export default defineSchema({
         content: v.string(),
       })
     ),
-  }),
+  }).index("by_user", ["userId"]),
 });
