@@ -79,7 +79,13 @@ export default function ReportPage() {
   
   const navigate = (path: string) => {
     if (typeof window !== 'undefined' && (window as any).navigateTo) {
-      (window as any).navigateTo(path);
+      // Extract chatId if present in path and store in sessionStorage
+      const match = path.match(/[?&]chatId=([^&]+)/)
+      if (match) {
+        sessionStorage.setItem('restoreChatId', decodeURIComponent(match[1]))
+        path = path.split('?')[0]
+      }
+      (window as any).navigateTo(path)
     }
   }
 

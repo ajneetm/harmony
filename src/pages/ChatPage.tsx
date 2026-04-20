@@ -29,9 +29,9 @@ function ChatPage() {
       (window as any).navigateTo(path);
     }
   }
-  // Get chatId from URL query parameters (for hash router, this works differently)
+  // Get chatId from URL or sessionStorage
   const urlParams = new URLSearchParams(window.location.search)
-  const chatIdFromUrl = urlParams.get('chatId')
+  const chatIdFromUrl = urlParams.get('chatId') || sessionStorage.getItem('restoreChatId')
   
   const {
     conversations,
@@ -119,7 +119,8 @@ function ChatPage() {
       console.log('Restoring conversation from URL:', chatIdFromUrl)
       setCurrentConversationId(chatIdFromUrl)
 
-      // Remove chatId from URL without triggering re-render
+      // Clear chatId from URL and sessionStorage
+      sessionStorage.removeItem('restoreChatId')
       const url = new URL(window.location.href)
       url.searchParams.delete('chatId')
       window.history.replaceState({}, '', url.toString())
