@@ -32,7 +32,7 @@ const cleanArabicReport = (text: string): string => {
 // ─── Groq config ──────────────────────────────────────────────────────────────
 const DEEPSEEK_API_KEY = import.meta.env.VITE_GROQ_API_KEY as string
 const DEEPSEEK_BASE    = 'https://api.groq.com/openai/v1/chat/completions'
-const DEEPSEEK_MODEL   = 'llama-3.3-70b-versatile'
+const DEEPSEEK_MODEL   = 'mistral-saba-24b'
 
 type DSMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
