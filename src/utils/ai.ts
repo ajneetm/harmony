@@ -53,6 +53,19 @@ const buildMessages = (
   return result
 }
 
+// ─── Retry helper ────────────────────────────────────────────────────────────
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+const fetchWithRetry = async (url: string, options: RequestInit, retries = 3): Promise<Response> => {
+  for (let i = 0; i < retries; i++) {
+    const res = await fetch(url, options)
+    if (res.status !== 429) return res
+    const delay = (i + 1) * 15000 // 15s, 30s, 45s
+    await sleep(delay)
+  }
+  return fetch(url, options)
+}
+
 // ─── Streaming ───────────────────────────────────────────────────────────────
 export const genAIResponseStream = async (
   data: {
@@ -125,7 +138,7 @@ export const genAIResponse = async (data: {
   messages: Message[]
   systemPrompt?: { value: string; enabled: boolean }
 }) => {
-  const response = await fetch(DEEPSEEK_BASE, {
+  const response = await fetchWithRetry(DEEPSEEK_BASE, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -193,7 +206,7 @@ Only return the complete JSON object, do not return any commands, comments, or a
       ? 'أنت خبير في نموذج هارموني. قم بإنشاء 27 سؤالاً بالضبط. أرجع JSON فقط مع حقلي "problem" و "questions".'
       : 'You are a Harmony model expert. Generate exactly 27 questions. Return valid JSON only with "problem" and "questions" fields.'
 
-    const response = await fetch(DEEPSEEK_BASE, {
+    const response = await fetchWithRetry(DEEPSEEK_BASE, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -292,7 +305,7 @@ export const generateReport = async (_answersData: any, chartData: any, language
       ? 'أنت خبير في نموذج هارموني. قم بكتابة تقرير نفسي موجز وإنساني باللغة العربية الفصحى حصراً بناءً على إجابات الاستبيان المقدمة. ممنوع منعاً باتاً استخدام أي كلمات أو أحرف من لغات أخرى غير العربية.'
       : 'You are a Harmony model expert. Write a brief and humane psychological report in English based on the provided questionnaire answers. Use only English words and characters.'
 
-    const response = await fetch(DEEPSEEK_BASE, {
+    const response = await fetchWithRetry(DEEPSEEK_BASE, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
