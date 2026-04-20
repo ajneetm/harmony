@@ -8,9 +8,9 @@ export interface Message {
 }
 
 // ─── DeepSeek config ──────────────────────────────────────────────────────────
-const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY as string
-const DEEPSEEK_BASE    = 'https://api.deepseek.com/chat/completions'
-const DEEPSEEK_MODEL   = 'deepseek-chat'
+const DEEPSEEK_API_KEY = import.meta.env.VITE_GROQ_API_KEY as string
+const DEEPSEEK_BASE    = 'https://api.groq.com/openai/v1/chat/completions'
+const DEEPSEEK_MODEL   = 'llama-3.3-70b-versatile'
 
 type DSMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
