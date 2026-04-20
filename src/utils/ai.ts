@@ -1,3 +1,5 @@
+import { GoogleGenerativeAI } from '@google/generative-ai'
+
 export interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -21,40 +23,21 @@ const cleanArabicReport = (text: string): string => {
   return text.trim()
 }
 
-// ─── Gemini config ────────────────────────────────────────────────────────────
-const API_KEY   = import.meta.env.VITE_GEMINI_API_KEY as string
-const API_BASE  = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
-const API_MODEL = 'gemini-2.0-flash'
+// ─── Gemini client ────────────────────────────────────────────────────────────
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as string)
+const MODEL  = 'gemini-2.0-flash'
 
-type DSMessage = { role: 'system' | 'user' | 'assistant'; content: string }
+const getModel = (systemInstruction?: string) =>
+  genAI.getGenerativeModel({ model: MODEL, ...(systemInstruction ? { systemInstruction } : {}) })
 
-const buildMessages = (
-  messages: Message[],
-  systemPrompt?: { value: string; enabled: boolean }
-): DSMessage[] => {
-  const result: DSMessage[] = []
-  if (systemPrompt?.enabled && systemPrompt.value) {
-    result.push({ role: 'system', content: systemPrompt.value })
-  }
+// Convert our Message[] to Gemini content format
+const toGeminiContents = (messages: Message[]) =>
   messages
     .filter(m => !m.isTyping && !m.isInitialInstruction && !m.isLoadingQuestionnaire)
-    .forEach(m => result.push({ role: m.role, content: m.content }))
-  return result
-}
-
-const gemini = async (body: object, retries = 3): Promise<Response> => {
-  const opts: RequestInit = {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}`, 'x-goog-api-key': API_KEY },
-    body: JSON.stringify({ ...body, model: API_MODEL }),
-  }
-  for (let i = 0; i < retries; i++) {
-    const res = await fetch(API_BASE, opts)
-    if (res.status !== 429) return res
-    await new Promise(r => setTimeout(r, (i + 1) * 10000)) // 10s, 20s, 30s
-  }
-  return fetch(API_BASE, opts)
-}
+    .map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }))
 
 // ─── Streaming ───────────────────────────────────────────────────────────────
 export const genAIResponseStream = async (
@@ -67,52 +50,22 @@ export const genAIResponseStream = async (
   onError: (error: string) => void,
   abortController?: AbortController
 ) => {
-  const controller = abortController || new AbortController()
   try {
-    const response = await fetch(API_BASE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}`, 'x-goog-api-key': API_KEY },
-      body: JSON.stringify({
-        model: API_MODEL,
-        messages: buildMessages(data.messages, data.systemPrompt),
-        stream: true,
-        max_tokens: 2000,
-      }),
-      signal: controller.signal,
-    })
+    const systemInstruction = data.systemPrompt?.enabled ? data.systemPrompt.value : undefined
+    const model    = getModel(systemInstruction)
+    const contents = toGeminiContents(data.messages)
 
-    if (!response.ok) {
-      const errText = await response.text()
-      throw new Error(`Gemini error ${response.status}: ${errText}`)
+    const result = await model.generateContentStream({ contents })
+
+    for await (const chunk of result.stream) {
+      if (abortController?.signal.aborted) break
+      const text = chunk.text()
+      if (text) onChunk(text)
     }
 
-    if (!response.body) throw new Error('No response body')
-
-    const reader  = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) { onComplete(); break }
-
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() ?? ''
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue
-        const jsonStr = line.slice(6).trim()
-        if (!jsonStr || jsonStr === '[DONE]') continue
-        try {
-          const parsed = JSON.parse(jsonStr)
-          const text = parsed?.choices?.[0]?.delta?.content
-          if (text) onChunk(text)
-        } catch { /* skip malformed chunk */ }
-      }
-    }
+    onComplete()
   } catch (error: any) {
-    if (error.name === 'AbortError') {
+    if (abortController?.signal.aborted) {
       onError('Streaming stopped by user.')
     } else {
       onError(error instanceof Error ? error.message : 'An unknown error occurred.')
@@ -125,18 +78,13 @@ export const genAIResponse = async (data: {
   messages: Message[]
   systemPrompt?: { value: string; enabled: boolean }
 }) => {
-  const response = await gemini({
-    messages: buildMessages(data.messages, data.systemPrompt),
-    max_tokens: 1500,
-  })
+  const systemInstruction = data.systemPrompt?.enabled ? data.systemPrompt.value : undefined
+  const model    = getModel(systemInstruction)
+  const contents = toGeminiContents(data.messages)
 
-  if (!response.ok) {
-    const errText = await response.text()
-    throw new Error(`Gemini error ${response.status}: ${errText}`)
-  }
-
-  const json = await response.json()
-  return { success: true, content: json?.choices?.[0]?.message?.content ?? '' }
+  const result = await model.generateContent({ contents })
+  const content = result.response.text()
+  return { success: true, content }
 }
 
 // ─── Generate questionnaire questions ────────────────────────────────────────
@@ -181,28 +129,18 @@ The output should be a complete JSON object in the following format:
 
 Only return the complete JSON object, do not return any commands, comments, or anything else.`
 
-    const systemText = language === 'ar'
+    const systemInstruction = language === 'ar'
       ? 'أنت خبير في نموذج هارموني. قم بإنشاء 27 سؤالاً بالضبط. أرجع JSON فقط مع حقلي "problem" و "questions".'
       : 'You are a Harmony model expert. Generate exactly 27 questions. Return valid JSON only with "problem" and "questions" fields.'
 
-    const response = await gemini({
-      messages: [
-        { role: 'system', content: systemText },
-        { role: 'user',   content: combinedPrompt },
-      ],
-      max_tokens: 4000,
-      response_format: { type: 'json_object' },
+    const model  = getModel(systemInstruction)
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
+      generationConfig: { responseMimeType: 'application/json' },
     })
 
-    if (!response.ok) {
-      const errText = await response.text()
-      throw new Error(`Gemini error ${response.status}: ${errText}`)
-    }
-
-    const json    = await response.json()
-    let   content = json?.choices?.[0]?.message?.content ?? ''
-
-    content = content.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '')
+    let content = result.response.text().trim()
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '')
     const jsonMatch = content.match(/\{[\s\S]*\}/)
     if (jsonMatch) content = jsonMatch[0]
 
@@ -272,30 +210,17 @@ export const generateReport = async (_answersData: any, chartData: any, language
 
     const fullPrompt = reportPrompt.replace('{CHART_DATA_PLACEHOLDER}', chartDataText)
 
-    const systemText = language === 'ar'
+    const systemInstruction = language === 'ar'
       ? 'أنت خبير في نموذج هارموني. قم بكتابة تقرير نفسي موجز وإنساني باللغة العربية الفصحى حصراً بناءً على إجابات الاستبيان المقدمة. ممنوع منعاً باتاً استخدام أي كلمات أو أحرف من لغات أخرى غير العربية.'
       : 'You are a Harmony model expert. Write a brief and humane psychological report in English based on the provided questionnaire answers. Use only English words and characters.'
 
-    const response = await gemini({
-      messages: [
-        { role: 'system', content: systemText },
-        { role: 'user',   content: fullPrompt },
-      ],
-      max_tokens: 2500,
+    const model  = getModel(systemInstruction)
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+      generationConfig: { maxOutputTokens: 2500 },
     })
 
-    if (!response.ok) {
-      const errText = await response.text()
-      if (response.status === 429) {
-        throw new Error(language === 'ar'
-          ? 'تم تجاوز الحد المسموح به للطلبات. حاول مرة أخرى بعد دقيقة.'
-          : 'Request limit reached. Please try again in a moment.')
-      }
-      throw new Error(`Gemini error ${response.status}: ${errText}`)
-    }
-
-    const json    = await response.json()
-    let   content = json?.choices?.[0]?.message?.content ?? ''
+    let content = result.response.text()
     if (!content?.trim()) throw new Error('Empty AI response received')
 
     if (language === 'ar') content = cleanArabicReport(content)
