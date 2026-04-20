@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { LogOut, MessageSquare, Globe, ChevronDown, Trash2 } from 'lucide-react'
-import { useQuery, useMutation } from 'convex/react'
-import { api } from '../../convex/_generated/api'
-import type { Id } from '../../convex/_generated/dataModel'
 import { useAuth } from '../context/AuthContext'
-import { useAppState } from '../store'
+import { useAppState, useConversations } from '../store'
 import { getFontCSSProperties } from '../utils/fonts'
 
 const t = {
@@ -37,19 +34,13 @@ const t = {
 }
 
 export default function DashboardPage() {
-  const { user, signOut }         = useAuth()
-  const { language, setLanguage } = useAppState()
-  const [langOpen, setLangOpen]   = useState(false)
-  const langRef                   = useRef<HTMLDivElement>(null)
-  const tr                        = t[language]
-  const isAr                      = language === 'ar'
-
-  const conversations = useQuery(
-    api.conversations.listByUser,
-    { userId: user?.id ?? '' }
-  ) ?? []
-
-  const removeConversation = useMutation(api.conversations.remove)
+  const { user, signOut }               = useAuth()
+  const { language, setLanguage }       = useAppState()
+  const { conversations, deleteConversation } = useConversations()
+  const [langOpen, setLangOpen]         = useState(false)
+  const langRef                         = useRef<HTMLDivElement>(null)
+  const tr                              = t[language]
+  const isAr                            = language === 'ar'
 
   useEffect(() => {
     document.documentElement.dir  = isAr ? 'rtl' : 'ltr'
@@ -78,7 +69,7 @@ export default function DashboardPage() {
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
-    await removeConversation({ id: id as Id<'conversations'> })
+    await deleteConversation(id)
   }
 
   return (
@@ -176,8 +167,8 @@ export default function DashboardPage() {
             <div className="space-y-2">
               {[...conversations].reverse().map(conv => (
                 <div
-                  key={conv._id}
-                  onClick={() => openConversation(conv._id)}
+                  key={conv.id}
+                  onClick={() => openConversation(conv.id)}
                   className="bg-[#0f0f0f] border border-white/5 hover:border-red-600/30 rounded-xl px-4 py-3.5 flex items-center gap-3 cursor-pointer transition group"
                 >
                   <div className="w-8 h-8 rounded-lg bg-red-600/10 border border-red-600/20 flex items-center justify-center flex-shrink-0">
@@ -189,7 +180,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
                     <button
-                      onClick={e => handleDelete(e, conv._id)}
+                      onClick={e => handleDelete(e, conv.id)}
                       className="p-1.5 rounded-lg hover:bg-red-600/20 text-gray-600 hover:text-red-400 transition"
                     >
                       <Trash2 size={13} />
