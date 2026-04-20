@@ -26,7 +26,24 @@ const cleanArabicReport = (text: string): string => {
 
 // ─── Gemini client ────────────────────────────────────────────────────────────
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as string)
-const MODEL  = 'gemini-2.0-flash'
+const MODEL  = 'gemini-2.0-flash-lite'
+
+// Retry once on 429 using the retryDelay the API suggests
+const withRetry = async <T>(fn: () => Promise<T>): Promise<T> => {
+  try {
+    return await fn()
+  } catch (err: any) {
+    const msg: string = err?.message ?? ''
+    const match = msg.match(/"retryDelay":"(\d+)s"/)
+    const delaySec = match ? parseInt(match[1], 10) + 2 : 30
+    if (msg.includes('429')) {
+      console.warn(`Rate limited — retrying in ${delaySec}s…`)
+      await new Promise(r => setTimeout(r, delaySec * 1000))
+      return await fn()
+    }
+    throw err
+  }
+}
 
 // Convert our Message[] → Gemini history format (excludes last message)
 const toHistory = (messages: Message[]): Content[] =>
@@ -155,10 +172,10 @@ Only return the complete JSON object, do not return any commands, comments, or a
       : 'You are a Harmony model expert. Generate exactly 27 questions. Return valid JSON only with "problem" and "questions" fields.'
 
     const model  = genAI.getGenerativeModel({ model: MODEL, systemInstruction })
-    const result = await model.generateContent({
+    const result = await withRetry(() => model.generateContent({
       contents:         [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: { responseMimeType: 'application/json' },
-    })
+    }))
 
     let content = result.response.text().trim()
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '')
@@ -234,10 +251,10 @@ export const generateReport = async (_answersData: any, chartData: any, language
       : 'You are a Harmony model expert. Write a brief and humane psychological report in English only.'
 
     const model  = genAI.getGenerativeModel({ model: MODEL, systemInstruction })
-    const result = await model.generateContent({
+    const result = await withRetry(() => model.generateContent({
       contents:         [{ role: 'user', parts: [{ text: fullPrompt }] }],
       generationConfig: { maxOutputTokens: 2500 },
-    })
+    }))
 
     let content = result.response.text()
     if (!content?.trim()) throw new Error('Empty AI response received')
