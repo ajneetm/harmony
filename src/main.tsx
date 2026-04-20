@@ -37,12 +37,10 @@ if (import.meta.env.VITE_SENTRY_DSN) {
     console.log('Cleared conversation for fresh chat')
   }
   
-  // Update URL with query parameter
-  const url = new URL(window.location.href)
-  if (path === '/') {
-    url.searchParams.delete('page')
-  } else {
-    url.searchParams.set('page', path.substring(1)) // Remove leading slash
+  // Build clean URL — only keep 'page', drop all other params
+  const url = new URL(window.location.origin + window.location.pathname)
+  if (path !== '/') {
+    url.searchParams.set('page', path.substring(1))
   }
   
   console.log('Updating URL to:', url.toString())
