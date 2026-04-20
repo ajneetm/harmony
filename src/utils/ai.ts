@@ -25,7 +25,7 @@ const cleanArabicReport = (text: string): string => {
 
 // ─── Gemini client ────────────────────────────────────────────────────────────
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as string)
-const MODEL  = 'gemini-1.5-flash-latest'
+const MODEL  = 'gemini-1.5-flash'
 
 const getModel = (systemInstruction?: string) =>
   genAI.getGenerativeModel({ model: MODEL, ...(systemInstruction ? { systemInstruction } : {}) })
