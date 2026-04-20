@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { LogOut, MessageSquare, Globe, ChevronDown, User, Trash2 } from 'lucide-react'
+import { LogOut, MessageSquare, Globe, ChevronDown, Trash2 } from 'lucide-react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { useAuth } from '../context/AuthContext'
 import { useAppState } from '../store'
 import { getFontCSSProperties } from '../utils/fonts'
-import { translations } from '../utils/translations'
 
 const t = {
   ar: {
@@ -44,11 +43,10 @@ export default function DashboardPage() {
   const langRef                   = useRef<HTMLDivElement>(null)
   const tr                        = t[language]
   const isAr                      = language === 'ar'
-  const trans                     = translations[language]
 
   const conversations = useQuery(
     api.conversations.listByUser,
-    user ? { userId: user.id } : 'skip'
+    { userId: user?.id ?? '' }
   ) ?? []
 
   const removeConversation = useMutation(api.conversations.remove)
