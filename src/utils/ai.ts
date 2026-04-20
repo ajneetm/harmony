@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import type { Content } from '@google/generative-ai'
 
 export interface Message {
   id: string
@@ -27,11 +28,18 @@ const cleanArabicReport = (text: string): string => {
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as string)
 const MODEL  = 'gemini-1.5-flash'
 
-const getModel = (systemInstruction?: string) =>
-  genAI.getGenerativeModel(
-    { model: MODEL, ...(systemInstruction ? { systemInstruction } : {}) },
-    { apiVersion: 'v1' }
-  )
+const getModel = () =>
+  genAI.getGenerativeModel({ model: MODEL }, { apiVersion: 'v1' })
+
+// v1 doesn't support systemInstruction — prepend it as a user/model exchange
+const withSystem = (systemInstruction: string | undefined, contents: Content[]): Content[] =>
+  systemInstruction
+    ? [
+        { role: 'user',  parts: [{ text: systemInstruction }] },
+        { role: 'model', parts: [{ text: 'مفهوم، سأتبع هذه التعليمات.' }] },
+        ...contents,
+      ]
+    : contents
 
 // Convert our Message[] to Gemini content format
 const toGeminiContents = (messages: Message[]) =>
@@ -55,8 +63,8 @@ export const genAIResponseStream = async (
 ) => {
   try {
     const systemInstruction = data.systemPrompt?.enabled ? data.systemPrompt.value : undefined
-    const model    = getModel(systemInstruction)
-    const contents = toGeminiContents(data.messages)
+    const model    = getModel()
+    const contents = withSystem(systemInstruction, toGeminiContents(data.messages))
 
     const result = await model.generateContentStream({ contents })
 
@@ -82,8 +90,8 @@ export const genAIResponse = async (data: {
   systemPrompt?: { value: string; enabled: boolean }
 }) => {
   const systemInstruction = data.systemPrompt?.enabled ? data.systemPrompt.value : undefined
-  const model    = getModel(systemInstruction)
-  const contents = toGeminiContents(data.messages)
+  const model    = getModel()
+  const contents = withSystem(systemInstruction, toGeminiContents(data.messages))
 
   const result = await model.generateContent({ contents })
   const content = result.response.text()
@@ -136,9 +144,9 @@ Only return the complete JSON object, do not return any commands, comments, or a
       ? 'أنت خبير في نموذج هارموني. قم بإنشاء 27 سؤالاً بالضبط. أرجع JSON فقط مع حقلي "problem" و "questions".'
       : 'You are a Harmony model expert. Generate exactly 27 questions. Return valid JSON only with "problem" and "questions" fields.'
 
-    const model  = getModel(systemInstruction)
+    const model  = getModel()
     const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
+      contents: withSystem(systemInstruction, [{ role: 'user', parts: [{ text: combinedPrompt }] }]),
       generationConfig: { responseMimeType: 'application/json' },
     })
 
@@ -217,9 +225,9 @@ export const generateReport = async (_answersData: any, chartData: any, language
       ? 'أنت خبير في نموذج هارموني. قم بكتابة تقرير نفسي موجز وإنساني باللغة العربية الفصحى حصراً بناءً على إجابات الاستبيان المقدمة. ممنوع منعاً باتاً استخدام أي كلمات أو أحرف من لغات أخرى غير العربية.'
       : 'You are a Harmony model expert. Write a brief and humane psychological report in English based on the provided questionnaire answers. Use only English words and characters.'
 
-    const model  = getModel(systemInstruction)
+    const model  = getModel()
     const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+      contents: withSystem(systemInstruction, [{ role: 'user', parts: [{ text: fullPrompt }] }]),
       generationConfig: { maxOutputTokens: 2500 },
     })
 
