@@ -7,68 +7,34 @@ export interface Message {
   isLoadingQuestionnaire?: boolean
 }
 
-// ─── Gemini config ───────────────────────────────────────────────────────────
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string
-const GEMINI_MODEL   = 'gemini-flash-latest'
-const GEMINI_BASE    = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}`
+// ─── DeepSeek config ──────────────────────────────────────────────────────────
+const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY as string
+const DEEPSEEK_BASE    = 'https://api.deepseek.com/chat/completions'
+const DEEPSEEK_MODEL   = 'deepseek-chat'
 
-// Convert our Message[] + optional system prompt → Gemini request body
-const buildGeminiBody = (
-  messages: Array<Message>,
-  systemPrompt?: { value: string; enabled: boolean },
-  maxTokens = 1500,
-  jsonMode = false
-) => {
-  // Filter out non-conversational messages and map roles
-  const contents = messages
-    .filter(m => !m.isTyping && !m.isInitialInstruction && !m.isLoadingQuestionnaire)
-    .map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }]
-    }))
+type DSMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 
-  // Gemini requires messages to start with 'user' and alternate
-  // Merge consecutive same-role messages
-  const merged: { role: string; parts: { text: string }[] }[] = []
-  for (const msg of contents) {
-    if (merged.length && merged[merged.length - 1].role === msg.role) {
-      merged[merged.length - 1].parts[0].text += '\n' + msg.parts[0].text
-    } else {
-      merged.push({ ...msg, parts: [{ text: msg.parts[0].text }] })
-    }
-  }
-
-  const body: any = {
-    contents: merged,
-    generationConfig: { maxOutputTokens: maxTokens },
-    safetySettings: [
-      { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-    ],
-  }
+const buildMessages = (
+  messages: Message[],
+  systemPrompt?: { value: string; enabled: boolean }
+): DSMessage[] => {
+  const result: DSMessage[] = []
 
   if (systemPrompt?.enabled && systemPrompt.value) {
-    body.systemInstruction = { parts: [{ text: systemPrompt.value }] }
+    result.push({ role: 'system', content: systemPrompt.value })
   }
 
-  if (jsonMode) {
-    body.generationConfig.responseMimeType = 'application/json'
-  }
+  messages
+    .filter(m => !m.isTyping && !m.isInitialInstruction && !m.isLoadingQuestionnaire)
+    .forEach(m => result.push({ role: m.role, content: m.content }))
 
-  return body
-}
-
-// Extract text from a Gemini non-streaming response JSON
-const extractGeminiText = (json: any): string => {
-  return json?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+  return result
 }
 
 // ─── Streaming ───────────────────────────────────────────────────────────────
 export const genAIResponseStream = async (
   data: {
-    messages: Array<Message>
+    messages: Message[]
     systemPrompt?: { value: string; enabled: boolean }
   },
   onChunk: (chunk: string) => void,
@@ -78,19 +44,24 @@ export const genAIResponseStream = async (
 ) => {
   const controller = abortController || new AbortController()
   try {
-    const url = `${GEMINI_BASE}:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`
-    const body = buildGeminiBody(data.messages, data.systemPrompt, 2000)
-
-    const response = await fetch(url, {
+    const response = await fetch(DEEPSEEK_BASE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: controller.signal
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
+        messages: buildMessages(data.messages, data.systemPrompt),
+        stream: true,
+        max_tokens: 2000,
+      }),
+      signal: controller.signal,
     })
 
     if (!response.ok) {
       const errText = await response.text()
-      throw new Error(`Gemini error ${response.status}: ${errText}`)
+      throw new Error(`DeepSeek error ${response.status}: ${errText}`)
     }
 
     if (!response.body) throw new Error('No response body')
@@ -105,7 +76,7 @@ export const genAIResponseStream = async (
 
       buffer += decoder.decode(value, { stream: true })
       const lines = buffer.split('\n')
-      buffer = lines.pop() ?? ''   // keep incomplete line
+      buffer = lines.pop() ?? ''
 
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue
@@ -113,7 +84,7 @@ export const genAIResponseStream = async (
         if (!jsonStr || jsonStr === '[DONE]') continue
         try {
           const parsed = JSON.parse(jsonStr)
-          const text = extractGeminiText(parsed)
+          const text = parsed?.choices?.[0]?.delta?.content
           if (text) onChunk(text)
         } catch { /* skip malformed chunk */ }
       }
@@ -127,27 +98,31 @@ export const genAIResponseStream = async (
   }
 }
 
-// ─── Non-streaming (fallback / internal use) ─────────────────────────────────
+// ─── Non-streaming ────────────────────────────────────────────────────────────
 export const genAIResponse = async (data: {
-  messages: Array<Message>
+  messages: Message[]
   systemPrompt?: { value: string; enabled: boolean }
 }) => {
-  const url = `${GEMINI_BASE}:generateContent?key=${GEMINI_API_KEY}`
-  const body = buildGeminiBody(data.messages, data.systemPrompt)
-
-  const response = await fetch(url, {
+  const response = await fetch(DEEPSEEK_BASE, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: DEEPSEEK_MODEL,
+      messages: buildMessages(data.messages, data.systemPrompt),
+      max_tokens: 1500,
+    }),
   })
 
   if (!response.ok) {
     const errText = await response.text()
-    throw new Error(`Gemini error ${response.status}: ${errText}`)
+    throw new Error(`DeepSeek error ${response.status}: ${errText}`)
   }
 
   const json = await response.json()
-  return { success: true, content: extractGeminiText(json) }
+  return { success: true, content: json?.choices?.[0]?.message?.content ?? '' }
 }
 
 // ─── Generate questionnaire questions ────────────────────────────────────────
@@ -196,29 +171,31 @@ Only return the complete JSON object, do not return any commands, comments, or a
       ? 'أنت خبير في نموذج هارموني. قم بإنشاء 27 سؤالاً بالضبط. أرجع JSON فقط مع حقلي "problem" و "questions".'
       : 'You are a Harmony model expert. Generate exactly 27 questions. Return valid JSON only with "problem" and "questions" fields.'
 
-    const url  = `${GEMINI_BASE}:generateContent?key=${GEMINI_API_KEY}`
-    const body = buildGeminiBody(
-      [{ id: '1', role: 'user', content: combinedPrompt }],
-      { value: systemText, enabled: true },
-      4000,
-      true  // JSON mode
-    )
-
-    const response = await fetch(url, {
+    const response = await fetch(DEEPSEEK_BASE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
+        messages: [
+          { role: 'system', content: systemText },
+          { role: 'user',   content: combinedPrompt },
+        ],
+        max_tokens: 4000,
+        response_format: { type: 'json_object' },
+      }),
     })
 
     if (!response.ok) {
       const errText = await response.text()
-      throw new Error(`Gemini error ${response.status}: ${errText}`)
+      throw new Error(`DeepSeek error ${response.status}: ${errText}`)
     }
 
     const json    = await response.json()
-    let   content = extractGeminiText(json)
+    let   content = json?.choices?.[0]?.message?.content ?? ''
 
-    // Clean any markdown wrapping
     content = content.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '')
     const jsonMatch = content.match(/\{[\s\S]*\}/)
     if (jsonMatch) content = jsonMatch[0]
@@ -240,7 +217,7 @@ Only return the complete JSON object, do not return any commands, comments, or a
 }
 
 // ─── Generate report ──────────────────────────────────────────────────────────
-export const generateReport = async (answersData: any, chartData: any, language: 'ar' | 'en' = 'ar') => {
+export const generateReport = async (_answersData: any, chartData: any, language: 'ar' | 'en' = 'ar') => {
   try {
     const { getReportPrompt } = await import('./report_prompts')
     const reportPrompt = getReportPrompt(language)
@@ -248,9 +225,9 @@ export const generateReport = async (answersData: any, chartData: any, language:
     const { mental, emotional, existential, harmony, overall, allElements } = chartData
 
     const dimensionData = [
-      { key: 'mental',     value: mental.percentage,     label_ar: 'الذهني',    label_en: 'Mental',     desc_ar: 'جانب التفكير والتحليل',           desc_en: 'the side of thinking and analysis' },
-      { key: 'emotional',  value: emotional.percentage,  label_ar: 'المشاعري',  label_en: 'Emotional',  desc_ar: 'جانب المشاعر والتفاعل الداخلي',   desc_en: 'the side of emotions and inner interaction' },
-      { key: 'existential',value: existential.percentage,label_ar: 'السلوكي',   label_en: 'Existential',desc_ar: 'جانب الهوية والتشكل الداخلي',      desc_en: 'the side of identity and inner formation' },
+      { key: 'mental',      value: mental.percentage,      label_ar: 'الذهني',   label_en: 'Mental',      desc_ar: 'جانب التفكير والتحليل',          desc_en: 'the side of thinking and analysis' },
+      { key: 'emotional',   value: emotional.percentage,   label_ar: 'المشاعري', label_en: 'Emotional',   desc_ar: 'جانب المشاعر والتفاعل الداخلي',  desc_en: 'the side of emotions and inner interaction' },
+      { key: 'existential', value: existential.percentage, label_ar: 'السلوكي',  label_en: 'Existential', desc_ar: 'جانب الهوية والتشكل الداخلي',    desc_en: 'the side of identity and inner formation' },
     ]
     dimensionData.sort((a, b) => b.value - a.value)
     const highest = dimensionData[0]
@@ -262,11 +239,11 @@ export const generateReport = async (answersData: any, chartData: any, language:
       - Math.min(mental.percentage, emotional.percentage, existential.percentage)
 
     const chartDataText = JSON.stringify({
-      overall_percentage:    overall,
-      harmony_percentage:    harmony,
-      mental_percentage:     mental.percentage,
-      emotional_percentage:  emotional.percentage,
-      existential_percentage:existential.percentage,
+      overall_percentage:     overall,
+      harmony_percentage:     harmony,
+      mental_percentage:      mental.percentage,
+      emotional_percentage:   emotional.percentage,
+      existential_percentage: existential.percentage,
       highest_dimension: { label_ar: highest.label_ar, label_en: highest.label_en, desc_ar: highest.desc_ar, desc_en: highest.desc_en, value: highest.value },
       lowest_dimension:  { label_ar: lowest.label_ar,  label_en: lowest.label_en,  value: lowest.value },
       top_3_functions:    top3.map((e: any)    => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
@@ -280,26 +257,29 @@ export const generateReport = async (answersData: any, chartData: any, language:
       ? 'أنت خبير في نموذج هارموني. قم بكتابة تقرير نفسي موجز وإنساني باللغة العربية بناءً على إجابات الاستبيان المقدمة.'
       : 'You are a Harmony model expert. Write a brief and humane psychological report in English based on the provided questionnaire answers.'
 
-    const url  = `${GEMINI_BASE}:generateContent?key=${GEMINI_API_KEY}`
-    const body = buildGeminiBody(
-      [{ id: '1', role: 'user', content: fullPrompt }],
-      { value: systemText, enabled: true },
-      8192
-    )
-
-    const response = await fetch(url, {
+    const response = await fetch(DEEPSEEK_BASE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
+        messages: [
+          { role: 'system', content: systemText },
+          { role: 'user',   content: fullPrompt },
+        ],
+        max_tokens: 8192,
+      }),
     })
 
     if (!response.ok) {
       const errText = await response.text()
-      throw new Error(`Gemini error ${response.status}: ${errText}`)
+      throw new Error(`DeepSeek error ${response.status}: ${errText}`)
     }
 
     const json    = await response.json()
-    const content = extractGeminiText(json)
+    const content = json?.choices?.[0]?.message?.content ?? ''
     if (!content?.trim()) throw new Error('Empty AI response received')
 
     return content.trim()
