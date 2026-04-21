@@ -144,7 +144,8 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
   // Structure: 27 questions = 3 worlds × 3 elements × 3 types
   // typeIndex = question index % 3  (0=cognitive, 1=emotional, 2=behavioral)
   // elementIndex within each world = Math.floor((index % 9) / 3)
-  const radarDimensions = functionNames
+  // Always use English keys to match RadarChart component's internal lookup
+  const radarDimensions = ['Perception', 'Readiness', 'Intention', 'Action', 'Interaction', 'Response', 'Reception', 'Evolution', 'Mental Image']
 
   const radarGroups = {
     cognitive: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
