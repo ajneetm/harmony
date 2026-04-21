@@ -38,15 +38,19 @@ export default function AdminPage() {
   useEffect(() => {
     if (!isAdmin) return
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) return
+      if (!session) { setLoadingUsers(false); return }
       fetch(`${SUPABASE_URL}/functions/v1/admin-users`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
         .then(r => r.json())
-        .then(res => { if (res.users) setSupabaseUsers(res.users) })
-        .catch(console.error)
+        .then(res => {
+          console.log('admin-users response:', res)
+          if (res.users) setSupabaseUsers(res.users)
+          else console.error('admin-users error:', res.error)
+        })
+        .catch(e => console.error('admin-users fetch failed:', e))
         .finally(() => setLoadingUsers(false))
-    })
+    }).catch(e => { console.error('getSession failed:', e); setLoadingUsers(false) })
   }, [isAdmin])
 
   if (!user) return (
