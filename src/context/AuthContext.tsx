@@ -42,8 +42,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name } },
+      options: {
+        data: { full_name: name },
+        emailRedirectTo: undefined,
+      },
     })
+    // If email confirmation is required, still try signing in immediately
+    if (!error) {
+      await supabase.auth.signInWithPassword({ email, password })
+    }
     return { error: error?.message ?? null }
   }
 
