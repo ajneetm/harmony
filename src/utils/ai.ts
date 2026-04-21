@@ -1,3 +1,6 @@
+import { getReportPrompt } from './report_prompts'
+import { subscription_AR_PROMPT, subscription_EN_PROMPT } from './subscription_prompts'
+
 export interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -79,7 +82,6 @@ export const genAIResponse = async (data: {
 // ─── Generate questionnaire questions ────────────────────────────────────────
 export const generateQuestions = async (aiResponse: string, language: 'ar' | 'en' = 'en') => {
   try {
-    const { subscription_AR_PROMPT, subscription_EN_PROMPT } = await import('./subscription_prompts')
     const subscriptionPrompt = language === 'ar' ? subscription_AR_PROMPT : subscription_EN_PROMPT
 
     const prompt = language === 'ar'
@@ -140,7 +142,6 @@ Only return the complete JSON object, do not return any commands, comments, or a
 // ─── Generate report ──────────────────────────────────────────────────────────
 export const generateReport = async (_answersData: any, chartData: any, language: 'ar' | 'en' = 'ar') => {
   try {
-    const { getReportPrompt } = await import('./report_prompts')
     const reportPrompt = getReportPrompt(language)
 
     const { mental, emotional, existential, harmony, overall, allElements } = chartData
