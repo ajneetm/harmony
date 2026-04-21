@@ -26,7 +26,7 @@ const cleanArabicReport = (text: string): string => {
 
 // ─── Gemini client ────────────────────────────────────────────────────────────
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as string)
-const MODEL  = 'gemini-2.0-flash-lite'
+const MODEL  = 'gemma-3-4b-it'
 
 // Retry once on 429 using the retryDelay the API suggests
 const withRetry = async <T>(fn: () => Promise<T>): Promise<T> => {
