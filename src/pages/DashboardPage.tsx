@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { LogOut, MessageSquare, Globe, ChevronDown, Trash2, TrendingUp, TrendingDown, BarChart2, FileText } from 'lucide-react'
+import { LogOut, MessageSquare, Globe, ChevronDown, Trash2, TrendingUp, TrendingDown, BarChart2, FileText, Phone, RefreshCw } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useAppState, useConversations } from '../store'
 import { getFontCSSProperties } from '../utils/fonts'
@@ -34,6 +34,13 @@ const t = {
     cognitiveRadar: 'الرادار الإدراكي',
     admin: 'الإدارة',
     messages: 'رسالة',
+    quickActions: 'إجراءات سريعة',
+    viewFullReport: 'عرض التقرير الكامل',
+    continueLastChat: 'متابعة آخر محادثة',
+    retakeAssessment: 'إعادة التقييم',
+    consultation: 'هل تريد استشارة؟',
+    consultationDesc: 'احجز جلسة مع أحد مستشارينا لمناقشة نتائجك',
+    bookNow: 'احجز الآن',
   },
   en: {
     dashboard: 'My Dashboard',
@@ -62,6 +69,13 @@ const t = {
     cognitiveRadar: 'Cognitive Radar',
     admin: 'Admin',
     messages: 'messages',
+    quickActions: 'Quick Actions',
+    viewFullReport: 'View Full Report',
+    continueLastChat: 'Continue Last Chat',
+    retakeAssessment: 'Retake Assessment',
+    consultation: 'Need a consultation?',
+    consultationDesc: 'Book a session with one of our advisors to discuss your results',
+    bookNow: 'Book Now',
   },
 }
 
@@ -334,6 +348,50 @@ export default function DashboardPage() {
             <p className="text-gray-600 text-sm">{tr.noReportHint}</p>
           </div>
         )}
+
+        {/* Quick Actions + Consultation */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+          {/* Quick Actions */}
+          <div className="bg-[#0f0f0f] border border-white/8 rounded-2xl p-5">
+            <p className="text-xs text-gray-400 uppercase tracking-wider mb-4">{tr.quickActions}</p>
+            <div className="space-y-2">
+              {cd && (
+                <button onClick={openLastReport}
+                  className="w-full flex items-center gap-3 rounded-xl border border-white/8 px-4 py-3 text-sm text-gray-300 hover:border-red-600/40 hover:text-white hover:bg-red-600/5 transition">
+                  <FileText size={15} className="text-red-400 flex-shrink-0" />
+                  {tr.viewFullReport}
+                </button>
+              )}
+              {conversations.length > 0 && (
+                <button onClick={() => openConversation([...conversations].reverse()[0].id)}
+                  className="w-full flex items-center gap-3 rounded-xl border border-white/8 px-4 py-3 text-sm text-gray-300 hover:border-red-600/40 hover:text-white hover:bg-red-600/5 transition">
+                  <MessageSquare size={15} className="text-red-400 flex-shrink-0" />
+                  {tr.continueLastChat}
+                </button>
+              )}
+              <button
+                onClick={() => { sessionStorage.removeItem('currentConversationId'); (window as any).navigateTo('/chat') }}
+                className="w-full flex items-center gap-3 rounded-xl border border-white/8 px-4 py-3 text-sm text-gray-300 hover:border-red-600/40 hover:text-white hover:bg-red-600/5 transition">
+                <RefreshCw size={15} className="text-red-400 flex-shrink-0" />
+                {tr.retakeAssessment}
+              </button>
+            </div>
+          </div>
+
+          {/* Consultation card */}
+          <div className="bg-[#0f0f0f] border border-white/8 rounded-2xl p-5 flex flex-col justify-between">
+            <div>
+              <p className="font-semibold text-white mb-2">{tr.consultation}</p>
+              <p className="text-sm text-gray-500">{tr.consultationDesc}</p>
+            </div>
+            <a href="tel:+97431000003"
+              className="mt-5 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white rounded-xl py-3 text-sm font-semibold transition shadow-[0_4px_15px_rgba(174,31,35,0.3)]">
+              <Phone size={14} />
+              +974 3100 0003
+            </a>
+          </div>
+        </div>
 
         {/* Conversation history */}
         <div>
