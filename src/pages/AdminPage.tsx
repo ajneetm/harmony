@@ -5,7 +5,7 @@ import { api } from '../../convex/_generated/api'
 
 const ADMIN_EMAIL = 'a.hajali@ajnee.com'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string
+const isConvexAvailable = Boolean(import.meta.env.VITE_CONVEX_URL)
 
 interface SupabaseUser {
   id: string
@@ -17,7 +17,8 @@ interface SupabaseUser {
 
 export default function AdminPage() {
   const { user, signOut } = useAuth()
-  const allConversations = useQuery(api.conversations.listAll) ?? []
+  const convexConversations = isConvexAvailable ? useQuery(api.conversations.listAll) : null
+  const allConversations = convexConversations ?? []
   const [supabaseUsers, setSupabaseUsers] = useState<SupabaseUser[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [selectedUser, setSelectedUser] = useState<string | null>(null)

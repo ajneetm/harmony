@@ -77,7 +77,7 @@ export function useConversations() {
   
   // Only fetch Convex conversations for logged-in users (guests use localStorage only)
   const convexConversations = isConvexAvailable
-    ? useQuery(api.conversations.listByUser, userId ? { userId } : 'skip') ?? []
+    ? (useQuery(api.conversations.list) ?? []).filter((c: any) => !userId || c.userId === userId)
     : null;
   
   // Convex mutations (only if Convex is available)

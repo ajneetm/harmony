@@ -50,11 +50,12 @@ function ChatPage() {
   
   const { isLoading, setLoading, language } = useAppState()
   const { user } = useAuth()
-  const saveReportMutation = useMutation(api.conversations.saveReport)
+  const isConvexAvailable = Boolean(import.meta.env.VITE_CONVEX_URL)
+  const saveReportMutation = isConvexAvailable ? useMutation(api.conversations.saveReport) : null
 
   const saveReportToConvex = useCallback(async (chatId: string, reportJson: string) => {
-    if (!user) return  // guests don't save to Convex
-    await saveReportMutation({ id: chatId as Id<'conversations'>, reportData: reportJson })
+    if (!user || !saveReportMutation) return
+    try { await saveReportMutation({ id: chatId as Id<'conversations'>, reportData: reportJson }) } catch { /* non-critical */ }
   }, [saveReportMutation, user])
 
   // CRITICAL FIX: Set document direction and styles IMMEDIATELY on mount
