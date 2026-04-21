@@ -53,8 +53,9 @@ function ChatPage() {
   const saveReportMutation = useMutation(api.conversations.saveReport)
 
   const saveReportToConvex = useCallback(async (chatId: string, reportJson: string) => {
+    if (!user) return  // guests don't save to Convex
     await saveReportMutation({ id: chatId as Id<'conversations'>, reportData: reportJson })
-  }, [saveReportMutation])
+  }, [saveReportMutation, user])
 
   // CRITICAL FIX: Set document direction and styles IMMEDIATELY on mount
   useEffect(() => {

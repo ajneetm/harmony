@@ -64,8 +64,8 @@ function AppRouter({ currentPath }: { currentPath: string }) {
     )
   }
 
-  // Protected routes
-  if ((currentPath === '/chat' || currentPath === '/report' || currentPath === '/dashboard' || currentPath === '/admin') && !user) {
+  // Protected routes (chat and report are open to guests)
+  if ((currentPath === '/dashboard' || currentPath === '/admin') && !user) {
     ;(window as any).navigateTo('/auth')
     return null
   }

@@ -75,9 +75,9 @@ export function useConversations() {
   const currentConversationId = useStore(store, s => selectors.getCurrentConversationId(s));
   const currentConversation = useStore(store, s => selectors.getCurrentConversation(s));
   
-  // Only use Convex if it's available
-  const convexConversations = isConvexAvailable 
-    ? useQuery(api.conversations.list) || []
+  // Only fetch Convex conversations for logged-in users (guests use localStorage only)
+  const convexConversations = isConvexAvailable
+    ? useQuery(api.conversations.listByUser, userId ? { userId } : 'skip') ?? []
     : null;
   
   // Convex mutations (only if Convex is available)
@@ -104,9 +104,9 @@ export function useConversations() {
     }
   }, [conversations]);
   
-  // Convert Convex conversations to local format if available
+  // Convert Convex conversations to local format if available (logged-in users only)
   useEffect(() => {
-    if (isConvexAvailable && convexConversations && convexConversations.length > 0) {
+    if (isConvexAvailable && userId && convexConversations && convexConversations.length > 0) {
       const formattedConversations: Conversation[] = convexConversations.map(conv => ({
         id: conv._id,
         title: conv.title,
@@ -160,8 +160,8 @@ export function useConversations() {
       // First update local state for immediate UI feedback
       actions.addConversation(newConversation);
       
-      // Then create in Convex database if available
-      if (isConvexAvailable && createConversation) {
+      // Then create in Convex database if available (only for logged-in users)
+      if (isConvexAvailable && userId && createConversation) {
         try {
           const convexId = await createConversation({
             title,
@@ -216,8 +216,8 @@ export function useConversations() {
       // First update local state
       actions.addMessage(conversationId, message);
       
-      // Then add to Convex if available
-      if (isConvexAvailable && addMessageToConversation) {
+      // Then add to Convex if available (only for logged-in users)
+      if (isConvexAvailable && userId && addMessageToConversation) {
         try {
           await addMessageToConversation({
             conversationId: conversationId as Id<'conversations'>,
