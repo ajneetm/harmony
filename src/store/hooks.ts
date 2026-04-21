@@ -127,11 +127,11 @@ export function useConversations() {
     },
 
     addMessage: async (conversationId: string, message: Message) => {
+      // Read BEFORE updating store to avoid double-append
+      const existing = store.getState().conversations.find(c => c.id === conversationId)?.messages ?? []
       actions.addMessage(conversationId, message)
       if (isLoggedIn) {
-        const conv = store.getState().conversations.find(c => c.id === conversationId)
-        const msgs = conv?.messages ?? []
-        try { await sbConversations.addMessage(conversationId, message, msgs) } catch { /* ignore */ }
+        try { await sbConversations.addMessage(conversationId, message, existing) } catch { /* ignore */ }
       }
     },
 
