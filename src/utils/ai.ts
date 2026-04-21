@@ -1,6 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
-import type { Content } from '@google/generative-ai'
-
 export interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -10,67 +7,11 @@ export interface Message {
   isLoadingQuestionnaire?: boolean
 }
 
-// ─── Arabic report cleaner ────────────────────────────────────────────────────
-const cleanArabicReport = (text: string): string => {
-  text = text.replace(/[\u4E00-\u9FFF\u3400-\u4DBF\u3040-\u30FF\u31F0-\u31FF\uFF65-\uFF9F]/g, '')
-  text = text.replace(/[\u0400-\u04FF]/g, '')
-  text = text.replace(/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, '')
-  text = text.replace(/(?<=[\u0600-\u06FF])[A-Za-z]+/g, '')
-  text = text.replace(/[A-Za-z]+(?=[\u0600-\u06FF])/g, '')
-  text = text.replace(/([\u0600-\u06FF])\s+[A-Za-z]{2,}\s+([\u0600-\u06FF])/g, '$1 $2')
-  text = text.replace(/(?<=[^\x00-\x7F\s])\s*[A-Za-z]{2,}\s*(?=[^\x00-\x7F])/g, ' ')
-  text = text.replace(/[、。・]/g, '،')
-  text = text.replace(/[ \t]{2,}/g, ' ')
-  return text.trim()
-}
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string
 
-// ─── Gemini client ────────────────────────────────────────────────────────────
-const genAI  = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as string)
-const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.0-flash-001', 'gemini-2.0-flash-lite-001']
-
-const getModel = (systemInstruction?: string, modelIndex = 0) =>
-  genAI.getGenerativeModel({
-    model: MODELS[modelIndex] ?? MODELS[0],
-    ...(systemInstruction ? { systemInstruction } : {}),
-  })
-
-// Retry once on 429; fallback to next model on 404/403
-const withRetry = async <T>(fn: (modelIndex: number) => Promise<T>, modelIndex = 0): Promise<T> => {
-  try {
-    return await fn(modelIndex)
-  } catch (err: any) {
-    const msg: string = err?.message ?? ''
-    if (msg.includes('429')) {
-      const match = msg.match(/"retryDelay":"(\d+)s"/)
-      const delaySec = match ? parseInt(match[1], 10) + 2 : 30
-      console.warn(`Rate limited — retrying in ${delaySec}s…`)
-      await new Promise(r => setTimeout(r, delaySec * 1000))
-      return await fn(modelIndex)
-    }
-    if ((msg.includes('404') || msg.includes('403')) && modelIndex < MODELS.length - 1) {
-      console.warn(`Model ${MODELS[modelIndex]} unavailable — trying ${MODELS[modelIndex + 1]}`)
-      return await withRetry(fn, modelIndex + 1)
-    }
-    throw err
-  }
-}
-
-// Convert our Message[] → Gemini history format (excludes last message)
-const toHistory = (messages: Message[]): Content[] =>
-  messages
-    .filter(m => !m.isTyping && !m.isInitialInstruction && !m.isLoadingQuestionnaire)
-    .slice(0, -1) // all except last — last is the new user message
-    .map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }))
-
-const getLastMessage = (messages: Message[]): string => {
-  const filtered = messages.filter(
-    m => !m.isTyping && !m.isInitialInstruction && !m.isLoadingQuestionnaire
-  )
-  return filtered[filtered.length - 1]?.content ?? ''
-}
+const fnUrl = (name: string) => `${SUPABASE_URL}/functions/v1/${name}`
+const fnHeaders = { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_KEY}` }
 
 // ─── Streaming chat ───────────────────────────────────────────────────────────
 export const genAIResponseStream = async (
@@ -84,22 +25,32 @@ export const genAIResponseStream = async (
   abortController?: AbortController
 ) => {
   try {
-    const systemInstruction = data.systemPrompt?.enabled ? data.systemPrompt.value : undefined
-
-    const model = getModel(systemInstruction)
-    const chat = model.startChat({
-      history: toHistory(data.messages),
+    const res = await fetch(fnUrl('ai-chat'), {
+      method: 'POST',
+      headers: fnHeaders,
+      body: JSON.stringify({ messages: data.messages, systemPrompt: data.systemPrompt, stream: true }),
+      signal: abortController?.signal,
     })
 
-    const lastMessage = getLastMessage(data.messages)
-    const result = await chat.sendMessageStream(lastMessage)
+    if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
 
-    for await (const chunk of result.stream) {
-      if (abortController?.signal.aborted) break
-      const text = chunk.text()
-      if (text) onChunk(text)
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        const payload = line.slice(6).trim()
+        if (payload === '[DONE]') { onComplete(); return }
+        try { const { text } = JSON.parse(payload); if (text) onChunk(text) } catch { /* ignore */ }
+      }
     }
-
     onComplete()
   } catch (error: any) {
     if (abortController?.signal.aborted) {
@@ -115,16 +66,14 @@ export const genAIResponse = async (data: {
   messages: Message[]
   systemPrompt?: { value: string; enabled: boolean }
 }) => {
-  const systemInstruction = data.systemPrompt?.enabled ? data.systemPrompt.value : undefined
-
-  const model = getModel(systemInstruction)
-  const chat = model.startChat({
-    history: toHistory(data.messages),
+  const res = await fetch(fnUrl('ai-chat'), {
+    method: 'POST',
+    headers: fnHeaders,
+    body: JSON.stringify({ messages: data.messages, systemPrompt: data.systemPrompt, stream: false }),
   })
-
-  const result  = await chat.sendMessage(getLastMessage(data.messages))
-  const content = result.response.text()
-  return { success: true, content }
+  const json = await res.json()
+  if (json.error) throw new Error(json.error)
+  return { success: true, content: json.content as string }
 }
 
 // ─── Generate questionnaire questions ────────────────────────────────────────
@@ -173,24 +122,14 @@ Only return the complete JSON object, do not return any commands, comments, or a
       ? 'أنت خبير في نموذج هارموني. قم بإنشاء 27 سؤالاً بالضبط. أرجع JSON فقط مع حقلي "problem" و "questions".'
       : 'You are a Harmony model expert. Generate exactly 27 questions. Return valid JSON only with "problem" and "questions" fields.'
 
-    const result = await withRetry((i) => getModel(systemInstruction, i).generateContent({
-      contents:         [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: 'application/json' },
-    }))
-
-    let content = result.response.text().trim()
-    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '')
-    const jsonMatch = content.match(/\{[\s\S]*\}/)
-    if (jsonMatch) content = jsonMatch[0]
-
-    const parsed    = JSON.parse(content)
-    const questions = parsed.questions
-    if (!Array.isArray(questions)) throw new Error('Invalid response: missing questions array')
-
-    return questions.map((q: any, i: number) => ({
-      id: i + 1,
-      text: q.statement || q.text || q.question,
-    }))
+    const res = await fetch(fnUrl('ai-questions'), {
+      method: 'POST',
+      headers: fnHeaders,
+      body: JSON.stringify({ prompt, systemInstruction }),
+    })
+    const json = await res.json()
+    if (json.error) throw new Error(json.error)
+    return json.questions
 
   } catch (error) {
     console.error('Failed to generate questions:', error)
@@ -212,10 +151,10 @@ export const generateReport = async (_answersData: any, chartData: any, language
       { value: existential.percentage, label_ar: 'السلوكي',  label_en: 'Existential', desc_ar: 'جانب الهوية والتشكل الداخلي',   desc_en: 'the side of identity and inner formation' },
     ].sort((a, b) => b.value - a.value)
 
-    const highest = dimensionData[0]
-    const lowest  = dimensionData[dimensionData.length - 1]
-    const top3    = allElements.slice(0, 3)
-    const bottom3 = [...allElements].slice(-3).reverse()
+    const highest    = dimensionData[0]
+    const lowest     = dimensionData[dimensionData.length - 1]
+    const top3       = allElements.slice(0, 3)
+    const bottom3    = [...allElements].slice(-3).reverse()
     const balance_gap = Math.max(mental.percentage, emotional.percentage, existential.percentage)
       - Math.min(mental.percentage, emotional.percentage, existential.percentage)
 
@@ -247,20 +186,14 @@ export const generateReport = async (_answersData: any, chartData: any, language
 
     const fullPrompt = reportPrompt.replace('{CHART_DATA_PLACEHOLDER}', chartDataText)
 
-    const systemInstruction = language === 'ar'
-      ? 'أنت خبير في نموذج هارموني. قم بكتابة تقرير نفسي موجز وإنساني باللغة العربية الفصحى حصراً. ممنوع منعاً باتاً استخدام أي كلمات أو أحرف من لغات أخرى غير العربية.'
-      : 'You are a Harmony model expert. Write a brief and humane psychological report in English only.'
-
-    const result = await withRetry((i) => getModel(systemInstruction, i).generateContent({
-      contents:         [{ role: 'user', parts: [{ text: fullPrompt }] }],
-      generationConfig: { maxOutputTokens: 2500 },
-    }))
-
-    let content = result.response.text()
-    if (!content?.trim()) throw new Error('Empty AI response received')
-
-    if (language === 'ar') content = cleanArabicReport(content)
-    return content.trim()
+    const res = await fetch(fnUrl('ai-report'), {
+      method: 'POST',
+      headers: fnHeaders,
+      body: JSON.stringify({ chartData, language, reportPrompt: fullPrompt }),
+    })
+    const json = await res.json()
+    if (json.error) throw new Error(json.error)
+    return json.content as string
 
   } catch (error) {
     console.error('Failed to generate report:', error)
