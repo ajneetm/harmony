@@ -183,6 +183,7 @@ function ChatPage() {
   const [questionnaireResults, setQuestionnaireResults] = useState<Record<number, number> | null>(null)
   const [isResponseComplete, setIsResponseComplete] = useState(false) // Track if response was completed vs stopped
   const [generatingReport, setGeneratingReport] = useState(false)
+  const [reportFailed, setReportFailed] = useState(false)
   const [showQuestionnaireReminder, setShowQuestionnaireReminder] = useState(false)
   const [userPressedLater, setUserPressedLater] = useState(false)
 
@@ -559,6 +560,7 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
     setShowQuestionnaire(false)
     setShowQuestionnaireReminder(false) // Hide the reminder when questionnaire is completed
     setGeneratingReport(true) // Start report generation loading
+    setReportFailed(false)
     
     // Create enhanced JSON with full question details + user answers
     const enhancedResults = {
@@ -615,30 +617,50 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
       addMessage(currentConversationId, resultsMessage)
     }
     
+    // Save results to sessionStorage so user can retry without retaking the test
+    sessionStorage.setItem('pendingReportData', JSON.stringify(enhancedResults))
+
     // Directly generate and open report instead of showing visualization in chat
     try {
       await generateAndOpenReport(enhancedResults, undefined, currentConversationId || undefined)
+      sessionStorage.removeItem('pendingReportData')
     } catch (error) {
       console.error('Failed to generate report:', error)
       // Show error message in chat
       const errorMessage: Message = {
         id: (Date.now() + 4).toString(),
         role: 'assistant' as const,
-        content: `${language === 'ar' ? 
-          '❌ حدث خطأ في إنشاء التقرير. يرجى المحاولة مرة أخرى.' : 
-          '❌ Failed to generate report. Please try again.'
+        content: `${language === 'ar' ?
+          '❌ حدث خطأ في إنشاء التقرير. اضغط على زر "إعادة المحاولة" لإعادة توليد التقرير.' :
+          '❌ Failed to generate report. Click "Retry" to generate the report again.'
         }`
       }
-      
+
       if (currentConversationId) {
         addMessage(currentConversationId, errorMessage)
       }
+      setReportFailed(true)
     } finally {
       setGeneratingReport(false) // Stop report generation loading
     }
   }, [questions, language, currentConversationId, addMessage, actions])
 
-
+  const handleRetryReport = useCallback(async () => {
+    const raw = sessionStorage.getItem('pendingReportData')
+    if (!raw) return
+    const enhancedResults = JSON.parse(raw)
+    setReportFailed(false)
+    setGeneratingReport(true)
+    try {
+      await generateAndOpenReport(enhancedResults, undefined, currentConversationId || undefined)
+      sessionStorage.removeItem('pendingReportData')
+    } catch (error) {
+      console.error('Retry failed:', error)
+      setReportFailed(true)
+    } finally {
+      setGeneratingReport(false)
+    }
+  }, [currentConversationId])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -1127,6 +1149,18 @@ const handleCrisisQuestionnaire = useCallback(async () => {
                         
                         {/* Questionnaire button removed - now handled by floating reminder */}
                         
+                        {/* Retry button when report generation failed */}
+                        {reportFailed && isLastMessage && (
+                          <div className="mt-4 mb-4 flex justify-center">
+                            <button
+                              onClick={handleRetryReport}
+                              className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                            >
+                              {language === 'ar' ? '🔄 إعادة المحاولة' : '🔄 Retry'}
+                            </button>
+                          </div>
+                        )}
+
                         {/* Show report generation loading after questionnaire completion */}
                         {generatingReport && isLastMessage && (
                           <div className="mt-4 mb-4 animate-fadeIn">
