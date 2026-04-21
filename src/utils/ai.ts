@@ -25,21 +25,31 @@ const cleanArabicReport = (text: string): string => {
 }
 
 // ─── Gemini client ────────────────────────────────────────────────────────────
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as string)
-const MODEL  = 'gemma-3-4b-it'
+const genAI  = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as string)
+const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.0-flash-001', 'gemini-2.0-flash-lite-001']
 
-// Retry once on 429 using the retryDelay the API suggests
-const withRetry = async <T>(fn: () => Promise<T>): Promise<T> => {
+const getModel = (systemInstruction?: string, modelIndex = 0) =>
+  genAI.getGenerativeModel({
+    model: MODELS[modelIndex] ?? MODELS[0],
+    ...(systemInstruction ? { systemInstruction } : {}),
+  })
+
+// Retry once on 429; fallback to next model on 404/403
+const withRetry = async <T>(fn: (modelIndex: number) => Promise<T>, modelIndex = 0): Promise<T> => {
   try {
-    return await fn()
+    return await fn(modelIndex)
   } catch (err: any) {
     const msg: string = err?.message ?? ''
-    const match = msg.match(/"retryDelay":"(\d+)s"/)
-    const delaySec = match ? parseInt(match[1], 10) + 2 : 30
     if (msg.includes('429')) {
+      const match = msg.match(/"retryDelay":"(\d+)s"/)
+      const delaySec = match ? parseInt(match[1], 10) + 2 : 30
       console.warn(`Rate limited — retrying in ${delaySec}s…`)
       await new Promise(r => setTimeout(r, delaySec * 1000))
-      return await fn()
+      return await fn(modelIndex)
+    }
+    if ((msg.includes('404') || msg.includes('403')) && modelIndex < MODELS.length - 1) {
+      console.warn(`Model ${MODELS[modelIndex]} unavailable — trying ${MODELS[modelIndex + 1]}`)
+      return await withRetry(fn, modelIndex + 1)
     }
     throw err
   }
@@ -76,11 +86,7 @@ export const genAIResponseStream = async (
   try {
     const systemInstruction = data.systemPrompt?.enabled ? data.systemPrompt.value : undefined
 
-    const model = genAI.getGenerativeModel({
-      model: MODEL,
-      ...(systemInstruction ? { systemInstruction } : {}),
-    })
-
+    const model = getModel(systemInstruction)
     const chat = model.startChat({
       history: toHistory(data.messages),
     })
@@ -111,11 +117,7 @@ export const genAIResponse = async (data: {
 }) => {
   const systemInstruction = data.systemPrompt?.enabled ? data.systemPrompt.value : undefined
 
-  const model = genAI.getGenerativeModel({
-    model: MODEL,
-    ...(systemInstruction ? { systemInstruction } : {}),
-  })
-
+  const model = getModel(systemInstruction)
   const chat = model.startChat({
     history: toHistory(data.messages),
   })
@@ -171,8 +173,7 @@ Only return the complete JSON object, do not return any commands, comments, or a
       ? 'أنت خبير في نموذج هارموني. قم بإنشاء 27 سؤالاً بالضبط. أرجع JSON فقط مع حقلي "problem" و "questions".'
       : 'You are a Harmony model expert. Generate exactly 27 questions. Return valid JSON only with "problem" and "questions" fields.'
 
-    const model  = genAI.getGenerativeModel({ model: MODEL, systemInstruction })
-    const result = await withRetry(() => model.generateContent({
+    const result = await withRetry((i) => getModel(systemInstruction, i).generateContent({
       contents:         [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: { responseMimeType: 'application/json' },
     }))
@@ -250,8 +251,7 @@ export const generateReport = async (_answersData: any, chartData: any, language
       ? 'أنت خبير في نموذج هارموني. قم بكتابة تقرير نفسي موجز وإنساني باللغة العربية الفصحى حصراً. ممنوع منعاً باتاً استخدام أي كلمات أو أحرف من لغات أخرى غير العربية.'
       : 'You are a Harmony model expert. Write a brief and humane psychological report in English only.'
 
-    const model  = genAI.getGenerativeModel({ model: MODEL, systemInstruction })
-    const result = await withRetry(() => model.generateContent({
+    const result = await withRetry((i) => getModel(systemInstruction, i).generateContent({
       contents:         [{ role: 'user', parts: [{ text: fullPrompt }] }],
       generationConfig: { maxOutputTokens: 2500 },
     }))
