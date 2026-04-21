@@ -246,7 +246,14 @@ export const generateAndOpenReport = async (
     
     // Step 4: Store complete report data
     sessionStorage.setItem('reportData', JSON.stringify(reportData))
-    
+
+    // Also persist to localStorage keyed by chatId so it can be re-opened later
+    if (chatId) {
+      try {
+        localStorage.setItem(`report-${chatId}`, JSON.stringify(reportData))
+      } catch { /* ignore quota errors */ }
+    }
+
     // Step 5: Navigate to report in same tab with chatId if provided
     console.log('Navigating to report page...')
     const reportUrl = chatId ? `?page=report&chatId=${encodeURIComponent(chatId)}` : '?page=report'

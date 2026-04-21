@@ -161,6 +161,16 @@ function ChatPage() {
     }
   }, [currentConversationId, currentConversation?.questionnaireData])
 
+  // Check if current conversation has a saved report in localStorage
+  useEffect(() => {
+    if (currentConversationId) {
+      setHasSavedReport(!!localStorage.getItem(`report-${currentConversationId}`))
+      setReportFailed(false)
+    } else {
+      setHasSavedReport(false)
+    }
+  }, [currentConversationId])
+
   // Local state
   const [input, setInput] = useState('')
   const [editingChatId, setEditingChatId] = useState<string | null>(null)
@@ -184,6 +194,7 @@ function ChatPage() {
   const [isResponseComplete, setIsResponseComplete] = useState(false) // Track if response was completed vs stopped
   const [generatingReport, setGeneratingReport] = useState(false)
   const [reportFailed, setReportFailed] = useState(false)
+  const [hasSavedReport, setHasSavedReport] = useState(false)
   const [showQuestionnaireReminder, setShowQuestionnaireReminder] = useState(false)
   const [userPressedLater, setUserPressedLater] = useState(false)
 
@@ -645,6 +656,15 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
     }
   }, [questions, language, currentConversationId, addMessage, actions])
 
+  const handleViewSavedReport = useCallback(() => {
+    if (!currentConversationId) return
+    const raw = localStorage.getItem(`report-${currentConversationId}`)
+    if (!raw) return
+    sessionStorage.setItem('reportData', raw)
+    const reportUrl = `?page=report&chatId=${encodeURIComponent(currentConversationId)}`
+    window.location.href = window.location.origin + '/' + reportUrl
+  }, [currentConversationId])
+
   const handleRetryReport = useCallback(async () => {
     const raw = sessionStorage.getItem('pendingReportData')
     if (!raw) return
@@ -1089,6 +1109,19 @@ const handleCrisisQuestionnaire = useCallback(async () => {
           {error && (
             <p className="w-full max-w-3xl p-4 mx-auto font-bold text-red-600">{error}</p>
           )}
+
+          {/* View saved report banner */}
+          {hasSavedReport && !generatingReport && (
+            <div className="w-full max-w-3xl mx-auto px-4 pt-3">
+              <button
+                onClick={handleViewSavedReport}
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl transition-colors"
+              >
+                {language === 'ar' ? '📊 عرض التقرير السابق' : '📊 View Previous Report'}
+              </button>
+            </div>
+          )}
+
           {hasMessages ? (
           <>
             {/* Messages */}
