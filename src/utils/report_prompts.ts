@@ -67,14 +67,6 @@ export const report_AR_prompt = `
 ## الخلاصة
 [فقرة ختامية تربط المستوى العام بالتجانس بين الأبعاد، وتذكر نقاط القوة الثلاث وجوانب التطوير الثلاثة بأسلوب إنساني ودافئ، مع دعوة للتواصل والبناء على هذه النتائج.]
 
-## التوصيات
-
-**الأهداف التطويرية:**
-[اذكر 3 أهداف واضحة وقابلة للتطبيق يجب أن يعمل عليها المشارك لتحسين درجة التجانس بين أبعاده، مستنبطةً من نقاط الضعف المحددة في التقرير. اكتب كل هدف في سطر مستقل بأسلوب عملي وتحفيزي.]
-
-**الدورات والاستشارات الموصى بها:**
-[اقترح ما لا يقل عن 3 دورات تدريبية أو استشارات متخصصة تتناسب مع جوانب التطوير المحددة لهذا المشارك تحديدًا. لكل مقترح: اذكر اسم الدورة أو نوع الاستشارة، وسبب توصيتك بها في جملة واحدة.]
-
 ---
 
 📊 **جداول التفسير**:
@@ -107,7 +99,6 @@ export const report_AR_prompt = `
 - الوظائف تُؤخذ من: أقوى_3_وظائف (الأقوى) و أضعف_3_وظائف (الأضعف)
 - لا تشرح النموذج أو تذكر "نموذج الهارموني" في نص التقرير
 - إذا كان فجوة_التوازن أكبر من 20 نقطة، أشر صراحةً في قسم التجانس إلى عدم الاتساق حتى لو كانت نسبة_التجانس مرتفعة
-- لا تقل التوصيات عن 3 أهداف و3 دورات أو استشارات
 
 ---
 
@@ -186,14 +177,6 @@ It also suggests [...]
 ## Summary
 [A closing paragraph connecting the overall level with the coherence between dimensions, mentioning the three strengths and the three development areas in a warm, human tone, with an invitation to build on these findings.]
 
-## Recommendations
-
-**Development Goals:**
-[List 3 clear, actionable goals the participant should work on to improve their dimensional coherence, derived specifically from the weaknesses identified in this report. Write each goal on a separate line in a practical and motivating tone.]
-
-**Recommended Courses & Consultations:**
-[Suggest at least 3 training courses or specialized consultations that match this participant's specific development areas. For each: state the course name or consultation type, and briefly explain why it is recommended in one sentence.]
-
 ---
 
 📊 **Interpretation Tables**:
@@ -225,7 +208,6 @@ Coherence Score:
 - Functions are taken from: top_3_functions (strongest) and bottom_3_functions (weakest)
 - Do not explain the model or mention "Harmony Model" in the report text
 - If balance_gap is greater than 20 points, explicitly note the incoherence in the coherence section even if harmony_percentage appears high
-- Recommendations must include at least 3 goals and at least 3 courses or consultations
 
 ---
 
