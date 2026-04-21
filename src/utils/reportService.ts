@@ -198,7 +198,8 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
 export const generateAndOpenReport = async (
   data: QuestionnaireData,
   visualizationElement?: HTMLElement,
-  chatId?: string
+  chatId?: string,
+  saveReportToConvex?: (id: string, reportJson: string) => Promise<void>
 ): Promise<void> => {
   try {
     console.log('Starting report generation process...')
@@ -248,10 +249,16 @@ export const generateAndOpenReport = async (
     sessionStorage.setItem('reportData', JSON.stringify(reportData))
 
     // Also persist to localStorage keyed by chatId so it can be re-opened later
+    const reportJson = JSON.stringify(reportData)
     if (chatId) {
       try {
-        localStorage.setItem(`report-${chatId}`, JSON.stringify(reportData))
+        localStorage.setItem(`report-${chatId}`, reportJson)
       } catch { /* ignore quota errors */ }
+
+      // Persist to Convex for admin visibility
+      if (saveReportToConvex) {
+        try { await saveReportToConvex(chatId, reportJson) } catch { /* non-critical */ }
+      }
     }
 
     // Step 5: Navigate to report in same tab with chatId if provided

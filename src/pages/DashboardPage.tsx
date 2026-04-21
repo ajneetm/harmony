@@ -87,6 +87,15 @@ export default function DashboardPage() {
         <span className="text-[#FFBD00] font-bold tracking-widest text-sm uppercase">Harmony</span>
 
         <div className="flex items-center gap-3">
+          {/* Admin link */}
+          {email === 'a.hajali@ajnee.com' && (
+            <button
+              onClick={() => (window as any).navigateTo('/admin')}
+              className="text-xs border border-red-600/40 rounded-full px-3 py-1.5 text-red-400 hover:bg-red-600/10 transition"
+            >
+              Admin
+            </button>
+          )}
           {/* Language */}
           <div className="relative" ref={langRef}>
             <button

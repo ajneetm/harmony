@@ -6,6 +6,7 @@ import ChatPage from './pages/ChatPage'
 import ReportPage from './pages/ReportPage'
 import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
+import AdminPage from './pages/AdminPage'
 import NotFound from './pages/NotFound'
 import { FontProvider } from './components'
 import { getFontCSSProperties } from './utils/fonts'
@@ -64,7 +65,7 @@ function AppRouter({ currentPath }: { currentPath: string }) {
   }
 
   // Protected routes
-  if ((currentPath === '/chat' || currentPath === '/report' || currentPath === '/dashboard') && !user) {
+  if ((currentPath === '/chat' || currentPath === '/report' || currentPath === '/dashboard' || currentPath === '/admin') && !user) {
     ;(window as any).navigateTo('/auth')
     return null
   }
@@ -74,6 +75,7 @@ function AppRouter({ currentPath }: { currentPath: string }) {
     case '/chat':       return <ChatPage />
     case '/report':     return <ReportPage />
     case '/dashboard':  return <DashboardPage />
+    case '/admin':      return <AdminPage />
     case '/auth':       return user ? ((() => { (window as any).navigateTo('/dashboard'); return null })()) : <AuthPage />
     default:            return <NotFound />
   }
@@ -92,6 +94,7 @@ const App = () => {
       if (page === 'report')    return '/report'
       if (page === 'auth')      return '/auth'
       if (page === 'dashboard') return '/dashboard'
+      if (page === 'admin')     return '/admin'
       return '/'
     }
     

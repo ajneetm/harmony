@@ -21,6 +21,10 @@ import {
 } from '../utils/lifeQuestionnaire'
 import { generateAndOpenReport } from '../utils/reportService'
 import { getFontCSSProperties } from '../utils/fonts'
+import { useAuth } from '../context/AuthContext'
+import { useMutation } from 'convex/react'
+import { api } from '../../convex/_generated/api'
+import type { Id } from '../../convex/_generated/dataModel'
 
 function ChatPage() {
 
@@ -45,8 +49,12 @@ function ChatPage() {
   } = useConversations()
   
   const { isLoading, setLoading, language } = useAppState()
+  const { user } = useAuth()
+  const saveReportMutation = useMutation(api.conversations.saveReport)
 
-
+  const saveReportToConvex = useCallback(async (chatId: string, reportJson: string) => {
+    await saveReportMutation({ id: chatId as Id<'conversations'>, reportData: reportJson })
+  }, [saveReportMutation])
 
   // CRITICAL FIX: Set document direction and styles IMMEDIATELY on mount
   useEffect(() => {
@@ -633,7 +641,7 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
 
     // Directly generate and open report instead of showing visualization in chat
     try {
-      await generateAndOpenReport(enhancedResults, undefined, currentConversationId || undefined)
+      await generateAndOpenReport(enhancedResults, undefined, currentConversationId || undefined, saveReportToConvex)
       sessionStorage.removeItem('pendingReportData')
     } catch (error) {
       console.error('Failed to generate report:', error)
@@ -672,7 +680,7 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
     setReportFailed(false)
     setGeneratingReport(true)
     try {
-      await generateAndOpenReport(enhancedResults, undefined, currentConversationId || undefined)
+      await generateAndOpenReport(enhancedResults, undefined, currentConversationId || undefined, saveReportToConvex)
       sessionStorage.removeItem('pendingReportData')
     } catch (error) {
       console.error('Retry failed:', error)

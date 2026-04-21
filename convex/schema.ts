@@ -12,5 +12,8 @@ export default defineSchema({
         content: v.string(),
       })
     ),
+    reportData: v.optional(v.string()),   // JSON-stringified report snapshot
+    userEmail: v.optional(v.string()),    // denormalized for admin queries
+    userName: v.optional(v.string()),
   }).index("by_user", ["userId"]),
 });

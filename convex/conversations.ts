@@ -47,6 +47,22 @@ export const create = mutation({
   },
 });
 
+export const listAll = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("conversations").order("desc").collect();
+  },
+});
+
+export const saveReport = mutation({
+  args: {
+    id: v.id("conversations"),
+    reportData: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.patch(args.id, { reportData: args.reportData });
+  },
+});
+
 export const updateTitle = mutation({
   args: { id: v.id("conversations"), title: v.string() },
   handler: async (ctx, args) => {
