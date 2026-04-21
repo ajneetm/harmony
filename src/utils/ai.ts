@@ -1,17 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { getReportPrompt } from './report_prompts'
 import { subscription_AR_PROMPT, subscription_EN_PROMPT } from './subscription_prompts'
-
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY as string
-const REPORT_MODELS = ['gemini-2.5-flash-latest', 'gemini-2.0-flash', 'gemini-1.5-flash']
-
-const cleanArabicReport = (text: string): string => {
-  text = text.replace(/[\u4E00-\u9FFF\u3400-\u4DBF\u3040-\u30FF\u31F0-\u31FF\uFF65-\uFF9F]/g, '')
-  text = text.replace(/[\u0400-\u04FF]/g, '')
-  text = text.replace(/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, '')
-  text = text.replace(/[ \t]{2,}/g, ' ')
-  return text.trim()
-}
 
 export interface Message {
   id: string
@@ -199,28 +187,14 @@ export const generateReport = async (_answersData: any, chartData: any, language
 
     const fullPrompt = reportPrompt.replace('{CHART_DATA_PLACEHOLDER}', chartDataText)
 
-    const genAI = new GoogleGenerativeAI(GEMINI_KEY)
-    const systemInstruction = language === 'ar'
-      ? 'أنت خبير في نموذج هارموني. قم بكتابة تقرير نفسي موجز وإنساني باللغة العربية الفصحى حصراً. ممنوع منعاً باتاً استخدام أي كلمات أو أحرف من لغات أخرى غير العربية.'
-      : 'You are a Harmony model expert. Write a brief and humane psychological report in English only.'
-
-    let content = ''
-    for (let i = 0; i < REPORT_MODELS.length; i++) {
-      try {
-        const model = genAI.getGenerativeModel({ model: REPORT_MODELS[i], systemInstruction })
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
-          generationConfig: { maxOutputTokens: 2500 },
-        })
-        content = result.response.text()
-        break
-      } catch (err) {
-        if (i === REPORT_MODELS.length - 1) throw err
-      }
-    }
-
-    if (language === 'ar') content = cleanArabicReport(content)
-    return content
+    const res = await fetch(fnUrl('ai-report'), {
+      method: 'POST',
+      headers: fnHeaders,
+      body: JSON.stringify({ chartData, language, reportPrompt: fullPrompt }),
+    })
+    const json = await res.json()
+    if (json.error) throw new Error(json.error)
+    return json.content as string
 
   } catch (error) {
     console.error('Failed to generate report:', error)
