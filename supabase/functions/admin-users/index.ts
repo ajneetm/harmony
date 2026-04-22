@@ -18,14 +18,14 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    // Verify identity using the service role client + the user's token
     const adminClient = createClient(supabaseUrl, serviceKey)
+
+    // Verify identity
     const { data: { user }, error: userErr } = await adminClient.auth.getUser(userToken)
     if (userErr || !user) throw new Error('Unauthorized')
     if (user.email !== ADMIN_EMAIL) throw new Error('Forbidden')
 
-    // Use service role to list all users
-    const adminClient = createClient(supabaseUrl, serviceKey)
+    // List all users
     const { data, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
     if (error) throw error
 
