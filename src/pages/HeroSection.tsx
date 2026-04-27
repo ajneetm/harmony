@@ -318,7 +318,7 @@ export default function HeroSection() {
               </button>
 
               {/* Partner logos */}
-              <div className="flex items-end gap-6 mt-0" dir="ltr">
+              <div className="flex items-end gap-6 mt-4" dir="ltr">
                 {[
                   { src: '/LOIDA.png', label: isAr ? 'الموزع'  : 'Distributor', link: 'https://www.loidabritish.com/' },
                   { src: '/AJNEE.png', label: isAr ? 'المبتكر' : 'Innovator',   link: 'https://www.ajnee.com/' },
