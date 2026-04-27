@@ -240,8 +240,26 @@ export default function HeroSection() {
             />
           </div>
 
-          {/* CTA */}
-          <div className="w-full flex-shrink-0 pb-3">
+          {/* Partner logos + CTA */}
+          <div className="w-full flex-shrink-0 pb-3 flex flex-col items-center gap-3">
+            <div className="flex items-end justify-center gap-5" dir="ltr">
+              {[
+                { src: '/LOIDA.png', label: isAr ? 'الموزع'  : 'Distributor', link: 'https://www.loidabritish.com/' },
+                { src: '/AJNEE.png', label: isAr ? 'المبتكر' : 'Innovator',   link: 'https://www.ajnee.com/' },
+                { src: '/CPD.png',   label: isAr ? 'المعتمد' : 'Accredited',  link: 'https://www.cpduk.co.uk/courses/loida-british-self-leadership-towards-broader-horizons-through-the-harmony-technique' },
+              ].map(({ src, label, link }) => (
+                <div key={src} className="flex flex-col items-center gap-1">
+                  {link ? (
+                    <a href={link} target="_blank" rel="noopener noreferrer">
+                      <img src={src} alt={label} className="h-[80px] w-[80px] object-contain opacity-75 hover:opacity-100 transition-opacity cursor-pointer" />
+                    </a>
+                  ) : (
+                    <img src={src} alt={label} className="h-[80px] w-[80px] object-contain opacity-75" />
+                  )}
+                  <span className="text-[10px] text-white/50">{label}</span>
+                </div>
+              ))}
+            </div>
             <button
               onClick={handleChatRedirect}
               className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl text-lg font-bold transition-all shadow-[0_10px_35px_rgba(220,38,38,0.35)] active:scale-95"
@@ -298,6 +316,22 @@ export default function HeroSection() {
               >
                 {hero.talkToHarmony}
               </button>
+
+              {/* Partner logos */}
+              <div className="flex items-end gap-6 mt-0" dir="ltr">
+                {[
+                  { src: '/LOIDA.png', label: isAr ? 'الموزع'  : 'Distributor', link: 'https://www.loidabritish.com/' },
+                  { src: '/AJNEE.png', label: isAr ? 'المبتكر' : 'Innovator',   link: 'https://www.ajnee.com/' },
+                  { src: '/CPD.png',   label: isAr ? 'المعتمد' : 'Accredited',  link: 'https://www.cpduk.co.uk/courses/loida-british-self-leadership-towards-broader-horizons-through-the-harmony-technique' },
+                ].map(({ src, label, link }) => (
+                  <div key={src} className="flex flex-col items-center gap-1">
+                    <a href={link} target="_blank" rel="noopener noreferrer">
+                      <img src={src} alt={label} className="h-[80px] w-[80px] object-contain opacity-75 hover:opacity-100 transition-opacity cursor-pointer" />
+                    </a>
+                    <span className="text-[10px] text-white/50">{label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

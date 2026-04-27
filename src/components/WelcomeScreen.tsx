@@ -32,7 +32,7 @@ export const WelcomeScreen = ({
   onRomanticQuestionnaire,
   onWorkQuestionnaire
   // استقبال الخاصية الجديدة
-  
+
 }: WelcomeScreenProps) => {
   const [showTopics] = useState(false); // تم تعديلها لتدار عبر useState
   const [showDropdown, setShowDropdown] = useState(false);
@@ -59,7 +59,7 @@ export const WelcomeScreen = ({
       <div className="flex justify-center pt-8 mb-6">
         <BrandLogo className="w-24 h-auto" />
       </div>
-      
+
       {/* Main content centered */}
       <div className="flex items-center justify-center flex-1">
         <div className="w-full max-w-3xl mx-auto text-center">
@@ -95,18 +95,18 @@ export const WelcomeScreen = ({
                       type="button"
                       onClick={() => {
                         setShowDropdown(false);
-                        
+
                         const isAr = language === 'ar';
-                        
+
                         if ((isAr && topic === 'الأحداث الكبرى') || (!isAr && topic === 'Major Events')) {
                           onCrisisQuestionnaire?.();
-                        } 
+                        }
                         else if ((isAr && topic === 'الحياة العامة') || (!isAr && topic === 'Life')) {
                           onLifeQuestionnaire?.();
-                        } 
+                        }
                         else if ((isAr && topic === 'الشؤون الأسرية') || (!isAr && topic === 'Family')) {
                           onFamilyQuestionnaire?.();
-                        } 
+                        }
                         else if ((isAr && topic === 'العلاقات العاطفية') || (!isAr && topic === 'Emotions')) {
                           onRomanticQuestionnaire?.();
                         }
