@@ -12,133 +12,129 @@ interface CombinedWorldRadarProps {
   language?: 'ar' | 'en'
 }
 
-const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
-  worlds,
-  dominantIndex = 0,
-}) => {
-  const size   = 700
+const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({ worlds, language = 'en' }) => {
+  const size   = 1010
   const cx     = size / 2
   const cy     = size / 2
-  const maxR   = 250
+  const maxR   = 387
   const levels = 5
-  const n      = 3
-  const labelR = maxR + 62
+  const total  = 9  // 9 axes total (3 per world)
 
-  const angleOf = (i: number) => (i * 360) / n - 90
+  const angleOf = (i: number) => (i * 360) / total - 90
 
-  const toXY = (i: number, value: number) => {
-    const a = (angleOf(i) * Math.PI) / 180
+  const toXY = (axisIndex: number, value: number) => {
+    const a = (angleOf(axisIndex) * Math.PI) / 180
     const r = (value / 5) * maxR
     return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r }
   }
 
+  // Grid rings (9-axis polygons)
   const gridPoints = (level: number) =>
-    Array.from({ length: n }, (_, i) => {
+    Array.from({ length: total }, (_, i) => {
       const a = (angleOf(i) * Math.PI) / 180
       const r = ((level + 1) / levels) * maxR
       return `${cx + Math.cos(a) * r},${cy + Math.sin(a) * r}`
     }).join(' ')
 
-  const polyPoints = (world: WorldEntry) =>
-    world.data.map((d, i) => {
-      const p = toXY(i, d.value)
-      return `${p.x},${p.y}`
-    }).join(' ')
+  // Each world occupies 3 consecutive axes on the 9-axis radar
+  // World 0 → axes 0,1,2 | World 1 → axes 3,4,5 | World 2 → axes 6,7,8
+  const worldTriangles = worlds.map((w, wi) =>
+    w.data.map((d, di) => toXY(wi * 3 + di, d.value))
+  )
 
-  const axisLabels = worlds[dominantIndex].data.map((d, i) => {
-    const a = (angleOf(i) * Math.PI) / 180
-    const x = cx + Math.cos(a) * labelR
-    const y = cy + Math.sin(a) * labelR
-    return {
-      x, y,
-      text: d.dimension,
-      anchor: x > cx + 10 ? 'start' : x < cx - 10 ? 'end' : 'middle',
-    }
-  })
-
-  // draw order: others first, dominant on top
-  const drawOrder = [0, 1, 2].filter(i => i !== dominantIndex).concat(dominantIndex)
+  // All 9 axis labels (combined from the 3 worlds in order)
+  const allLabels = worlds.flatMap((w, wi) =>
+    w.data.map((d, di) => {
+      const axisIdx = wi * 3 + di
+      const a       = (angleOf(axisIdx) * Math.PI) / 180
+      const needsExtra = language === 'ar' && (d.dimension === 'التفاعل' || d.dimension === 'الناتج')
+      const labelR    = maxR + (needsExtra ? 60 : 42)
+      const x         = cx + Math.cos(a) * labelR
+      const y         = cy + Math.sin(a) * labelR
+      return {
+        x, y,
+        text: d.dimension,
+        color: w.color,
+        anchor: x > cx + 10 ? 'start' : x < cx - 10 ? 'end' : 'middle',
+      }
+    })
+  )
 
   return (
     <div className="flex flex-col items-center w-full">
-      <div className="w-full" style={{ maxWidth: 380 }}>
-        <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-auto">
+      <div className="relative w-full max-w-lg aspect-square">
+        <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full">
           <defs>
             {worlds.map((w, wi) => (
-              <radialGradient key={wi} id={`cwr-g-${wi}-${dominantIndex}`} cx="50%" cy="50%" r="50%">
-                <stop offset="0%"   stopColor={w.color} stopOpacity="0.02" />
-                <stop offset="60%"  stopColor={w.color} stopOpacity="0.15" />
-                <stop offset="100%" stopColor={w.color} stopOpacity="0.38" />
+              <radialGradient key={wi} id={`cwf-g-${wi}`} cx="50%" cy="50%" r="50%">
+                <stop offset="0%"   stopColor={w.color} stopOpacity="0.05" />
+                <stop offset="60%"  stopColor={w.color} stopOpacity="0.20" />
+                <stop offset="100%" stopColor={w.color} stopOpacity="0.45" />
               </radialGradient>
             ))}
           </defs>
 
+          {/* Background circle */}
+          <circle cx={cx} cy={cy} r={maxR} fill="none" stroke="#9CA3AF" strokeWidth="1" />
+
           {/* Grid rings */}
           {Array.from({ length: levels }, (_, i) => (
-            <polygon key={i} points={gridPoints(i)} fill="none" stroke="#374151" strokeWidth="0.8" opacity="0.6" />
+            <polygon key={i} points={gridPoints(i)} fill="none" stroke="#9CA3AF" strokeWidth="0.5" opacity="0.5" />
           ))}
 
-          {/* Axes */}
-          {Array.from({ length: n }, (_, i) => {
+          {/* Axis lines */}
+          {Array.from({ length: total }, (_, i) => {
             const a = (angleOf(i) * Math.PI) / 180
             return (
               <line key={i}
                 x1={cx} y1={cy}
                 x2={cx + Math.cos(a) * maxR}
                 y2={cy + Math.sin(a) * maxR}
-                stroke="#4B5563" strokeWidth="1.2"
+                stroke="#D1D5DB" strokeWidth="1.5"
               />
             )
           })}
 
           {/* Scale numbers */}
           {[1, 2, 3, 4, 5].map(lv => (
-            <text key={lv} x={cx + 6} y={cy - (lv / 5) * maxR + 8}
-              fontSize="22" fill="#6B7280" textAnchor="start">{lv}</text>
+            <text key={lv}
+              x={cx + 8} y={cy - (lv / 5) * maxR + 6}
+              fontSize="33" fill="#9CA3AF" textAnchor="start">
+              {lv}
+            </text>
           ))}
 
-          {/* All 3 polygons */}
-          {drawOrder.map(wi => {
-            const w       = worlds[wi]
-            const isDom   = wi === dominantIndex
-            const gradId  = `cwr-g-${wi}-${dominantIndex}`
+          {/* 3 world triangles */}
+          {worlds.map((w, wi) => {
+            const pts = worldTriangles[wi].map(p => `${p.x},${p.y}`).join(' ')
             return (
               <g key={wi}>
                 <polygon
-                  points={polyPoints(w)}
-                  fill={`url(#${gradId})`}
+                  points={pts}
+                  fill={`url(#cwf-g-${wi})`}
                   stroke={w.color}
-                  strokeWidth={isDom ? 3.5 : 1.5}
-                  opacity={1}
-                  strokeDasharray={isDom ? undefined : '5 4'}
-                  style={isDom ? { filter: `drop-shadow(0 0 6px ${w.color}80)` } : undefined}
+                  strokeWidth="3"
+                  style={{ filter: `drop-shadow(0 0 4px ${w.color}66)` }}
                 />
                 {/* Data points */}
-                {w.data.map((d, i) => {
-                  const p = toXY(i, d.value)
-                  return (
-                    <circle key={i}
-                      cx={p.x} cy={p.y}
-                      r={isDom ? 9 : 5}
-                      fill={w.color}
-                      stroke="#fff"
-                      strokeWidth={isDom ? 2.5 : 1.5}
-                      opacity={1}
-                    />
-                  )
-                })}
+                {worldTriangles[wi].map((p, pi) => (
+                  <circle key={pi}
+                    cx={p.x} cy={p.y} r="14"
+                    fill={w.color} stroke="#ffffff" strokeWidth="3"
+                  />
+                ))}
               </g>
             )
           })}
 
-          {/* Axis labels */}
-          {axisLabels.map((lbl, i) => (
+          {/* Axis labels — each colored by its world */}
+          {allLabels.map((lbl, i) => (
             <text key={i}
               x={lbl.x} y={lbl.y}
-              fontSize="30" fill="#fff"
+              fontSize="37" fill={lbl.color}
               textAnchor={lbl.anchor}
               dominantBaseline="middle"
-              fontWeight="600"
+              fontWeight="700"
             >
               {lbl.text}
             </text>
@@ -146,13 +142,15 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
         </svg>
       </div>
 
-      {/* Static label */}
-      <div className="flex items-center justify-center gap-1.5 mt-1">
-        <span className="w-3 h-3 rounded-full flex-shrink-0"
-          style={{ background: worlds[dominantIndex].color }} />
-        <span className="text-sm font-semibold text-white">
-          {worlds[dominantIndex].label}
-        </span>
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-5 mt-3 flex-wrap"
+        dir={language === 'ar' ? 'rtl' : 'ltr'}>
+        {worlds.map((w, wi) => (
+          <div key={wi} className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: w.color }} />
+            <span className="text-sm font-semibold" style={{ color: w.color }}>{w.label}</span>
+          </div>
+        ))}
       </div>
     </div>
   )

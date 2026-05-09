@@ -841,7 +841,7 @@ export default function ReportPage() {
                       </div>
                     </div>
 
-                    {/* 3 overlapping world radars — each highlights its own world */}
+                    {/* Single 9-axis circular radar with 3 colored world triangles */}
                     {(() => {
                       type WEntry = { data: ChartData[]; label: string; color: string }
                       const worldsData: [WEntry, WEntry, WEntry] = [
@@ -850,15 +850,13 @@ export default function ReportPage() {
                         { data: chartData.worldRadarExistential ?? [],  label: chartData.worldLabels.existential, color: '#3b82f6' },
                       ]
                       return (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                          {([0, 1, 2] as const).map(idx => (
+                        <div className="flex justify-center mt-2">
+                          <div className="w-full max-w-md">
                             <CombinedWorldRadar
-                              key={idx}
                               worlds={worldsData}
-                              dominantIndex={idx}
                               language={questionnaireData.language}
                             />
-                          ))}
+                          </div>
                         </div>
                       )
                     })()}
