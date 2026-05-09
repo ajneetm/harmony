@@ -8,7 +8,7 @@ import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import rehypeHighlight from 'rehype-highlight'
 import RadarChart from '../components/RadarChart'
-import WorldRadarChart from '../components/WorldRadarChart'
+import CombinedWorldRadar from '../components/CombinedWorldRadar'
 import misbaraLogo from '../components/icons/misbara_original_logo.svg'
 import headerSvg from '../components/icons/header.svg'
 import footerSvg from '../components/icons/footer.svg'
@@ -841,40 +841,27 @@ export default function ReportPage() {
                       </div>
                     </div>
 
-                    {/* 3 World Radar Charts */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                      <div className="chart-container h-40 md:h-52 flex items-center justify-center">
-                        <WorldRadarChart
-                          title={chartData.worldLabels.inner}
-                          color="#22c55e"
-                          data={chartData.worldRadarInner}
-                          language={questionnaireData.language}
-                        />
-                      </div>
-                      <div className="chart-container h-40 md:h-52 flex items-center justify-center">
-                        <WorldRadarChart
-                          title={chartData.worldLabels.physical}
-                          color="#ae1f23"
-                          data={chartData.worldRadarPhysical ?? []}
-                          language={questionnaireData.language}
-                        />
-                      </div>
-                      <div className="chart-container h-40 md:h-52 flex items-center justify-center">
-                        <WorldRadarChart
-                          title={chartData.worldLabels.existential}
-                          color="#3b82f6"
-                          data={chartData.worldRadarExistential ?? []}
-                          language={questionnaireData.language}
-                        />
-                      </div>
-                    </div>
-
-                    {/* World percentages */}
-                    <div className="grid grid-cols-3 gap-3 mt-2 text-center">
-                      <span className="text-xl font-bold" style={{ color: '#22c55e' }}>{chartData.mental.percentage}%</span>
-                      <span className="text-xl font-bold" style={{ color: '#ae1f23' }}>{chartData.emotional.percentage}%</span>
-                      <span className="text-xl font-bold" style={{ color: '#3b82f6' }}>{chartData.existential.percentage}%</span>
-                    </div>
+                    {/* 3 overlapping world radars — each highlights its own world */}
+                    {(() => {
+                      type WEntry = { data: ChartData[]; label: string; color: string }
+                      const worldsData: [WEntry, WEntry, WEntry] = [
+                        { data: chartData.worldRadarInner,              label: chartData.worldLabels.inner,       color: '#22c55e' },
+                        { data: chartData.worldRadarPhysical    ?? [],  label: chartData.worldLabels.physical,    color: '#ae1f23' },
+                        { data: chartData.worldRadarExistential ?? [],  label: chartData.worldLabels.existential, color: '#3b82f6' },
+                      ]
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                          {([0, 1, 2] as const).map(idx => (
+                            <CombinedWorldRadar
+                              key={idx}
+                              worlds={worldsData}
+                              dominantIndex={idx}
+                              language={questionnaireData.language}
+                            />
+                          ))}
+                        </div>
+                      )
+                    })()}
                   </>
                 )}
 
