@@ -56,6 +56,17 @@ export interface ReportChartData {
     emotional: string
     behavioral: string
   }
+  // World radars: العالم الداخلي / الفيزيائي / الوجودي
+  worldRadarInner: ChartData[]
+  worldRadarPhysical: ChartData[]
+  worldRadarExistential: ChartData[]
+  worldLabels: {
+    inner: string
+    physical: string
+    existential: string
+  }
+  worldHarmony: number
+  dominantWorld: string
 }
 
 interface ReportData {
@@ -169,6 +180,32 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
       value: group[i].count > 0 ? group[i].total / group[i].count : 0,
     }))
 
+  // ── World radars (3 axes each = 3 functions per world, averaged across all 3 types) ──
+  // Each world = one dimension (9 questions). Each axis = one element (3 questions averaged).
+  const buildWorldRadar = (dimAnswers: number[], names: string[]): ChartData[] =>
+    names.map((name, i) => ({
+      dimension: name,
+      value: (dimAnswers[i * 3] + dimAnswers[i * 3 + 1] + dimAnswers[i * 3 + 2]) / 3,
+    }))
+
+  const worldRadarInner    = buildWorldRadar(mentalAnswers,      elementNames.mental)
+  const worldRadarPhysical = buildWorldRadar(emotionalAnswers,   elementNames.emotional)
+  const worldRadarExistential = buildWorldRadar(existentialAnswers, elementNames.existential)
+
+  const worldLabels = {
+    inner:      language === 'ar' ? 'العالم الداخلي'   : 'Inner World',
+    physical:   language === 'ar' ? 'العالم الفيزيائي' : 'Physical World',
+    existential: language === 'ar' ? 'العالم الوجودي'  : 'Existential World',
+  }
+
+  // World harmony = 100 - (max_world% - min_world%)
+  const worldPcts = [mentalPct, emotionalPct, existentialPct]
+  const worldHarmony = Math.max(0, 100 - (Math.max(...worldPcts) - Math.min(...worldPcts)))
+
+  const worldNames = [worldLabels.inner, worldLabels.physical, worldLabels.existential]
+  const dominantIndex = worldPcts.indexOf(Math.max(...worldPcts))
+  const dominantWorld = worldNames[dominantIndex]
+
   return {
     mental: { percentage: mentalPct, elements: mentalElements },
     emotional: { percentage: emotionalPct, elements: emotionalElements },
@@ -185,6 +222,12 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
       emotional: language === 'ar' ? 'المشاعري' : 'Emotional',
       behavioral: language === 'ar' ? 'السلوكي' : 'Existential',
     },
+    worldRadarInner,
+    worldRadarPhysical,
+    worldRadarExistential,
+    worldLabels,
+    worldHarmony,
+    dominantWorld,
   }
 }
 

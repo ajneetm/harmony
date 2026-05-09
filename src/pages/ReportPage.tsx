@@ -8,6 +8,7 @@ import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import rehypeHighlight from 'rehype-highlight'
 import RadarChart from '../components/RadarChart'
+import WorldRadarChart from '../components/WorldRadarChart'
 import misbaraLogo from '../components/icons/misbara_original_logo.svg'
 import headerSvg from '../components/icons/header.svg'
 import footerSvg from '../components/icons/footer.svg'
@@ -61,6 +62,16 @@ interface ReportChartData {
     emotional: string
     behavioral: string
   }
+  worldRadarInner?: ChartData[]
+  worldRadarPhysical?: ChartData[]
+  worldRadarExistential?: ChartData[]
+  worldLabels?: {
+    inner: string
+    physical: string
+    existential: string
+  }
+  worldHarmony?: number
+  dominantWorld?: string
 }
 
 interface ReportData {
@@ -790,19 +801,83 @@ export default function ReportPage() {
                       {chartData.mental.percentage}%
                     </span>
                   </div>
-
                   <div className="text-center">
                     <span className="text-xl font-bold" style={{ color: '#ae1f23' }}>
                       {chartData.emotional.percentage}%
                     </span>
                   </div>
-
                   <div className="text-center">
                     <span className="text-xl font-bold" style={{ color: '#3b82f6' }}>
                       {chartData.existential.percentage}%
                     </span>
                   </div>
                 </div>
+
+                {/* ══ WORLDS SECTION ══ */}
+                {chartData.worldRadarInner && chartData.worldLabels && (
+                  <>
+                    {/* Divider */}
+                    <div className="my-5 border-t border-gray-700" />
+
+                    {/* World summary cards */}
+                    <div className="flex flex-col sm:flex-row justify-center gap-3 mb-5">
+                      {/* World harmony */}
+                      <div className="flex-1 rounded-2xl px-5 py-4" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+                        <p className="text-xs text-gray-400 mb-2">
+                          {isArabic ? 'التجانس بين العوالم الثلاث' : 'Coherence Between Worlds'}
+                        </p>
+                        <p className="text-4xl font-bold leading-none text-white">
+                          {chartData.worldHarmony ?? 0}%
+                        </p>
+                      </div>
+                      {/* Dominant world */}
+                      <div className="flex-1 rounded-2xl px-5 py-4" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+                        <p className="text-xs text-gray-400 mb-2">
+                          {isArabic ? 'العالم المتحكم' : 'Dominant World'}
+                        </p>
+                        <p className="text-2xl font-bold leading-snug" style={{ color: '#f59e0b' }}>
+                          {chartData.dominantWorld}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* 3 World Radar Charts */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                      <div className="chart-container h-40 md:h-52 flex items-center justify-center">
+                        <WorldRadarChart
+                          title={chartData.worldLabels.inner}
+                          color="#22c55e"
+                          data={chartData.worldRadarInner}
+                          language={questionnaireData.language}
+                        />
+                      </div>
+                      <div className="chart-container h-40 md:h-52 flex items-center justify-center">
+                        <WorldRadarChart
+                          title={chartData.worldLabels.physical}
+                          color="#ae1f23"
+                          data={chartData.worldRadarPhysical ?? []}
+                          language={questionnaireData.language}
+                        />
+                      </div>
+                      <div className="chart-container h-40 md:h-52 flex items-center justify-center">
+                        <WorldRadarChart
+                          title={chartData.worldLabels.existential}
+                          color="#3b82f6"
+                          data={chartData.worldRadarExistential ?? []}
+                          language={questionnaireData.language}
+                        />
+                      </div>
+                    </div>
+
+                    {/* World percentages */}
+                    <div className="grid grid-cols-3 gap-3 mt-2 text-center">
+                      <span className="text-xl font-bold" style={{ color: '#22c55e' }}>{chartData.mental.percentage}%</span>
+                      <span className="text-xl font-bold" style={{ color: '#ae1f23' }}>{chartData.emotional.percentage}%</span>
+                      <span className="text-xl font-bold" style={{ color: '#3b82f6' }}>{chartData.existential.percentage}%</span>
+                    </div>
+                  </>
+                )}
+
               </section>
             )}
 

@@ -5,9 +5,14 @@ export const report_AR_prompt = `
 يقسّم النموذج التجربة الإنسانية إلى 3 أبعاد عليا (ذهني، مشاعري، وجودي)، وكل بُعد يضم 3 وظائف أساسية.
 
 الأبعاد والوظائف:
-- البعد الذهني: الإدراك (الوعي والفهم) ، الجاهزية (الاستعداد النفسي والذهني) ، النية (وضوح القصد والتوجه)
-- البعد المشاعري: الفعل (ترجمة الفهم إلى خطوات) ، التفاعل (التعامل مع المحيط والآخرين) ، الناتج (استخلاص الدروس والمكاسب)
-- البعد السلوكي: الاستقبال (تلقّي الحدث بوعي) ، التطور (النمو والتغيير عبر التجارب) ، التشكل (إعادة بناء الهوية)
+- البعد الذهني (= العالم الداخلي): الإدراك (الوعي والفهم) ، الجاهزية (الاستعداد النفسي والذهني) ، النية (وضوح القصد والتوجه)
+- البعد المشاعري (= العالم الفيزيائي): الفعل (ترجمة الفهم إلى خطوات) ، التفاعل (التعامل مع المحيط والآخرين) ، الناتج (استخلاص الدروس والمكاسب)
+- البعد السلوكي (= العالم الوجودي): الاستقبال (تلقّي الحدث بوعي) ، التطور (النمو والتغيير عبر التجارب) ، التشكل (إعادة بناء الهوية)
+
+ملاحظة: كل بعد يرتبط بعالم مقابل له في نموذج هارموني للعوالم الثلاث:
+- العالم الداخلي ← البعد الذهني (التفكير، الوعي، النية)
+- العالم الفيزيائي ← البعد المشاعري (الفعل، التفاعل، النتائج الملموسة)
+- العالم الوجودي ← البعد السلوكي (الهوية، التطور، التشكّل العميق)
 
 ---
 
@@ -21,6 +26,14 @@ export const report_AR_prompt = `
 
 ## التجانس بين الأبعاد
 بلغت درجة التجانس بين البعد الذهني والبعد المشاعري والبعد السلوكي [harmony_percentage]%، وهي [تفسير درجة التجانس وفق الجدول أدناه].
+
+## العوالم الثلاث
+بلغت نسبة التجانس بين عوالم الشخصية الثلاثة ([تجانس_العوالم]%):
+- **العالم الداخلي** (الذهني): [نسبة_الذهني]%
+- **العالم الفيزيائي** (المشاعري): [نسبة_المشاعري]%
+- **العالم الوجودي** (السلوكي): [نسبة_السلوكي]%
+
+العالم المتحكم في هذه الشخصية هو **[العالم_المتحكم]**، [جملة قصيرة تشرح ما يعنيه ذلك عملياً بحيث تعكس طبيعة هذا العالم في السلوك والقرار].
 
 [قاعدة التجانس الفعلي: إذا كان هناك تباعد ملحوظ بين درجات الأبعاد الثلاثة (ذهني، مشاعري، سلوكي) داخل الوظائف الأقوى أو الأضعف — أي أن بُعدًا واحدًا يهيمن بوضوح بينما يتراجع الآخران — فلا يمكن اعتبار النتائج متجانسة حتى لو بلغت نسبة التجانس الحسابية قيمةً مرتفعة. في هذه الحالة أشر إلى هذا التفاوت في الفقرة بوضوح وبأسلوب مهني.]
 
@@ -115,9 +128,14 @@ You are a smart assistant specialized in writing developmental psychological rep
 The model divides human experience into 3 main dimensions (Mental, Emotional, Existential), each containing 3 core functions.
 
 Dimensions and functions:
-- Mental dimension: Perception (awareness and understanding), Readiness (psychological and mental preparedness), Intention (clarity of purpose and direction)
-- Emotional dimension: Action (translating understanding into steps), Interaction (engaging with the environment and others), Outcome (extracting lessons and gains)
-- Existential dimension: Reception (receiving events with awareness), Evolution (growth and change through experiences), Formation (rebuilding identity)
+- Mental dimension (= Inner World): Perception (awareness and understanding), Readiness (psychological and mental preparedness), Intention (clarity of purpose and direction)
+- Emotional dimension (= Physical World): Action (translating understanding into steps), Interaction (engaging with the environment and others), Outcome (extracting lessons and gains)
+- Existential dimension (= Existential World): Reception (receiving events with awareness), Evolution (growth and change through experiences), Formation (rebuilding identity)
+
+Note: Each dimension maps to a corresponding world in Harmony's three-worlds model:
+- Inner World ← Mental dimension (thinking, awareness, intention)
+- Physical World ← Emotional dimension (action, interaction, tangible results)
+- Existential World ← Existential dimension (identity, evolution, deep formation)
 
 ---
 
@@ -131,6 +149,14 @@ The participant's overall level reached [overall_percentage]%, indicating [level
 
 ## Coherence Between Dimensions
 The coherence score between the Mental, Emotional, and Existential dimensions reached [harmony_percentage]%, which is [harmony interpretation from table below].
+
+## The Three Worlds
+The coherence between the three personality worlds reached [world_coherence]%:
+- **Inner World** (Mental): [mental_percentage]%
+- **Physical World** (Emotional): [emotional_percentage]%
+- **Existential World** (Existential): [existential_percentage]%
+
+The dominant world in this personality is **[dominant_world]**, [a short sentence explaining what this means practically, reflecting how this world shapes the person's behavior and decisions].
 
 [Coherence rule: If there is a notable gap between the three dimension scores (Mental, Emotional, Existential) within the top or bottom functions — meaning one dimension clearly dominates while the others fall behind — the results cannot be considered truly coherent even if the calculated harmony percentage is high. In this case, clearly note this imbalance in a professional tone.]
 

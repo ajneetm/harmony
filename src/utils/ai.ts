@@ -144,12 +144,12 @@ export const generateReport = async (_answersData: any, chartData: any, language
   try {
     const reportPrompt = getReportPrompt(language)
 
-    const { mental, emotional, existential, harmony, overall, allElements } = chartData
+    const { mental, emotional, existential, harmony, overall, allElements, worldHarmony, dominantWorld } = chartData
 
     const dimensionData = [
-      { value: mental.percentage,      label_ar: 'الذهني',   label_en: 'Mental',      desc_ar: 'جانب التفكير والتحليل',         desc_en: 'the side of thinking and analysis' },
-      { value: emotional.percentage,   label_ar: 'المشاعري', label_en: 'Emotional',   desc_ar: 'جانب المشاعر والتفاعل الداخلي', desc_en: 'the side of emotions and inner interaction' },
-      { value: existential.percentage, label_ar: 'السلوكي',  label_en: 'Existential', desc_ar: 'جانب الهوية والتشكل الداخلي',   desc_en: 'the side of identity and inner formation' },
+      { value: mental.percentage,      label_ar: 'الذهني',   label_en: 'Mental',      desc_ar: 'جانب التفكير والتحليل',         desc_en: 'the side of thinking and analysis',  world_ar: 'العالم الداخلي',   world_en: 'Inner World'       },
+      { value: emotional.percentage,   label_ar: 'المشاعري', label_en: 'Emotional',   desc_ar: 'جانب المشاعر والتفاعل الداخلي', desc_en: 'the side of emotions and inner interaction', world_ar: 'العالم الفيزيائي', world_en: 'Physical World'    },
+      { value: existential.percentage, label_ar: 'السلوكي',  label_en: 'Existential', desc_ar: 'جانب الهوية والتشكل الداخلي',   desc_en: 'the side of identity and inner formation',  world_ar: 'العالم الوجودي',   world_en: 'Existential World' },
     ].sort((a, b) => b.value - a.value)
 
     const highest    = dimensionData[0]
@@ -171,6 +171,13 @@ export const generateReport = async (_answersData: any, chartData: any, language
           'أقوى_3_وظائف':  top3.map((e: any)    => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
           'أضعف_3_وظائف':  bottom3.map((e: any) => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
           'فجوة_التوازن':  Number(balance_gap.toFixed(1)),
+          'العوالم_الثلاثة': {
+            'العالم_الداخلي':   { النسبة: mental.percentage,      البعد: 'الذهني'   },
+            'العالم_الفيزيائي': { النسبة: emotional.percentage,   البعد: 'المشاعري' },
+            'العالم_الوجودي':   { النسبة: existential.percentage, البعد: 'السلوكي'  },
+          },
+          'تجانس_العوالم':  worldHarmony ?? harmony,
+          'العالم_المتحكم': dominantWorld ?? highest.world_ar,
         }, null, 2)
       : JSON.stringify({
           overall_percentage:     overall,
@@ -183,6 +190,13 @@ export const generateReport = async (_answersData: any, chartData: any, language
           top_3_functions:    top3.map((e: any)    => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
           bottom_3_functions: bottom3.map((e: any) => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
           balance_gap: Number(balance_gap.toFixed(1)),
+          three_worlds: {
+            inner_world:       { percentage: mental.percentage,      dimension: 'Mental'      },
+            physical_world:    { percentage: emotional.percentage,   dimension: 'Emotional'   },
+            existential_world: { percentage: existential.percentage, dimension: 'Existential' },
+          },
+          world_coherence:  worldHarmony ?? harmony,
+          dominant_world:   dominantWorld ?? highest.world_en,
         }, null, 2)
 
     const fullPrompt = reportPrompt.replace('{CHART_DATA_PLACEHOLDER}', chartDataText)
