@@ -7,13 +7,14 @@ interface CombinedWorldRadarProps {
   cognitive:  number[]          // 3 ذهني  values  → green
   emotional:  number[]          // 3 مشاعري values  → red
   behavioral: number[]          // 3 سلوكي values   → blue
+  percentage: number
   language?: 'ar' | 'en'
 }
 
 const COLORS = { cognitive: '#22c55e', emotional: '#ae1f23', behavioral: '#3b82f6' }
 
 const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
-  title, titleColor, axisLabels, cognitive, emotional, behavioral, language = 'en'
+  title, titleColor, axisLabels, cognitive, emotional, behavioral, percentage, language = 'en'
 }) => {
   const size   = 700
   const cx     = size / 2
@@ -126,21 +127,13 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
         </svg>
       </div>
 
-      {/* World title */}
-      <div className="flex items-center justify-center gap-1.5 mt-1 mb-1">
+      {/* World title + percentage */}
+      <div className="flex items-center justify-center gap-1.5 mt-1 mb-0.5">
         <span className="w-3 h-3 rounded-full" style={{ background: titleColor }} />
         <span className="text-sm font-bold" style={{ color: titleColor }}>{title}</span>
       </div>
-
-      {/* Type legend */}
-      <div className="flex items-center justify-center gap-3 flex-wrap"
-        dir={language === 'ar' ? 'rtl' : 'ltr'}>
-        {types.map(t => (
-          <div key={t.key} className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.color }} />
-            <span className="text-[10px] font-medium" style={{ color: t.color }}>{t.label}</span>
-          </div>
-        ))}
+      <div className="text-center">
+        <span className="text-xl font-bold" style={{ color: titleColor }}>{percentage}%</span>
       </div>
     </div>
   )

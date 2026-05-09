@@ -846,6 +846,30 @@ export default function ReportPage() {
                       const rc = chartData.radarCognitive
                       const re = chartData.radarEmotional
                       const rb = chartData.radarBehavioral
+
+                      const fnCoherence = (c: number, e: number, b: number) =>
+                        Math.max(0, Math.round(100 - (Math.max(c, e, b) - Math.min(c, e, b)) * 25))
+
+                      const worldInternalCoherence = (start: number) => {
+                        const scores = [0, 1, 2].map(j =>
+                          fnCoherence(rc[start + j].value, re[start + j].value, rb[start + j].value)
+                        )
+                        return Math.round(scores.reduce((a, b) => a + b, 0) / 3)
+                      }
+
+                      const innerCoh  = worldInternalCoherence(0)
+                      const physCoh   = worldInternalCoherence(3)
+                      const existCoh  = worldInternalCoherence(6)
+
+                      const cohMap = [
+                        { label: chartData.worldLabels.inner,       coh: innerCoh,  color: '#22c55e' },
+                        { label: chartData.worldLabels.physical,     coh: physCoh,   color: '#ae1f23' },
+                        { label: chartData.worldLabels.existential,  coh: existCoh,  color: '#3b82f6' },
+                      ]
+                      const avgCoh      = Math.round((innerCoh + physCoh + existCoh) / 3)
+                      const mostCoh     = cohMap.reduce((a, b) => a.coh >= b.coh ? a : b)
+                      const mostDisturb = cohMap.reduce((a, b) => a.coh <= b.coh ? a : b)
+
                       const worlds = [
                         {
                           title: chartData.worldLabels.inner,
@@ -854,6 +878,7 @@ export default function ReportPage() {
                           cognitive:  rc.slice(0, 3).map(d => d.value),
                           emotional:  re.slice(0, 3).map(d => d.value),
                           behavioral: rb.slice(0, 3).map(d => d.value),
+                          percentage: chartData.mental.percentage,
                         },
                         {
                           title: chartData.worldLabels.physical,
@@ -862,6 +887,7 @@ export default function ReportPage() {
                           cognitive:  rc.slice(3, 6).map(d => d.value),
                           emotional:  re.slice(3, 6).map(d => d.value),
                           behavioral: rb.slice(3, 6).map(d => d.value),
+                          percentage: chartData.emotional.percentage,
                         },
                         {
                           title: chartData.worldLabels.existential,
@@ -870,14 +896,42 @@ export default function ReportPage() {
                           cognitive:  rc.slice(6, 9).map(d => d.value),
                           emotional:  re.slice(6, 9).map(d => d.value),
                           behavioral: rb.slice(6, 9).map(d => d.value),
+                          percentage: chartData.existential.percentage,
                         },
                       ]
+
                       return (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                          {worlds.map((w, i) => (
-                            <CombinedWorldRadar key={i} {...w} language={questionnaireData.language} />
-                          ))}
-                        </div>
+                        <>
+                          {/* Per-world coherence indicators */}
+                          <div className="flex flex-col sm:flex-row justify-center gap-3 mb-4">
+                            <div className="flex-1 rounded-2xl px-5 py-4" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+                              <p className="text-xs text-gray-400 mb-2">
+                                {isArabic ? 'متوسط تجانس العوالم' : 'Avg World Coherence'}
+                              </p>
+                              <p className="text-4xl font-bold leading-none text-white">{avgCoh}%</p>
+                            </div>
+                            <div className="flex-1 rounded-2xl px-5 py-4" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+                              <p className="text-xs text-gray-400 mb-2">
+                                {isArabic ? 'أكثر عالم مضطرب' : 'Most Disturbed World'}
+                              </p>
+                              <p className="text-xl font-bold leading-snug" style={{ color: mostDisturb.color }}>{mostDisturb.label}</p>
+                              <p className="text-sm text-gray-400">{mostDisturb.coh}%</p>
+                            </div>
+                            <div className="flex-1 rounded-2xl px-5 py-4" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+                              <p className="text-xs text-gray-400 mb-2">
+                                {isArabic ? 'أكثر عالم متجانس' : 'Most Coherent World'}
+                              </p>
+                              <p className="text-xl font-bold leading-snug" style={{ color: mostCoh.color }}>{mostCoh.label}</p>
+                              <p className="text-sm text-gray-400">{mostCoh.coh}%</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                            {worlds.map((w, i) => (
+                              <CombinedWorldRadar key={i} {...w} language={questionnaireData.language} />
+                            ))}
+                          </div>
+                        </>
                       )
                     })()}
                   </>
