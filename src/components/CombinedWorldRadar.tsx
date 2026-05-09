@@ -1,25 +1,27 @@
 import React from 'react'
 
-interface WorldEntry {
-  data: Array<{ dimension: string; value: number }>
-  label: string
-  color: string
-}
-
 interface CombinedWorldRadarProps {
-  worlds: [WorldEntry, WorldEntry, WorldEntry]
-  dominantIndex?: number
+  title: string
+  titleColor: string
+  axisLabels: string[]          // 3 function names for this world
+  cognitive:  number[]          // 3 ذهني  values  → green
+  emotional:  number[]          // 3 مشاعري values  → red
+  behavioral: number[]          // 3 سلوكي values   → blue
   language?: 'ar' | 'en'
 }
 
-const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({ worlds, dominantIndex = 0, language = 'en' }) => {
+const COLORS = { cognitive: '#22c55e', emotional: '#ae1f23', behavioral: '#3b82f6' }
+
+const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
+  title, titleColor, axisLabels, cognitive, emotional, behavioral, language = 'en'
+}) => {
   const size   = 700
   const cx     = size / 2
   const cy     = size / 2
-  const maxR   = 250
+  const maxR   = 240
   const levels = 5
   const n      = 3
-  const labelR = maxR + 62
+  const labelR = maxR + 65
 
   const angleOf = (i: number) => (i * 360) / n - 90
 
@@ -36,26 +38,30 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({ worlds, dominan
       return `${cx + Math.cos(a) * r},${cy + Math.sin(a) * r}`
     }).join(' ')
 
-  const polyPoints = (world: WorldEntry) =>
-    world.data.map((d, i) => {
-      const p = toXY(i, d.value)
+  const buildPoly = (values: number[]) =>
+    values.map((v, i) => {
+      const p = toXY(i, v)
       return `${p.x},${p.y}`
     }).join(' ')
 
-  const axisLabels = worlds[0].data.map((_, i) => {
-    const a = (angleOf(i) * Math.PI) / 180
-    const x = cx + Math.cos(a) * labelR
-    const y = cy + Math.sin(a) * labelR
-    return {
-      x, y,
-      anchor: x > cx + 10 ? 'start' : x < cx - 10 ? 'end' : 'middle',
-    }
-  })
+  const types = [
+    { key: 'cognitive',  values: cognitive,  color: COLORS.cognitive,  label: language === 'ar' ? 'الذهني'   : 'Cognitive'  },
+    { key: 'emotional',  values: emotional,  color: COLORS.emotional,  label: language === 'ar' ? 'المشاعري' : 'Emotional'  },
+    { key: 'behavioral', values: behavioral, color: COLORS.behavioral, label: language === 'ar' ? 'السلوكي'  : 'Behavioral' },
+  ]
 
   return (
     <div className="flex flex-col items-center w-full">
-      <div className="w-full" style={{ maxWidth: 380 }}>
+      <div className="w-full" style={{ maxWidth: 340 }}>
         <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-auto">
+          <defs>
+            {types.map(t => (
+              <radialGradient key={t.key} id={`cwrf-${t.key}-${title.replace(/\s/g,'')}`} cx="50%" cy="50%" r="50%">
+                <stop offset="0%"   stopColor={t.color} stopOpacity="0.03" />
+                <stop offset="100%" stopColor={t.color} stopOpacity="0.30" />
+              </radialGradient>
+            ))}
+          </defs>
 
           {/* Grid rings */}
           {Array.from({ length: levels }, (_, i) => (
@@ -76,69 +82,65 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({ worlds, dominan
           })}
 
           {/* Scale numbers */}
-          {[1, 2, 3, 4, 5].map(lv => (
-            <text key={lv} x={cx + 6} y={cy - (lv / 5) * maxR + 8}
+          {[1,2,3,4,5].map(lv => (
+            <text key={lv} x={cx + 6} y={cy - (lv/5)*maxR + 7}
               fontSize="22" fill="#6B7280" textAnchor="start">{lv}</text>
           ))}
 
-          {/* 3 world triangles — dominant filled, others outline only */}
-          {worlds.map((w, wi) => {
-            const isDom = wi === dominantIndex
+          {/* 3 type triangles */}
+          {types.map(t => (
+            <g key={t.key}>
+              <polygon
+                points={buildPoly(t.values)}
+                fill={`url(#cwrf-${t.key}-${title.replace(/\s/g,'')})`}
+                stroke={t.color}
+                strokeWidth="2.5"
+                strokeLinejoin="round"
+              />
+              {t.values.map((v, i) => {
+                const p = toXY(i, v)
+                return (
+                  <circle key={i}
+                    cx={p.x} cy={p.y} r="7"
+                    fill={t.color} stroke="#111" strokeWidth="2"
+                  />
+                )
+              })}
+            </g>
+          ))}
+
+          {/* Axis labels */}
+          {axisLabels.map((lbl, i) => {
+            const a = (angleOf(i) * Math.PI) / 180
+            const x = cx + Math.cos(a) * labelR
+            const y = cy + Math.sin(a) * labelR
+            const anchor = x > cx + 10 ? 'start' : x < cx - 10 ? 'end' : 'middle'
             return (
-              <g key={wi}>
-                <polygon
-                  points={polyPoints(w)}
-                  fill={isDom ? w.color + '33' : 'none'}
-                  stroke={w.color}
-                  strokeWidth={isDom ? 3 : 2}
-                  strokeLinejoin="round"
-                  style={isDom ? { filter: `drop-shadow(0 0 5px ${w.color}88)` } : undefined}
-                />
-                {/* Data points */}
-                {w.data.map((d, i) => {
-                  const p = toXY(i, d.value)
-                  return (
-                    <circle key={i}
-                      cx={p.x} cy={p.y} r={isDom ? 8 : 5}
-                      fill={w.color} stroke="#111" strokeWidth="2"
-                    />
-                  )
-                })}
-              </g>
+              <text key={i} x={x} y={y}
+                fontSize="30" fill="#ffffff"
+                textAnchor={anchor} dominantBaseline="middle" fontWeight="600">
+                {lbl}
+              </text>
             )
           })}
-
-          {/* Axis labels — show all 3 worlds' labels stacked */}
-          {axisLabels.map((lbl, i) => (
-            <text key={i}
-              x={lbl.x} y={lbl.y}
-              textAnchor={lbl.anchor}
-              dominantBaseline="middle"
-            >
-              {worlds.map((w, wi) => (
-                <tspan key={wi}
-                  x={lbl.x}
-                  dy={wi === 0 ? 0 : '1.2em'}
-                  fontSize="22"
-                  fill={w.color}
-                  fontWeight="600"
-                >
-                  {w.data[i]?.dimension}
-                </tspan>
-              ))}
-            </text>
-          ))}
         </svg>
       </div>
 
-      {/* Label for this radar's dominant world */}
-      <div className="flex items-center justify-center gap-1.5 mt-2">
-        <span className="w-3 h-3 rounded-full flex-shrink-0"
-          style={{ background: worlds[dominantIndex].color }} />
-        <span className="text-sm font-semibold"
-          style={{ color: worlds[dominantIndex].color }}>
-          {worlds[dominantIndex].label}
-        </span>
+      {/* World title */}
+      <div className="flex items-center justify-center gap-1.5 mt-1 mb-1">
+        <span className="w-3 h-3 rounded-full" style={{ background: titleColor }} />
+        <span className="text-sm font-bold" style={{ color: titleColor }}>{title}</span>
+      </div>
+
+      {/* Type legend */}
+      <div className="flex items-center justify-center gap-3 flex-wrap"
+        dir={language === 'ar' ? 'rtl' : 'ltr'}>
+        {types.map(t => (
+          <div key={t.key} className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: t.color }} />
+            <span className="text-[10px] font-medium" style={{ color: t.color }}>{t.label}</span>
+          </div>
+        ))}
       </div>
     </div>
   )

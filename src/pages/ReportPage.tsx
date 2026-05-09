@@ -841,23 +841,41 @@ export default function ReportPage() {
                       </div>
                     </div>
 
-                    {/* Single 9-axis circular radar with 3 colored world triangles */}
+                    {/* 3 world radars — each shows cognitive/emotional/behavioral breakdown */}
                     {(() => {
-                      type WEntry = { data: ChartData[]; label: string; color: string }
-                      const worldsData: [WEntry, WEntry, WEntry] = [
-                        { data: chartData.worldRadarInner,              label: chartData.worldLabels.inner,       color: '#22c55e' },
-                        { data: chartData.worldRadarPhysical    ?? [],  label: chartData.worldLabels.physical,    color: '#ae1f23' },
-                        { data: chartData.worldRadarExistential ?? [],  label: chartData.worldLabels.existential, color: '#3b82f6' },
+                      const rc = chartData.radarCognitive
+                      const re = chartData.radarEmotional
+                      const rb = chartData.radarBehavioral
+                      const worlds = [
+                        {
+                          title: chartData.worldLabels.inner,
+                          titleColor: '#22c55e',
+                          axisLabels: chartData.worldRadarInner.map(d => d.dimension),
+                          cognitive:  rc.slice(0, 3).map(d => d.value),
+                          emotional:  re.slice(0, 3).map(d => d.value),
+                          behavioral: rb.slice(0, 3).map(d => d.value),
+                        },
+                        {
+                          title: chartData.worldLabels.physical,
+                          titleColor: '#ae1f23',
+                          axisLabels: (chartData.worldRadarPhysical ?? []).map(d => d.dimension),
+                          cognitive:  rc.slice(3, 6).map(d => d.value),
+                          emotional:  re.slice(3, 6).map(d => d.value),
+                          behavioral: rb.slice(3, 6).map(d => d.value),
+                        },
+                        {
+                          title: chartData.worldLabels.existential,
+                          titleColor: '#3b82f6',
+                          axisLabels: (chartData.worldRadarExistential ?? []).map(d => d.dimension),
+                          cognitive:  rc.slice(6, 9).map(d => d.value),
+                          emotional:  re.slice(6, 9).map(d => d.value),
+                          behavioral: rb.slice(6, 9).map(d => d.value),
+                        },
                       ]
                       return (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                          {([0, 1, 2] as const).map(idx => (
-                            <CombinedWorldRadar
-                              key={idx}
-                              worlds={worldsData}
-                              dominantIndex={idx}
-                              language={questionnaireData.language}
-                            />
+                          {worlds.map((w, i) => (
+                            <CombinedWorldRadar key={i} {...w} language={questionnaireData.language} />
                           ))}
                         </div>
                       )
