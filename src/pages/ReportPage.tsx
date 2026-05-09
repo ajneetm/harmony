@@ -850,13 +850,15 @@ export default function ReportPage() {
                         { data: chartData.worldRadarExistential ?? [],  label: chartData.worldLabels.existential, color: '#3b82f6' },
                       ]
                       return (
-                        <div className="flex justify-center mt-2">
-                          <div className="w-full max-w-md">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                          {([0, 1, 2] as const).map(idx => (
                             <CombinedWorldRadar
+                              key={idx}
                               worlds={worldsData}
+                              dominantIndex={idx}
                               language={questionnaireData.language}
                             />
-                          </div>
+                          ))}
                         </div>
                       )
                     })()}

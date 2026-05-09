@@ -12,7 +12,7 @@ interface CombinedWorldRadarProps {
   language?: 'ar' | 'en'
 }
 
-const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({ worlds, language = 'en' }) => {
+const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({ worlds, dominantIndex = 0, language = 'en' }) => {
   const size   = 700
   const cx     = size / 2
   const cy     = size / 2
@@ -81,28 +81,32 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({ worlds, languag
               fontSize="22" fill="#6B7280" textAnchor="start">{lv}</text>
           ))}
 
-          {/* 3 world triangles — outline only, no fill */}
-          {worlds.map((w, wi) => (
-            <g key={wi}>
-              <polygon
-                points={polyPoints(w)}
-                fill="none"
-                stroke={w.color}
-                strokeWidth="2.5"
-                strokeLinejoin="round"
-              />
-              {/* Data points */}
-              {w.data.map((d, i) => {
-                const p = toXY(i, d.value)
-                return (
-                  <circle key={i}
-                    cx={p.x} cy={p.y} r="7"
-                    fill={w.color} stroke="#111" strokeWidth="2"
-                  />
-                )
-              })}
-            </g>
-          ))}
+          {/* 3 world triangles — dominant filled, others outline only */}
+          {worlds.map((w, wi) => {
+            const isDom = wi === dominantIndex
+            return (
+              <g key={wi}>
+                <polygon
+                  points={polyPoints(w)}
+                  fill={isDom ? w.color + '33' : 'none'}
+                  stroke={w.color}
+                  strokeWidth={isDom ? 3 : 2}
+                  strokeLinejoin="round"
+                  style={isDom ? { filter: `drop-shadow(0 0 5px ${w.color}88)` } : undefined}
+                />
+                {/* Data points */}
+                {w.data.map((d, i) => {
+                  const p = toXY(i, d.value)
+                  return (
+                    <circle key={i}
+                      cx={p.x} cy={p.y} r={isDom ? 8 : 5}
+                      fill={w.color} stroke="#111" strokeWidth="2"
+                    />
+                  )
+                })}
+              </g>
+            )
+          })}
 
           {/* Axis labels — show all 3 worlds' labels stacked */}
           {axisLabels.map((lbl, i) => (
@@ -127,15 +131,14 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({ worlds, languag
         </svg>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-5 mt-2 flex-wrap"
-        dir={language === 'ar' ? 'rtl' : 'ltr'}>
-        {worlds.map((w, wi) => (
-          <div key={wi} className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: w.color }} />
-            <span className="text-xs font-semibold" style={{ color: w.color }}>{w.label}</span>
-          </div>
-        ))}
+      {/* Label for this radar's dominant world */}
+      <div className="flex items-center justify-center gap-1.5 mt-2">
+        <span className="w-3 h-3 rounded-full flex-shrink-0"
+          style={{ background: worlds[dominantIndex].color }} />
+        <span className="text-sm font-semibold"
+          style={{ color: worlds[dominantIndex].color }}>
+          {worlds[dominantIndex].label}
+        </span>
       </div>
     </div>
   )
