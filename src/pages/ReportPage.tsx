@@ -737,7 +737,7 @@ export default function ReportPage() {
                       {/* Harmony */}
                       <div className="flex-1 rounded-2xl px-5 py-4" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
                         <p className="text-xs text-gray-400 mb-2">
-                          {isArabic ? 'التجانس بين الأبعاد' : 'Dimension Coherence'}
+                          {isArabic ? 'التجانس بين الوظائف' : 'Function Coherence'}
                         </p>
                         <p className="text-4xl font-bold leading-none text-white">
                           {chartData.harmony}%

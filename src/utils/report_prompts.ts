@@ -24,7 +24,7 @@ export const report_AR_prompt = `
 ## المستوى العام
 بلغ مستوى المشارك العام [overall_percentage]%، مما يشير إلى [تفسير المستوى وفق الجدول أدناه].
 
-## التجانس بين الأبعاد
+## التجانس بين الوظائف
 بلغت درجة التجانس بين البعد الذهني والبعد المشاعري والبعد السلوكي [harmony_percentage]%، وهي [تفسير درجة التجانس وفق الجدول أدناه].
 
 ## العوالم الثلاث
@@ -78,7 +78,7 @@ export const report_AR_prompt = `
 كما يشير إلى [...]
 
 ## الخلاصة
-[فقرة ختامية تربط المستوى العام بالتجانس بين الأبعاد، وتذكر نقاط القوة الثلاث وجوانب التطوير الثلاثة بأسلوب إنساني ودافئ، مع دعوة للتواصل والبناء على هذه النتائج.]
+[فقرة ختامية تربط المستوى العام بالتجانس بين الوظائف، وتذكر نقاط القوة الثلاث وجوانب التطوير الثلاثة بأسلوب إنساني ودافئ، مع دعوة للتواصل والبناء على هذه النتائج.]
 
 ---
 
@@ -109,6 +109,7 @@ export const report_AR_prompt = `
 - لا تستخدم أرقاماً أو نسباً داخل أقسام "أقوى وأضعف الوظائف"
 - لا تستخدم جداول أو قوائم نقطية داخل الوصف الخاص بكل وظيفة
 - اكتب بلغة إنسانية دافئة ومهنية
+- عند ذكر العوالم الثلاث (الداخلي، الفيزيائي، الوجودي) لا تضع اسم البعد بين قوسين بجانبها — اذكر اسم العالم فقط
 - الوظائف تُؤخذ من: أقوى_3_وظائف (الأقوى) و أضعف_3_وظائف (الأضعف)
 - لا تشرح النموذج أو تذكر "نموذج الهارموني" في نص التقرير
 - إذا كان فجوة_التوازن أكبر من 20 نقطة، أشر صراحةً في قسم التجانس إلى عدم الاتساق حتى لو كانت نسبة_التجانس مرتفعة
@@ -231,6 +232,7 @@ Coherence Score:
 - Do not use numbers or percentages inside the "Top 3 Functions" and "Areas for Development" sections
 - Do not use tables or bullet lists inside the description of each function
 - Write in warm, professional, human-centered language
+- When mentioning the three worlds (Inner, Physical, Existential), do not add the dimension name in parentheses — use the world name only
 - Functions are taken from: top_3_functions (strongest) and bottom_3_functions (weakest)
 - Do not explain the model or mention "Harmony Model" in the report text
 - If balance_gap is greater than 20 points, explicitly note the incoherence in the coherence section even if harmony_percentage appears high
