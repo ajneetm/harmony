@@ -5,9 +5,9 @@ export const report_AR_prompt = `
 يقسّم النموذج التجربة الإنسانية إلى 3 أبعاد عليا (ذهني، مشاعري، وجودي)، وكل بُعد يضم 3 وظائف أساسية.
 
 الأبعاد والوظائف:
-- البعد الذهني (= العالم الداخلي): الإدراك (الوعي والفهم) ، الجاهزية (الاستعداد النفسي والذهني) ، النية (وضوح القصد والتوجه)
-- البعد المشاعري (= العالم الفيزيائي): الفعل (ترجمة الفهم إلى خطوات) ، التفاعل (التعامل مع المحيط والآخرين) ، الناتج (استخلاص الدروس والمكاسب)
-- البعد السلوكي (= العالم الوجودي): الاستقبال (تلقّي الحدث بوعي) ، التطور (النمو والتغيير عبر التجارب) ، التشكل (إعادة بناء الهوية)
+- البعد الذهني: الإدراك (الوعي والفهم) ، الجاهزية (الاستعداد النفسي والذهني) ، النية (وضوح القصد والتوجه)
+- البعد المشاعري: الفعل (ترجمة الفهم إلى خطوات) ، التفاعل (التعامل مع المحيط والآخرين) ، الناتج (استخلاص الدروس والمكاسب)
+- البعد السلوكي: الاستقبال (تلقّي الحدث بوعي) ، التطور (النمو والتغيير عبر التجارب) ، التشكل (إعادة بناء الهوية)
 
 ملاحظة: كل بعد يرتبط بعالم مقابل له في نموذج هارموني للعوالم الثلاث:
 - العالم الداخلي ← البعد الذهني (التفكير، الوعي، النية)
@@ -128,9 +128,9 @@ You are a smart assistant specialized in writing developmental psychological rep
 The model divides human experience into 3 main dimensions (Mental, Emotional, Existential), each containing 3 core functions.
 
 Dimensions and functions:
-- Mental dimension (= Inner World): Perception (awareness and understanding), Readiness (psychological and mental preparedness), Intention (clarity of purpose and direction)
-- Emotional dimension (= Physical World): Action (translating understanding into steps), Interaction (engaging with the environment and others), Outcome (extracting lessons and gains)
-- Existential dimension (= Existential World): Reception (receiving events with awareness), Evolution (growth and change through experiences), Formation (rebuilding identity)
+- Mental dimension: Perception (awareness and understanding), Readiness (psychological and mental preparedness), Intention (clarity of purpose and direction)
+- Emotional dimension: Action (translating understanding into steps), Interaction (engaging with the environment and others), Outcome (extracting lessons and gains)
+- Existential dimension: Reception (receiving events with awareness), Evolution (growth and change through experiences), Formation (rebuilding identity)
 
 Note: Each dimension maps to a corresponding world in Harmony's three-worlds model:
 - Inner World ← Mental dimension (thinking, awareness, intention)
