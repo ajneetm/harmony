@@ -7,7 +7,6 @@ interface CombinedWorldRadarProps {
   cognitive:  number[]          // 3 ذهني  values  → green
   emotional:  number[]          // 3 مشاعري values  → red
   behavioral: number[]          // 3 سلوكي values   → blue
-  percentage: number
   coherence: number
   language?: 'ar' | 'en'
 }
@@ -15,7 +14,7 @@ interface CombinedWorldRadarProps {
 const COLORS = { cognitive: '#22c55e', emotional: '#ae1f23', behavioral: '#3b82f6' }
 
 const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
-  title, titleColor, axisLabels, cognitive, emotional, behavioral, percentage, coherence, language = 'en'
+  title, titleColor, axisLabels, cognitive, emotional, behavioral, coherence, language = 'en'
 }) => {
   const size   = 700
   const cx     = size / 2
@@ -134,20 +133,12 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
         <span className="text-sm font-bold" style={{ color: titleColor }}>{title}</span>
       </div>
 
-      {/* Two indicators */}
-      <div className="flex justify-center gap-3 w-full">
-        <div className="flex-1 rounded-xl px-3 py-2 text-center" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
-          <p className="text-[10px] text-gray-400 mb-1">
-            {language === 'ar' ? 'معدل الوظائف' : 'Functions Avg'}
-          </p>
-          <p className="text-lg font-bold leading-none" style={{ color: titleColor }}>{percentage}%</p>
-        </div>
-        <div className="flex-1 rounded-xl px-3 py-2 text-center" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
-          <p className="text-[10px] text-gray-400 mb-1">
-            {language === 'ar' ? 'التجانس الداخلي' : 'Internal Coherence'}
-          </p>
-          <p className="text-lg font-bold leading-none" style={{ color: titleColor }}>{coherence}%</p>
-        </div>
+      {/* Coherence indicator */}
+      <div className="rounded-xl px-4 py-2 text-center w-full" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+        <p className="text-[10px] text-gray-400 mb-1">
+          {language === 'ar' ? 'التجانس الداخلي' : 'Internal Coherence'}
+        </p>
+        <p className="text-lg font-bold leading-none" style={{ color: titleColor }}>{coherence}%</p>
       </div>
     </div>
   )
