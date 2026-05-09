@@ -109,7 +109,7 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
                   fill={`url(#${gradId})`}
                   stroke={w.color}
                   strokeWidth={isDom ? 3.5 : 1.5}
-                  opacity={isDom ? 1 : 0.35}
+                  opacity={1}
                   strokeDasharray={isDom ? undefined : '5 4'}
                   style={isDom ? { filter: `drop-shadow(0 0 6px ${w.color}80)` } : undefined}
                 />
@@ -123,7 +123,7 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
                       fill={w.color}
                       stroke="#fff"
                       strokeWidth={isDom ? 2.5 : 1.5}
-                      opacity={isDom ? 1 : 0.4}
+                      opacity={1}
                     />
                   )
                 })}
