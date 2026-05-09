@@ -29,9 +29,9 @@ export const report_AR_prompt = `
 
 ## العوالم الثلاث
 بلغت نسبة التجانس بين عوالم الشخصية الثلاثة ([تجانس_العوالم]%):
-- **العالم الداخلي** (الذهني): [نسبة_الذهني]%
-- **العالم الفيزيائي** (المشاعري): [نسبة_المشاعري]%
-- **العالم الوجودي** (السلوكي): [نسبة_السلوكي]%
+- **العالم الداخلي**: [نسبة_الذهني]%
+- **العالم الفيزيائي**: [نسبة_المشاعري]%
+- **العالم الوجودي**: [نسبة_السلوكي]%
 
 العالم المتحكم في هذه الشخصية هو **[العالم_المتحكم]**، [جملة قصيرة تشرح ما يعنيه ذلك عملياً بحيث تعكس طبيعة هذا العالم في السلوك والقرار].
 
@@ -152,9 +152,9 @@ The coherence score between the Mental, Emotional, and Existential dimensions re
 
 ## The Three Worlds
 The coherence between the three personality worlds reached [world_coherence]%:
-- **Inner World** (Mental): [mental_percentage]%
-- **Physical World** (Emotional): [emotional_percentage]%
-- **Existential World** (Existential): [existential_percentage]%
+- **Inner World**: [mental_percentage]%
+- **Physical World**: [emotional_percentage]%
+- **Existential World**: [existential_percentage]%
 
 The dominant world in this personality is **[dominant_world]**, [a short sentence explaining what this means practically, reflecting how this world shapes the person's behavior and decisions].
 
