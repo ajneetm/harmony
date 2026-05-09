@@ -8,13 +8,14 @@ interface CombinedWorldRadarProps {
   emotional:  number[]          // 3 مشاعري values  → red
   behavioral: number[]          // 3 سلوكي values   → blue
   percentage: number
+  coherence: number
   language?: 'ar' | 'en'
 }
 
 const COLORS = { cognitive: '#22c55e', emotional: '#ae1f23', behavioral: '#3b82f6' }
 
 const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
-  title, titleColor, axisLabels, cognitive, emotional, behavioral, percentage, language = 'en'
+  title, titleColor, axisLabels, cognitive, emotional, behavioral, percentage, coherence, language = 'en'
 }) => {
   const size   = 700
   const cx     = size / 2
@@ -127,13 +128,26 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
         </svg>
       </div>
 
-      {/* World title + percentage */}
-      <div className="flex items-center justify-center gap-1.5 mt-1 mb-0.5">
+      {/* World title */}
+      <div className="flex items-center justify-center gap-1.5 mt-1 mb-2">
         <span className="w-3 h-3 rounded-full" style={{ background: titleColor }} />
         <span className="text-sm font-bold" style={{ color: titleColor }}>{title}</span>
       </div>
-      <div className="text-center">
-        <span className="text-xl font-bold" style={{ color: titleColor }}>{percentage}%</span>
+
+      {/* Two indicators */}
+      <div className="flex justify-center gap-3 w-full">
+        <div className="flex-1 rounded-xl px-3 py-2 text-center" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+          <p className="text-[10px] text-gray-400 mb-1">
+            {language === 'ar' ? 'معدل الوظائف' : 'Functions Avg'}
+          </p>
+          <p className="text-lg font-bold leading-none" style={{ color: titleColor }}>{percentage}%</p>
+        </div>
+        <div className="flex-1 rounded-xl px-3 py-2 text-center" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+          <p className="text-[10px] text-gray-400 mb-1">
+            {language === 'ar' ? 'التجانس الداخلي' : 'Internal Coherence'}
+          </p>
+          <p className="text-lg font-bold leading-none" style={{ color: titleColor }}>{coherence}%</p>
+        </div>
       </div>
     </div>
   )
