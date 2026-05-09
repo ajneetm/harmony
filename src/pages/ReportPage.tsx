@@ -839,6 +839,18 @@ export default function ReportPage() {
                       const physCoh   = worldInternalCoherence(3)
                       const existCoh  = worldInternalCoherence(6)
 
+                      // True world percentage = avg of all 3 types across the world's 3 functions
+                      const worldAvgPct = (start: number) => {
+                        const vals = [0, 1, 2].map(j =>
+                          (rc[start + j].value + re[start + j].value + rb[start + j].value) / 3
+                        )
+                        return Math.round((vals.reduce((a, b) => a + b, 0) / 3) * 20)
+                      }
+
+                      const innerPct = worldAvgPct(0)
+                      const physPct  = worldAvgPct(3)
+                      const existPct = worldAvgPct(6)
+
                       const worlds = [
                         {
                           title: chartData.worldLabels.inner,
@@ -847,7 +859,7 @@ export default function ReportPage() {
                           cognitive:  rc.slice(0, 3).map(d => d.value),
                           emotional:  re.slice(0, 3).map(d => d.value),
                           behavioral: rb.slice(0, 3).map(d => d.value),
-                          percentage: chartData.mental.percentage,
+                          percentage: innerPct,
                           coherence:  innerCoh,
                         },
                         {
@@ -857,7 +869,7 @@ export default function ReportPage() {
                           cognitive:  rc.slice(3, 6).map(d => d.value),
                           emotional:  re.slice(3, 6).map(d => d.value),
                           behavioral: rb.slice(3, 6).map(d => d.value),
-                          percentage: chartData.emotional.percentage,
+                          percentage: physPct,
                           coherence:  physCoh,
                         },
                         {
@@ -867,7 +879,7 @@ export default function ReportPage() {
                           cognitive:  rc.slice(6, 9).map(d => d.value),
                           emotional:  re.slice(6, 9).map(d => d.value),
                           behavioral: rb.slice(6, 9).map(d => d.value),
-                          percentage: chartData.existential.percentage,
+                          percentage: existPct,
                           coherence:  existCoh,
                         },
                       ]
