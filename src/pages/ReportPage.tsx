@@ -427,15 +427,15 @@ export default function ReportPage() {
       .replace(/^```\s*/gm, '')
       .replace(/\s*```$/gm, '')
 
-    const startPattern = isArabic ? /^##\s*أقوى 3 وظائف/m : /^##\s*Top 3 Functions/m
+    const startPattern = isArabic ? /^##\s*أقوى الجوانب/m : /^##\s*Your Strongest Points/m
     const startMatch = startPattern.exec(clean)
     if (!startMatch) return { intro: clean, sw: '', after: '' }
 
     const before = clean.slice(0, startMatch.index).trim()
     const rest = clean.slice(startMatch.index)
 
-    // Find next section after "أضعف 3 وظائف" / "Areas for Development"
-    const weaknessPattern = isArabic ? /^##\s*أضعف 3 وظائف/m : /^##\s*Areas for Development/m
+    // Find next section after strengths
+    const weaknessPattern = isArabic ? /^##\s*ما يحتاج إلى دعم/m : /^##\s*Areas That Could Use Support/m
     const weaknessMatch = weaknessPattern.exec(rest)
     if (!weaknessMatch) return { intro: before, sw: rest.trim(), after: '' }
 
