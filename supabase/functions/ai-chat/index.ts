@@ -2,14 +2,29 @@ import { GoogleGenerativeAI } from 'npm:@google/generative-ai'
 
 const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.0-flash-001', 'gemini-2.0-flash-lite-001']
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+const getAllowedOrigin = () => Deno.env.get('ALLOWED_ORIGIN') ?? '*'
+
+const corsHeaders = () => ({
+  'Access-Control-Allow-Origin': getAllowedOrigin(),
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+})
+
+const isAuthorized = (req: Request): boolean => {
+  const anon = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+  const auth = req.headers.get('Authorization') ?? ''
+  return anon !== '' && auth === `Bearer ${anon}`
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders() })
+  }
+
+  if (!isAuthorized(req)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+    })
   }
 
   try {
@@ -36,7 +51,6 @@ Deno.serve(async (req) => {
       })
 
     if (!stream) {
-      // Non-streaming
       let result: any
       for (let i = 0; i < MODELS.length; i++) {
         try {
@@ -49,11 +63,10 @@ Deno.serve(async (req) => {
       }
       const content = result.response.text()
       return new Response(JSON.stringify({ content }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
       })
     }
 
-    // Streaming — SSE
     let streamResult: any
     for (let i = 0; i < MODELS.length; i++) {
       try {
@@ -79,15 +92,15 @@ Deno.serve(async (req) => {
 
     return new Response(readable, {
       headers: {
-        ...corsHeaders,
+        ...corsHeaders(),
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
       },
     })
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
     })
   }
 })

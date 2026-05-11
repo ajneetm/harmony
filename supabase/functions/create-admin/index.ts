@@ -4,37 +4,51 @@ import postgres from 'npm:postgres'
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } })
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const dbUrl       = Deno.env.get('SUPABASE_DB_URL')!
-  const admin       = createClient(supabaseUrl, serviceKey)
+  // Require a secret setup token — set SETUP_SECRET in Supabase secrets
+  const setupSecret = Deno.env.get('SETUP_SECRET') ?? ''
+  const authHeader  = req.headers.get('Authorization') ?? ''
+  if (!setupSecret || authHeader !== `Bearer ${setupSecret}`) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
 
-  const email    = 'a.hajali@ajnee.com'
-  const password = 'ab123456789'
+  const supabaseUrl   = Deno.env.get('SUPABASE_URL')!
+  const serviceKey    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const dbUrl         = Deno.env.get('SUPABASE_DB_URL')!
+  const adminEmail    = Deno.env.get('ADMIN_EMAIL')    ?? 'a.hajali@ajnee.com'
+  const adminPassword = Deno.env.get('ADMIN_PASSWORD') ?? ''
 
-  // Check current state via SQL
-  const sql = postgres(dbUrl, { ssl: 'require' })
-  const rows = await sql`
+  if (!adminPassword) {
+    return new Response(JSON.stringify({ error: 'ADMIN_PASSWORD env var not set' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const admin = createClient(supabaseUrl, serviceKey)
+  const sql   = postgres(dbUrl, { ssl: 'require' })
+  const rows  = await sql`
     SELECT id, email, email_confirmed_at IS NOT NULL as confirmed
-    FROM auth.users WHERE email = ${email}
+    FROM auth.users WHERE email = ${adminEmail}
   `
   await sql.end()
 
   if (rows.length > 0) {
     const u = rows[0]
-    // Update password and confirm
     const { error } = await admin.auth.admin.updateUserById(u.id, {
-      password,
+      password: adminPassword,
       email_confirm: true,
     })
     return new Response(
-      JSON.stringify({ action: 'updated', id: u.id, was_confirmed: u.confirmed, error: error?.message }),
+      JSON.stringify({ action: 'updated', id: u.id, error: error?.message }),
       { headers: { 'Content-Type': 'application/json' } }
     )
   }
 
   const { data, error } = await admin.auth.admin.createUser({
-    email, password, email_confirm: true,
+    email: adminEmail, password: adminPassword, email_confirm: true,
     user_metadata: { full_name: 'Admin' },
   })
   return new Response(

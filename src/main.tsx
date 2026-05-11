@@ -26,7 +26,6 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 
 // Create a global navigation function that can be used anywhere
 (window as any).navigateTo = (path: string) => {
-  console.log('navigateTo called with path:', path)
   
   // Check if this is a Mr. Harmony fresh start - if so, don't clear conversation ID
   // as the ChatPage will handle the complete reset
@@ -35,7 +34,6 @@ if (import.meta.env.VITE_SENTRY_DSN) {
   // Clear conversation ID for fresh chat (but not during Mr. Harmony fresh start)
   if (path === '/chat' && !isFreshStart) {
     localStorage.removeItem('currentConversationId')
-    console.log('Cleared conversation for fresh chat')
   }
   
   // Build clean URL — only keep 'page', drop all other params
@@ -44,7 +42,6 @@ if (import.meta.env.VITE_SENTRY_DSN) {
     url.searchParams.set('page', path.substring(1))
   }
   
-  console.log('Updating URL to:', url.toString())
   
   // Use pushState to update URL and trigger popstate
   window.history.pushState({}, '', url.toString())
@@ -101,8 +98,6 @@ const App = () => {
     // Set initial path
     const initialPath = getCurrentPath()
     setCurrentPath(initialPath)
-    console.log('Initial route:', initialPath)
-    console.log('Initial URL:', window.location.href)
     
     // Get the stored language preference or default to English
     const getStoredLanguage = (): 'ar' | 'en' => {
@@ -126,19 +121,15 @@ const App = () => {
     const defaultFontProps = getFontCSSProperties(initialLanguage)
     Object.entries(defaultFontProps).forEach(([property, value]) => {
       document.documentElement.style.setProperty(property, value)
-      console.log(`Set CSS property: ${property} = ${value}`)
     })
 
     // Also apply the appropriate font class to document root
     const fontClass = initialLanguage === 'ar' ? 'font-tajawal' : 'font-inter'
     document.documentElement.classList.add(fontClass)
-    console.log(`Applied initial font class: ${fontClass} for language: ${initialLanguage}`)
     
     // Listen for URL changes (browser back/forward and our custom navigation)
     const handleUrlChange = () => {
       const newPath = getCurrentPath()
-      console.log('Route changed to:', newPath)
-      console.log('Current URL:', window.location.href)
       setCurrentPath(newPath)
     }
     
@@ -146,7 +137,6 @@ const App = () => {
     
     // Clean up any hash from previous routing system
     if (window.location.hash) {
-      console.log('Cleaning up old hash:', window.location.hash)
       const url = new URL(window.location.href)
       url.hash = ''
       window.history.replaceState({}, '', url.toString())
@@ -157,8 +147,6 @@ const App = () => {
   
   // Log current state
   useEffect(() => {
-    console.log('Current route:', currentPath)
-    console.log('Current URL:', window.location.href)
   }, [currentPath])
   
   return (

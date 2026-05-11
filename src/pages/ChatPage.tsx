@@ -69,33 +69,26 @@ function ChatPage() {
       const fontProps = getFontCSSProperties(language)
       Object.entries(fontProps).forEach(([property, value]) => {
         document.documentElement.style.setProperty(property, value)
-        console.log(`ChatPage: Set CSS property: ${property} = ${value}`)
       })
       
       // Also apply the appropriate font class
       document.documentElement.classList.remove('font-tajawal', 'font-inter')
       const fontClass = language === 'ar' ? 'font-tajawal' : 'font-inter'
       document.documentElement.classList.add(fontClass)
-      console.log(`ChatPage: Applied font class: ${fontClass} for language: ${language}`)
       
       // Ensure dark mode is applied
       document.documentElement.classList.add('dark')
       document.body.classList.add('dark')
       
-      console.log('ChatPage mounted - Direction set to:', language === 'ar' ? 'rtl' : 'ltr')
     }
   }, [language]) // Re-run if language changes
   
   // Effect to handle fresh start from Mr. Harmony and restore conversation from URL
   useEffect(() => {
-    console.log('Chat component effect - chatIdFromUrl:', chatIdFromUrl);
-    console.log('Chat component effect - currentConversationId:', currentConversationId);
     
     // Check if this is a fresh Mr. Harmony start
     const isFreshStart = sessionStorage.getItem('mrHarmonyFreshStart');
     if (isFreshStart) {
-      console.log('=== MR HARMONY FRESH START DETECTED ===');
-      console.log('Current language will be preserved:', language);
 
       // Clear the flag so it doesn't affect subsequent visits
       sessionStorage.removeItem('mrHarmonyFreshStart');
@@ -116,13 +109,11 @@ function ChatPage() {
       setLastAIResponse(null);
       setIsResponseComplete(false);
       
-      console.log('=== FRESH START COMPLETE - ALL STATE RESET ===');
       return; // Don't restore any conversation
     }
     
     // Normal conversation restoration logic
     if (chatIdFromUrl && chatIdFromUrl !== currentConversationId) {
-      console.log('Restoring conversation from URL:', chatIdFromUrl)
       setCurrentConversationId(chatIdFromUrl)
 
       // Clear chatId from URL and sessionStorage
@@ -141,20 +132,12 @@ function ChatPage() {
   
   // Debug logging for conversation state
   useEffect(() => {
-    console.log('=== CONVERSATION STATE DEBUG ===');
-    console.log('currentConversationId:', currentConversationId);
-    console.log('currentConversation:', currentConversation);
-    console.log('messages:', messages);
-    console.log('messages.length:', messages.length);
-    console.log('conversations:', conversations);
-    console.log('================================');
   }, [currentConversationId, currentConversation, messages, conversations])
 
   // Effect to restore questionnaire state when switching conversations
   useEffect(() => {
     if (currentConversation?.questionnaireData) {
       const qData = currentConversation.questionnaireData
-      console.log('Restoring questionnaire state for conversation:', currentConversationId, qData)
       
       setShowQuestionnaire(qData.showQuestionnaire)
       setQuestions(qData.questions)
@@ -336,21 +319,18 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
     
     if (userMessages.length === 0) {
       // First user message - use the original Harmony prompt for deep analysis
-      console.log('Using HARMONY PROMPT for first user problem')
       promptToUse = {
         value: language === 'ar' ? PROMPT1_AR : PROMPT1_EN,
         enabled: true,
       }
     } else {
       // Subsequent messages - use the general prompt that can adapt
-      console.log('Using GENERAL PROMPT for follow-up messages')
       promptToUse = {
         value: language === 'ar' ? GENERAL_PROMPT_AR : GENERAL_PROMPT_EN,
         enabled: true,
       }
     }
 
-    console.log('Making streaming AI request with:', {
       messageCount: [...messages, userMessage].length,
       hasSystemPrompt: !!promptToUse?.enabled,
       conversationId
@@ -409,7 +389,6 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
       },
       // onComplete: Finalize the message
       async () => {
-        console.log('Streaming complete, final content length:', fullContent.length);
         abortControllerRef.current = null // Clear controller
         
         if (fullContent.trim()) {
@@ -609,7 +588,6 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
     
     // Persist questionnaire data to conversation
     if (currentConversationId) {
-      console.log('Persisting questionnaire data to conversation:', currentConversationId);
       const questionnaireData = {
         showQuestionnaire: false,
         questions,
@@ -713,16 +691,13 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
       // If no current conversation, create one in Convex first
       if (!conversationId) {
         try {
-          console.log('Creating new Convex conversation with title:', conversationTitle)
           // Create a new conversation with our title
           const convexId = await createNewConversation(conversationTitle)
           
           if (convexId) {
-            console.log('Successfully created Convex conversation with ID:', convexId)
             conversationId = convexId
             
             // Add user message directly to Convex
-            console.log('Adding user message to Convex conversation:', userMessage.content)
             await addMessage(conversationId, userMessage)
           } else {
             console.warn('Failed to create Convex conversation, falling back to local')
@@ -746,7 +721,6 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
         }
       } else {
         // We already have a conversation ID, add message directly to Convex
-        console.log('Adding user message to existing conversation:', conversationId)
         await addMessage(conversationId, userMessage)
         
         // Check if this is the user's first actual message (after the initial assistant message)
@@ -754,7 +728,6 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
         const userMessages = messages.filter(m => m.role === 'user')
         if (userMessages.length === 0) {
           // This is the first user message, update the conversation title
-          console.log('Updating conversation title to:', conversationTitle)
           await updateConversationTitle(conversationId, conversationTitle)
         }
       }
@@ -787,7 +760,6 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
   }, [input, isLoading, createTitleFromInput, currentConversationId, createNewConversation, addMessage, updateConversationTitle, processAIResponse, setLoading, messages, setInputDisabled, setError]);
 
   const handleNewChat = useCallback(() => {
-    console.log('handleNewChat called - resetting all state');
     
     // Clean up any pending AI response/typing animation
     setPendingMessage(null)
@@ -816,20 +788,16 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
     setCurrentConversationId(null)
     // System prompt is handled dynamically now
     
-    console.log('handleNewChat completed - currentConversationId should be null');
   }, [setCurrentConversationId, setPendingMessage, setLoading, setInputDisabled, setError])
 const handleCrisisQuestionnaire = useCallback(async () => {
     setQuestionnaireResults(null)
     setShowQuestionnaire(false)
     try {
-      console.log('handleCrisisQuestionnaire called');
       
       const defaultTitle = language === 'ar' ? 'التعامل مع الأحداث الكبرى' : 'Dealing with Major Events'
       sessionStorage.setItem('reportTopic', language === 'ar' ? 'الأحداث الكبرى' : 'Major Events')
 
-      console.log('Creating new conversation for Crisis questionnaire...');
       const id = await createNewConversation(defaultTitle)
-      console.log('New conversation created with ID:', id);
       
       // Clear any existing pending message and set the conversation
       setPendingMessage(null)
@@ -856,7 +824,6 @@ const handleCrisisQuestionnaire = useCallback(async () => {
         actions.updateConversationQuestionnaire(id, questionnaireData)
       }, 100)
       
-      console.log('Crisis questionnaire started with', randomizedQuestions.length, 'questions');
     } catch (error) {
       console.error('Error in handleCrisisQuestionnaire:', error);
       setError(language === 'ar' ? 'فشل في إنشاء استبيان الأحداث الكبرى. يرجى المحاولة مرة أخرى.' : 'Failed to create Crisis questionnaire. Please try again.');
@@ -864,7 +831,6 @@ const handleCrisisQuestionnaire = useCallback(async () => {
   }, [language, createNewConversation, setCurrentConversationId, setPendingMessage, setError])
   const handleDefineProblem = useCallback(async () => {
     try {
-      console.log('handleDefineProblem called - current state:', {
         currentConversationId,
         conversations: conversations.map(c => ({ id: c.id, title: c.title }))
       });
@@ -872,16 +838,13 @@ const handleCrisisQuestionnaire = useCallback(async () => {
       const instruction = language === 'ar' ? HARMONY_PROMPT_AR : HARMONY_PROMPT_EN
       const defaultTitle = language === 'ar' ? 'مشكلة جديدة' : 'New Problem'
       
-      console.log('Creating new conversation for problem definition...');
       const id = await createNewConversation(defaultTitle)
-      console.log('New conversation created with ID:', id);
       
       // Clear any existing pending message and set the conversation
       setPendingMessage(null)
       setCurrentConversationId(id)
       setInput('')
       
-      console.log('State updated - currentConversationId set to:', id);
       
       // Create the typing message as pendingMessage instead of adding directly
       const typingMessage: Message = {
@@ -892,7 +855,6 @@ const handleCrisisQuestionnaire = useCallback(async () => {
         isInitialInstruction: true
       }
       
-      console.log('Setting initial instruction as pending message with typing effect:', {
         messageId: typingMessage.id,
         contentLength: instruction.length,
         newConversationId: id
@@ -908,14 +870,11 @@ const handleCrisisQuestionnaire = useCallback(async () => {
     setQuestionnaireResults(null)
     setShowQuestionnaire(false)
     try {
-      console.log('handleLifeQuestionnaire called');
       
       const defaultTitle = language === 'ar' ? 'علاقتي بالحياة' : 'My Relationship with Life'
       sessionStorage.setItem('reportTopic', language === 'ar' ? 'الحياة العامة' : 'Life')
 
-      console.log('Creating new conversation for Life questionnaire...');
       const id = await createNewConversation(defaultTitle)
-      console.log('New conversation created with ID:', id);
       
       // Clear any existing pending message and set the conversation
       setPendingMessage(null)
@@ -942,7 +901,6 @@ const handleCrisisQuestionnaire = useCallback(async () => {
         actions.updateConversationQuestionnaire(id, questionnaireData)
       }, 100)
       
-      console.log('Life questionnaire started with', randomizedQuestions.length, 'questions');
     } catch (error) {
       console.error('Error in handleLifeQuestionnaire:', error);
       setError(language === 'ar' ? 'فشل في إنشاء استبيان الحياة. يرجى المحاولة مرة أخرى.' : 'Failed to create Life questionnaire. Please try again.');
@@ -953,14 +911,11 @@ const handleCrisisQuestionnaire = useCallback(async () => {
     setQuestionnaireResults(null)
     setShowQuestionnaire(false)
     try {
-      console.log('handleFamilyQuestionnaire called');
       
       const defaultTitle = language === 'ar' ? 'علاقتي بالأسرة' : 'My Relationship with Family'
       sessionStorage.setItem('reportTopic', language === 'ar' ? 'الشؤون الأسرية' : 'Family')
 
-      console.log('Creating new conversation for Family questionnaire...');
       const id = await createNewConversation(defaultTitle)
-      console.log('New conversation created with ID:', id);
       
       // Clear any existing pending message and set the conversation
       setPendingMessage(null)
@@ -987,7 +942,6 @@ const handleCrisisQuestionnaire = useCallback(async () => {
         actions.updateConversationQuestionnaire(id, questionnaireData)
       }, 100)
       
-      console.log('Family questionnaire started with', randomizedQuestions.length, 'questions');
     } catch (error) {
       console.error('Error in handleFamilyQuestionnaire:', error);
       setError(language === 'ar' ? 'فشل في إنشاء استبيان الأسرة. يرجى المحاولة مرة أخرى.' : 'Failed to create Family questionnaire. Please try again.');
@@ -998,14 +952,11 @@ const handleCrisisQuestionnaire = useCallback(async () => {
     setQuestionnaireResults(null)
     setShowQuestionnaire(false)
     try {
-      console.log('handleRomanticQuestionnaire called');
       
       const defaultTitle = language === 'ar' ? 'علاقتي بالشريك ' : 'My Relationship with Emotions'
       sessionStorage.setItem('reportTopic', language === 'ar' ? 'العلاقات العاطفية' : 'Emotions')
 
-      console.log('Creating new conversation for Emotions questionnaire...');
       const id = await createNewConversation(defaultTitle)
-      console.log('New conversation created with ID:', id);
       
       // Clear any existing pending message and set the conversation
       setPendingMessage(null)
@@ -1032,7 +983,6 @@ const handleCrisisQuestionnaire = useCallback(async () => {
         actions.updateConversationQuestionnaire(id, questionnaireData)
       }, 100)
       
-      console.log('Romantic questionnaire started with', randomizedQuestions.length, 'questions');
     } catch (error) {
       console.error('Error in handleRomanticQuestionnaire:', error);
       setError(language === 'ar' ? 'فشل في إنشاء الاستبيان العاطفي. يرجى المحاولة مرة أخرى.' : 'Failed to create Romantic questionnaire. Please try again.');
@@ -1043,14 +993,11 @@ const handleCrisisQuestionnaire = useCallback(async () => {
     setQuestionnaireResults(null)
     setShowQuestionnaire(false)
     try {
-      console.log('handleWorkQuestionnaire called');
       
       const defaultTitle = language === 'ar' ? 'علاقتي بالعمل' : 'My Relationship with Work'
       sessionStorage.setItem('reportTopic', language === 'ar' ? 'المسار المهني' : 'Work')
 
-      console.log('Creating new conversation for Work questionnaire...');
       const id = await createNewConversation(defaultTitle)
-      console.log('New conversation created with ID:', id);
       
       // Clear any existing pending message and set the conversation
       setPendingMessage(null)
@@ -1077,7 +1024,6 @@ const handleCrisisQuestionnaire = useCallback(async () => {
         actions.updateConversationQuestionnaire(id, questionnaireData)
       }, 100)
       
-      console.log('Work questionnaire started with', randomizedQuestions.length, 'questions');
     } catch (error) {
       console.error('Error in handleWorkQuestionnaire:', error);
       setError(language === 'ar' ? 'فشل في إنشاء استبيان العمل. يرجى المحاولة مرة أخرى.' : 'Failed to create Work questionnaire. Please try again.');
@@ -1159,7 +1105,6 @@ const handleCrisisQuestionnaire = useCallback(async () => {
                               const conversationAtCompletion = currentConversationId
                               
                               // When typing completes, save the message to the conversation
-                              console.log('Typing completed, saving message to conversation')
                               setPendingMessage(null)
                               
                               // Safety check: only proceed if we still have the same valid conversation

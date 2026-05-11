@@ -113,21 +113,18 @@ export default function ReportPage() {
         if (storedData) {
           const data = JSON.parse(storedData)
           setReportData(data)
-          console.log('Report data loaded:', data)
           
           // Apply font CSS properties based on language
           if (data.questionnaireData?.language) {
             const fontProps = getFontCSSProperties(data.questionnaireData.language)
             Object.entries(fontProps).forEach(([property, value]) => {
               document.documentElement.style.setProperty(property, value)
-              console.log(`ReportPage: Set CSS property: ${property} = ${value}`)
             })
             
             // Also apply the appropriate font class
             document.documentElement.classList.remove('font-tajawal', 'font-inter')
             const fontClass = data.questionnaireData.language === 'ar' ? 'font-tajawal' : 'font-inter'
             document.documentElement.classList.add(fontClass)
-            console.log(`ReportPage: Applied font class: ${fontClass} for language: ${data.questionnaireData.language}`)
           }
         } else {
           const storedLang = (() => { try { return JSON.parse(localStorage.getItem('language') || '"en"') } catch { return 'en' } })()
@@ -299,7 +296,6 @@ export default function ReportPage() {
       document.body.removeChild(link)
       setTimeout(() => URL.revokeObjectURL(blobUrl), 2000)
 
-      console.log('PDF generated successfully:', filename)
 
     } catch (error) {
       console.error('Error generating PDF:', error)
@@ -583,15 +579,11 @@ export default function ReportPage() {
           </p>
           <button
             onClick={() => {
-              console.log('Error page button clicked!');
-              console.log('ChatId from URL:', chatId);
 
               if (chatId) {
-                console.log('Navigating to chat with chatId:', chatId);
                 // Use React Router navigation to avoid page reload
                 navigate(`/chat?chatId=${encodeURIComponent(chatId)}`);
               } else {
-                console.log('No chatId found, navigating to chat welcome');
                 navigate('/chat');
               }
             }}
@@ -645,16 +637,11 @@ export default function ReportPage() {
           
           <button
             onClick={() => {
-              console.log('Close button clicked!');
-              console.log('ChatId from URL:', chatId);
-              console.log('Current URL:', window.location.href);
 
               if (chatId) {
-                console.log('Navigating to chat with chatId:', chatId);
                 // Use React Router navigation to avoid page reload
                 navigate(`/chat?chatId=${encodeURIComponent(chatId)}`);
               } else {
-                console.log('No chatId found, navigating to chat welcome');
                 navigate('/chat');
               }
             }}
@@ -958,16 +945,11 @@ export default function ReportPage() {
           
           <button
             onClick={() => {
-              console.log('Close button clicked!');
-              console.log('ChatId from URL:', chatId);
-              console.log('Current URL:', window.location.href);
 
               if (chatId) {
-                console.log('Navigating to chat with chatId:', chatId);
                 // Use React Router navigation to avoid page reload
                 navigate(`/chat?chatId=${encodeURIComponent(chatId)}`);
               } else {
-                console.log('No chatId found, navigating to chat welcome');
                 navigate('/chat');
               }
             }}

@@ -245,27 +245,15 @@ export const generateAndOpenReport = async (
   saveReportToConvex?: (id: string, reportJson: string) => Promise<void>
 ): Promise<void> => {
   try {
-    console.log('Starting report generation process...')
-    console.log('Received chatId:', chatId);
     
     // 🐛 DEBUG LOG: Show the complete questionnaire data structure
-    console.log('=== 🐛 DEBUG: QUESTIONNAIRE DATA STRUCTURE ===');
-    console.log('Language:', data.language);
-    console.log('Total Questions:', data.total_questions);
-    console.log('Answered Questions:', data.answered_questions);
-    console.log('Questions with Answers:');
     data.questions_with_answers.forEach((q, index) => {
-      console.log(`${index + 1}. ${q.text}`);
-      console.log(`   Answer: ${q.user_answer}/5 (${q.user_answer_text})`);
     });
-    console.log('=== END QUESTIONNAIRE DATA ===');
     
     // Step 1: Generate chart data for visualization first
-    console.log('Processing chart data...')
     const chartData = generateChartData(data)
     
     // Step 2: Generate AI report content using chart data
-    console.log('Generating AI report content...')
     const aiResponse = await generateReport(data, chartData, data.language)
     
     if (!aiResponse || typeof aiResponse !== 'string' || aiResponse.trim().length === 0) {
@@ -273,13 +261,6 @@ export const generateAndOpenReport = async (
     }
     
     // 🐛 DEBUG LOG: Show the 3 charts data
-    console.log('=== 🐛 DEBUG: 3 CHARTS DATA ===');
-    console.log('MENTAL:', chartData.mental);
-    console.log('EMOTIONAL:', chartData.emotional);
-    console.log('EXISTENTIAL:', chartData.existential);
-    console.log('OVERALL:', chartData.overall, '% | HARMONY:', chartData.harmony, '%');
-    console.log('ALL ELEMENTS RANKED:', chartData.allElements);
-    console.log('=== END CHARTS DATA ===');
     
     // Step 3: Prepare complete report data
     const reportData: ReportData = {
@@ -305,14 +286,11 @@ export const generateAndOpenReport = async (
     }
 
     // Step 5: Navigate to report in same tab with chatId if provided
-    console.log('Navigating to report page...')
     const reportUrl = chatId ? `?page=report&chatId=${encodeURIComponent(chatId)}` : '?page=report'
-    console.log('Report URL:', reportUrl);
     
     // Use the proper URL structure for the query parameter routing system
     window.location.href = window.location.origin + '/' + reportUrl
     
-    console.log('Report generation completed successfully')
     
   } catch (error) {
     console.error('Error generating report:', error)
