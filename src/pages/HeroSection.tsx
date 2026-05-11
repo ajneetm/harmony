@@ -270,10 +270,10 @@ export default function HeroSection() {
       </main>
 
       {/* ════════════════════ DESKTOP MAIN (xl+) ════════════════════ */}
-      <main className="hidden xl:flex h-full pt-16" dir={isAr ? 'rtl' : 'ltr'}>
+      <main className="hidden xl:flex h-full pt-16" dir="ltr">
         <div className="w-full max-w-[1440px] mx-auto px-8 flex h-full">
 
-          {/* Faces image — start side */}
+          {/* Faces image — always left */}
           <div className="w-[55%] flex items-center justify-center overflow-hidden">
             <img
               src="/faces.png"
@@ -282,8 +282,8 @@ export default function HeroSection() {
             />
           </div>
 
-          {/* Info panel — end side */}
-          <div className={`w-[45%] flex flex-col justify-center gap-8 ${isAr ? 'items-end text-right' : 'items-start text-left'}`}>
+          {/* Info panel — always right, text direction per language */}
+          <div className={`w-[45%] flex flex-col justify-center gap-8 ${isAr ? 'items-end text-right' : 'items-start text-left'}`} dir={isAr ? 'rtl' : 'ltr'}>
             {/* Logo */}
             <button onClick={() => { if ((window as any).navigateTo) (window as any).navigateTo('/') }}>
               <img src="/misbara_full_logo.svg" alt="Harmony Logo" className="h-28 object-contain" />
