@@ -193,13 +193,12 @@ export default function HeroSection() {
                 <button
                   key={item.id}
                   onClick={() => { setActiveTab(item); setMenuOpen(false) }}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                  className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                     activeTab.id === item.id
                       ? 'bg-red-600 text-white shadow-md'
                       : 'bg-white/5 text-gray-300 hover:bg-white/10'
                   }`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60 flex-shrink-0" />
                   {item.title}
                 </button>
               ))}
@@ -271,11 +270,10 @@ export default function HeroSection() {
       </main>
 
       {/* ════════════════════ DESKTOP MAIN (xl+) ════════════════════ */}
-      <main className="hidden xl:flex h-full pt-16" dir="ltr">
-        {/* Constrained container — same as navbar */}
+      <main className="hidden xl:flex h-full pt-16" dir={isAr ? 'rtl' : 'ltr'}>
         <div className="w-full max-w-[1440px] mx-auto px-8 flex h-full">
 
-          {/* Left: Faces image */}
+          {/* Faces image — start side */}
           <div className="w-[55%] flex items-center justify-center overflow-hidden">
             <img
               src="/faces.png"
@@ -284,15 +282,11 @@ export default function HeroSection() {
             />
           </div>
 
-          {/* Right: Info panel */}
-          <div className="w-[45%] flex flex-col items-end text-right justify-center gap-8">
+          {/* Info panel — end side */}
+          <div className={`w-[45%] flex flex-col justify-center gap-8 ${isAr ? 'items-end text-right' : 'items-start text-left'}`}>
             {/* Logo */}
             <button onClick={() => { if ((window as any).navigateTo) (window as any).navigateTo('/') }}>
-              <img
-                src="/misbara_full_logo.svg"
-                alt="Harmony Logo"
-                className="h-28 object-contain"
-              />
+              <img src="/misbara_full_logo.svg" alt="Harmony Logo" className="h-28 object-contain" />
             </button>
 
             {/* Active tab title + content */}
@@ -306,7 +300,7 @@ export default function HeroSection() {
             </div>
 
             {/* Subtitle + CTA */}
-            <div className="flex flex-col gap-3 w-full items-end">
+            <div className={`flex flex-col gap-3 w-full ${isAr ? 'items-end' : 'items-start'}`}>
               <p className="text-xl font-bold text-white leading-snug">
                 {t.welcomeSubtitle}
               </p>
@@ -317,7 +311,7 @@ export default function HeroSection() {
                 {hero.talkToHarmony}
               </button>
 
-              {/* Partner logos */}
+              {/* Partner logos — always LTR order */}
               <div className="flex items-end gap-6 mt-4" dir="ltr">
                 {[
                   { src: '/LOIDA.png', label: isAr ? 'الموزع'  : 'Distributor', link: 'https://www.loidabritish.com/' },
