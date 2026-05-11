@@ -290,7 +290,7 @@ export default function HeroSection() {
             </button>
 
             {/* Active tab title + content */}
-            <div className="flex flex-col gap-2 w-full">
+            <div className={`flex flex-col gap-2 w-full ${isAr ? 'text-left' : 'text-right'}`}>
               <h2 className="text-2xl font-bold text-[#FFBD00]">
                 {activeTab.title}{qMark}
               </h2>
@@ -301,7 +301,7 @@ export default function HeroSection() {
 
             {/* Subtitle + CTA */}
             <div className={`flex flex-col gap-3 w-full ${isAr ? 'items-start' : 'items-end'}`}>
-              <p className="text-xl font-bold text-white leading-snug">
+              <p className={`text-xl font-bold text-white leading-snug ${isAr ? 'text-left' : 'text-right'}`}>
                 {t.welcomeSubtitle}
               </p>
               <button
