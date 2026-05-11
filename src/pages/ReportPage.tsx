@@ -282,7 +282,7 @@ export default function ReportPage() {
 
       // Generate filename
       const timestamp = new Date().toISOString().split('T')[0]
-      const filename = `misbara-report-${timestamp}.pdf`
+      const filename = `harmony-report-${timestamp}.pdf`
 
       // Use blob URL for universal download compatibility (works on mobile + desktop + iOS)
       const blob = pdf.output('blob')

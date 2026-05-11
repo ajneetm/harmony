@@ -51,6 +51,7 @@ export default function AdminPage() {
   // ── Loading ───────────────────────────────────────────────────────────────
   const [loadingConvs, setLoadingConvs]   = useState(true)
   const [loadingUsers, setLoadingUsers]   = useState(true)
+  const [usersError,   setUsersError]     = useState<string | null>(null)
   const [loadingWs,    setLoadingWs]      = useState(false)
   const [loadingCerts, setLoadingCerts]   = useState(false)
   const [loadingConss, setLoadingConss]   = useState(false)
@@ -82,16 +83,13 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isAdmin) return
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { setLoadingUsers(false); return }
-      fetch(`${SUPABASE_URL}/functions/v1/admin-users`, {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+    supabase.from('profiles').select('*').order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) setUsersError(error.message)
+        else setSupabaseUsers(data ?? [])
       })
-        .then(r => r.json())
-        .then(res => { if (res.users) setSupabaseUsers(res.users) })
-        .catch(console.error)
-        .finally(() => setLoadingUsers(false))
-    }).catch(() => setLoadingUsers(false))
+      .catch(e => setUsersError(e.message))
+      .finally(() => setLoadingUsers(false))
   }, [isAdmin])
 
   // ── Load tab-specific data ────────────────────────────────────────────────
@@ -250,6 +248,11 @@ export default function AdminPage() {
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <h1 className="text-2xl font-bold">نظرة عامة</h1>
+            {usersError && (
+              <div className="bg-red-900/20 border border-red-600/30 rounded-xl px-4 py-3 text-sm text-red-400">
+                تعذّر جلب المستخدمين: {usersError}
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: 'إجمالي المستخدمين', value: supabaseUsers.length,  color: 'text-red-500'  },
@@ -288,6 +291,11 @@ export default function AdminPage() {
         {activeTab === 'users' && (
           <div className="space-y-5">
             <h1 className="text-2xl font-bold">المستخدمون <span className="text-base font-normal text-gray-500">({supabaseUsers.length})</span></h1>
+            {usersError && (
+              <div className="bg-red-900/20 border border-red-600/30 rounded-xl px-4 py-3 text-sm text-red-400">
+                خطأ في جلب المستخدمين: {usersError}
+              </div>
+            )}
             {loadingUsers ? <Spinner /> : (
               <div className="bg-[#0f0f0f] border border-white/8 rounded-2xl overflow-hidden">
                 <div className="divide-y divide-white/5">

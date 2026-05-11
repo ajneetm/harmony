@@ -331,11 +331,6 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
       }
     }
 
-      messageCount: [...messages, userMessage].length,
-      hasSystemPrompt: !!promptToUse?.enabled,
-      conversationId
-    });
-
     // Start with thinking state - no full bubble yet
     setIsThinking(true)
     setStreamingStarted(false)
