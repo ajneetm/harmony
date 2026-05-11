@@ -303,21 +303,31 @@ export default function AdminPage() {
                     const convCount   = conversations.filter(c => c.user_id === u.id).length
                     const reportCount = conversations.filter(c => c.user_id === u.id && c.report_data).length
                     return (
-                      <div key={u.id}
-                        onClick={() => { setSelectedUser(u.id === selectedUser ? null : u.id); setActiveTab('conversations') }}
-                        className="px-5 py-4 flex items-center gap-4 cursor-pointer hover:bg-white/3 transition group">
-                        <div className="w-10 h-10 rounded-xl bg-red-600/10 border border-red-600/20 flex items-center justify-center font-bold text-red-400 flex-shrink-0">
+                      <div key={u.id} className="px-5 py-4 flex items-center gap-4 hover:bg-white/3 transition group">
+                        <div className="w-10 h-10 rounded-xl bg-red-600/10 border border-red-600/20 flex items-center justify-center font-bold text-red-400 flex-shrink-0 cursor-pointer"
+                          onClick={() => { setSelectedUser(u.id === selectedUser ? null : u.id); setActiveTab('conversations') }}>
                           {(u.name || u.email).charAt(0).toUpperCase()}
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 cursor-pointer"
+                          onClick={() => { setSelectedUser(u.id === selectedUser ? null : u.id); setActiveTab('conversations') }}>
                           <p className="text-sm font-medium text-white">{u.name || '—'}</p>
                           <p className="text-xs text-gray-500">{u.email}</p>
                         </div>
-                        <div className="text-xs text-gray-600 space-y-0.5 text-left">
+                        <div className="text-xs text-gray-600 space-y-0.5 text-left cursor-pointer"
+                          onClick={() => { setSelectedUser(u.id === selectedUser ? null : u.id); setActiveTab('conversations') }}>
                           <p>{convCount} محادثة · {reportCount} تقرير</p>
                           <p>{new Date(u.created_at).toLocaleDateString('ar-SA')}</p>
                         </div>
-                        <span className="text-xs text-red-400 opacity-0 group-hover:opacity-100 transition">عرض المحادثات ←</span>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`حذف المستخدم ${u.email}؟ هذا الإجراء لا يمكن التراجع عنه.`)) return
+                            const { error } = await supabase.rpc('delete_user', { target_id: u.id })
+                            if (error) alert('فشل الحذف: ' + error.message)
+                            else setSupabaseUsers(prev => prev.filter(x => x.id !== u.id))
+                          }}
+                          className="p-2 rounded-lg border border-white/10 text-gray-600 hover:text-red-400 hover:border-red-600/30 transition opacity-0 group-hover:opacity-100 flex-shrink-0">
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     )
                   })}
