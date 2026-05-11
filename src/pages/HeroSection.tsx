@@ -271,7 +271,7 @@ export default function HeroSection() {
 
       {/* ════════════════════ DESKTOP MAIN (xl+) ════════════════════ */}
       <main className="hidden xl:flex h-full pt-16" dir="ltr">
-        <div className="w-full max-w-[1440px] mx-auto px-8 flex h-full">
+        <div className={`w-full max-w-[1440px] mx-auto px-8 flex h-full ${!isAr ? 'flex-row-reverse' : ''}`}>
 
           {/* Faces image — always left */}
           <div className="w-[55%] flex items-center justify-center overflow-hidden">
