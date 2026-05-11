@@ -826,10 +826,6 @@ const handleCrisisQuestionnaire = useCallback(async () => {
   }, [language, createNewConversation, setCurrentConversationId, setPendingMessage, setError])
   const handleDefineProblem = useCallback(async () => {
     try {
-        currentConversationId,
-        conversations: conversations.map(c => ({ id: c.id, title: c.title }))
-      });
-      
       const instruction = language === 'ar' ? HARMONY_PROMPT_AR : HARMONY_PROMPT_EN
       const defaultTitle = language === 'ar' ? 'مشكلة جديدة' : 'New Problem'
       
@@ -850,10 +846,6 @@ const handleCrisisQuestionnaire = useCallback(async () => {
         isInitialInstruction: true
       }
       
-        messageId: typingMessage.id,
-        contentLength: instruction.length,
-        newConversationId: id
-      });
       setPendingMessage(typingMessage)
     } catch (error) {
       console.error('Error in handleDefineProblem:', error);
