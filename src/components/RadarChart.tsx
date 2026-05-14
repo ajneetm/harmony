@@ -37,7 +37,7 @@ const RadarChart: React.FC<RadarChartProps> = ({ title, color, data, language = 
     'Response':     'الناتج',
     'Reception':    'الاستقبال',
     'Evolution':    'التطور',
-    'Mental Image': 'التشكل'
+    'Mental Image': 'التشكيل'
   } : {
     'Perception':   'Perception',
     'Readiness':    'Readiness',

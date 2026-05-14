@@ -149,7 +149,7 @@ export const generateReport = async (_answersData: any, chartData: any, language
     const dimensionData = [
       { value: mental.percentage,      label_ar: 'الذهني',   label_en: 'Mental',      desc_ar: 'جانب التفكير والتحليل',         desc_en: 'the side of thinking and analysis',  world_ar: 'العالم الداخلي',   world_en: 'Inner World'       },
       { value: emotional.percentage,   label_ar: 'المشاعري', label_en: 'Emotional',   desc_ar: 'جانب المشاعر والتفاعل الداخلي', desc_en: 'the side of emotions and inner interaction', world_ar: 'العالم الفيزيائي', world_en: 'Physical World'    },
-      { value: existential.percentage, label_ar: 'السلوكي',  label_en: 'Existential', desc_ar: 'جانب الهوية والتشكل الداخلي',   desc_en: 'the side of identity and inner formation',  world_ar: 'العالم الوجودي',   world_en: 'Existential World' },
+      { value: existential.percentage, label_ar: 'السلوكي',  label_en: 'Existential', desc_ar: 'جانب الهوية والتشكيل الداخلي',   desc_en: 'the side of identity and inner formation',  world_ar: 'العالم الوجودي',   world_en: 'Existential World' },
     ].sort((a, b) => b.value - a.value)
 
     const highest    = dimensionData[0]
