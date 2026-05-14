@@ -781,21 +781,21 @@ export default function ReportPage() {
                   </div>
                 </div>
 
-                {/* Dimension Percentages Row */}
+                {/* Type Percentages Row — matches the radar above each */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-2">
                   <div className="text-center">
                     <span className="text-xl font-bold" style={{ color: '#22c55e' }}>
-                      {chartData.mental.percentage}%
+                      {chartData.radarPct.cognitive}%
                     </span>
                   </div>
                   <div className="text-center">
                     <span className="text-xl font-bold" style={{ color: '#ae1f23' }}>
-                      {chartData.emotional.percentage}%
+                      {chartData.radarPct.emotional}%
                     </span>
                   </div>
                   <div className="text-center">
                     <span className="text-xl font-bold" style={{ color: '#3b82f6' }}>
-                      {chartData.existential.percentage}%
+                      {chartData.radarPct.behavioral}%
                     </span>
                   </div>
                 </div>

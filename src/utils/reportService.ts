@@ -51,6 +51,7 @@ export interface ReportChartData {
   radarCognitive: ChartData[]
   radarEmotional: ChartData[]
   radarBehavioral: ChartData[]
+  radarPct: { cognitive: number; emotional: number; behavioral: number }
   radarLabels: {
     cognitive: string
     emotional: string
@@ -198,6 +199,16 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
     existential: language === 'ar' ? 'العالم الوجودي'  : 'Existential World',
   }
 
+  // Type percentages — each type covers 9 questions (one per function)
+  const cognitiveAnswers  = answers.filter((_, i) => i % 3 === 0)
+  const emotionalTypeAnswers = answers.filter((_, i) => i % 3 === 1)
+  const behavioralAnswers = answers.filter((_, i) => i % 3 === 2)
+  const radarPct = {
+    cognitive:  Math.round(sum(cognitiveAnswers)      / 45 * 100),
+    emotional:  Math.round(sum(emotionalTypeAnswers)  / 45 * 100),
+    behavioral: Math.round(sum(behavioralAnswers)     / 45 * 100),
+  }
+
   // World harmony = 100 - (max_world% - min_world%)
   const worldPcts = [mentalPct, emotionalPct, existentialPct]
   const worldHarmony = Math.max(0, 100 - (Math.max(...worldPcts) - Math.min(...worldPcts)))
@@ -217,6 +228,7 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
     radarCognitive: buildRadarData(radarGroups.cognitive),
     radarEmotional: buildRadarData(radarGroups.emotional),
     radarBehavioral: buildRadarData(radarGroups.behavioral),
+    radarPct,
     radarLabels: {
       cognitive: language === 'ar' ? 'الذهني' : 'Cognitive',
       emotional: language === 'ar' ? 'المشاعري' : 'Emotional',
