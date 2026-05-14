@@ -13,6 +13,7 @@ import misbaraLogo from '../components/icons/misbara_original_logo.svg'
 import headerSvg from '../components/icons/header.svg'
 import footerSvg from '../components/icons/footer.svg'
 import { getFontCSSProperties } from '../utils/fonts'
+import { supabase } from '../lib/supabase'
 
 // Interface definitions
 interface QuestionWithAnswer {
@@ -107,30 +108,44 @@ export default function ReportPage() {
   const chatId = urlParams.get('chatId')
 
   useEffect(() => {
-    const loadReportData = () => {
+    const applyFont = (lang: string) => {
+      const fontProps = getFontCSSProperties(lang)
+      Object.entries(fontProps).forEach(([p, v]) => document.documentElement.style.setProperty(p, v))
+      document.documentElement.classList.remove('font-tajawal', 'font-inter')
+      document.documentElement.classList.add(lang === 'ar' ? 'font-tajawal' : 'font-inter')
+    }
+
+    const loadReportData = async () => {
       try {
-        const storedData = sessionStorage.getItem('reportData')
+        // 1. Try sessionStorage first (fastest)
+        const local = sessionStorage.getItem('reportData')
           || (chatId ? localStorage.getItem(`report-${chatId}`) : null)
-        if (storedData) {
-          const data = JSON.parse(storedData)
+
+        if (local) {
+          const data = JSON.parse(local)
           setReportData(data)
-          
-          // Apply font CSS properties based on language
-          if (data.questionnaireData?.language) {
-            const fontProps = getFontCSSProperties(data.questionnaireData.language)
-            Object.entries(fontProps).forEach(([property, value]) => {
-              document.documentElement.style.setProperty(property, value)
-            })
-            
-            // Also apply the appropriate font class
-            document.documentElement.classList.remove('font-tajawal', 'font-inter')
-            const fontClass = data.questionnaireData.language === 'ar' ? 'font-tajawal' : 'font-inter'
-            document.documentElement.classList.add(fontClass)
-          }
-        } else {
-          const storedLang = (() => { try { return JSON.parse(localStorage.getItem('language') || '"en"') } catch { return 'en' } })()
-          setError(storedLang === 'ar' ? 'لم يتم العثور على بيانات التقرير' : 'No report data found')
+          if (data.questionnaireData?.language) applyFont(data.questionnaireData.language)
+          return
         }
+
+        // 2. Fallback: fetch from Supabase
+        if (chatId) {
+          const { data: row, error: dbErr } = await supabase
+            .from('conversations')
+            .select('report_data')
+            .eq('id', chatId)
+            .single()
+
+          if (!dbErr && row?.report_data) {
+            const data = JSON.parse(row.report_data)
+            setReportData(data)
+            if (data.questionnaireData?.language) applyFont(data.questionnaireData.language)
+            return
+          }
+        }
+
+        const storedLang = (() => { try { return JSON.parse(localStorage.getItem('language') || '"en"') } catch { return 'en' } })()
+        setError(storedLang === 'ar' ? 'لم يتم العثور على بيانات التقرير' : 'No report data found')
       } catch (err) {
         console.error('Error loading report data:', err)
         const storedLang = (() => { try { return JSON.parse(localStorage.getItem('language') || '"en"') } catch { return 'en' } })()
