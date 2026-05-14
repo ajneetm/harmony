@@ -110,6 +110,7 @@ export default function ReportPage() {
     const loadReportData = () => {
       try {
         const storedData = sessionStorage.getItem('reportData')
+          || (chatId ? localStorage.getItem(`report-${chatId}`) : null)
         if (storedData) {
           const data = JSON.parse(storedData)
           setReportData(data)
