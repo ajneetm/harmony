@@ -14,6 +14,7 @@ import headerSvg from '../components/icons/header.svg'
 import footerSvg from '../components/icons/footer.svg'
 import { getFontCSSProperties } from '../utils/fonts'
 import { supabase } from '../lib/supabase'
+import { generateChartData } from '../utils/reportService'
 
 // Interface definitions
 interface QuestionWithAnswer {
@@ -115,6 +116,13 @@ export default function ReportPage() {
       document.documentElement.classList.add(lang === 'ar' ? 'font-tajawal' : 'font-inter')
     }
 
+    const fixData = (data: any) => {
+      if (data.questionnaireData && (!data.chartData || data.chartData.harmony == null)) {
+        data.chartData = generateChartData(data.questionnaireData)
+      }
+      return data
+    }
+
     const loadReportData = async () => {
       try {
         // 1. Try sessionStorage first (fastest)
@@ -122,7 +130,7 @@ export default function ReportPage() {
           || (chatId ? localStorage.getItem(`report-${chatId}`) : null)
 
         if (local) {
-          const data = JSON.parse(local)
+          const data = fixData(JSON.parse(local))
           setReportData(data)
           if (data.questionnaireData?.language) applyFont(data.questionnaireData.language)
           return
@@ -137,7 +145,7 @@ export default function ReportPage() {
             .single()
 
           if (!dbErr && row?.report_data) {
-            const data = JSON.parse(row.report_data)
+            const data = fixData(JSON.parse(row.report_data))
             setReportData(data)
             if (data.questionnaireData?.language) applyFont(data.questionnaireData.language)
             return
