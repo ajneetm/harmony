@@ -1037,6 +1037,82 @@ export default function ReportPage() {
                       </table>
                     </div>
                   </div>
+
+                  {/* Table 4 — 12 Indicators */}
+                  {(() => {
+                    const drivers = [
+                      { name: isArabic ? 'الذهني'   : 'Cognitive',  pct: chartData.mental.percentage },
+                      { name: isArabic ? 'المشاعري' : 'Emotional',  pct: chartData.emotional.percentage },
+                      { name: isArabic ? 'السلوكي'  : 'Behavioral', pct: chartData.existential.percentage },
+                    ]
+                    const wlds = [
+                      { name: chartData.worldLabels?.inner       ?? (isArabic ? 'الداخلي'   : 'Inner'),       pct: chartData.worldMentalPct      ?? 0 },
+                      { name: chartData.worldLabels?.physical    ?? (isArabic ? 'الفيزيائي' : 'Physical'),    pct: chartData.worldEmotionalPct   ?? 0 },
+                      { name: chartData.worldLabels?.existential ?? (isArabic ? 'الوجودي'   : 'Existential'), pct: chartData.worldExistentialPct ?? 0 },
+                    ]
+                    const domDriver   = drivers.reduce((a, b) => a.pct >= b.pct ? a : b)
+                    const weakDriver  = drivers.reduce((a, b) => a.pct <= b.pct ? a : b)
+                    const strongWorld = wlds.reduce((a, b) => a.pct >= b.pct ? a : b)
+                    const weakWorld   = wlds.reduce((a, b) => a.pct <= b.pct ? a : b)
+                    const strongFn    = chartData.allElements[0]
+                    const weakFn      = chartData.allElements[chartData.allElements.length - 1]
+                    const driverGap   = Math.max(...drivers.map(d => d.pct)) - Math.min(...drivers.map(d => d.pct))
+                    const ap          = chartData.actionPower ?? Math.round(chartData.overall * chartData.harmony / 100)
+
+                    const rows = isArabic ? [
+                      { num: 1,  label: 'قوة الفعل',                 value: `${ap}%` },
+                      { num: 2,  label: 'متوسط الأداء العام',         value: `${chartData.overall}%` },
+                      { num: 3,  label: 'التجانس العام',              value: `${chartData.harmony}%` },
+                      { num: 4,  label: 'تجانس المحركات',             value: `${chartData.driverHarmony ?? '-'}%` },
+                      { num: 5,  label: 'تجانس العوالم',              value: `${chartData.worldHarmony ?? '-'}%` },
+                      { num: 6,  label: 'المحرك المسيطر',             value: `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 7,  label: 'أقوى عالم',                  value: `${strongWorld.name} (${strongWorld.pct}%)` },
+                      { num: 8,  label: 'أضعف عالم',                  value: `${weakWorld.name} (${weakWorld.pct}%)` },
+                      { num: 9,  label: 'أضعف محرك',                  value: `${weakDriver.name} (${weakDriver.pct}%)` },
+                      { num: 10, label: 'أقوى وظيفة',                 value: `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 11, label: 'أضعف وظيفة',                 value: `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 12, label: 'أكبر فجوة بين المحركات',     value: `${driverGap}%` },
+                    ] : [
+                      { num: 1,  label: 'Action Power',         value: `${ap}%` },
+                      { num: 2,  label: 'Action Average',       value: `${chartData.overall}%` },
+                      { num: 3,  label: 'General Harmony',      value: `${chartData.harmony}%` },
+                      { num: 4,  label: 'Driver Harmony',       value: `${chartData.driverHarmony ?? '-'}%` },
+                      { num: 5,  label: 'World Harmony',        value: `${chartData.worldHarmony ?? '-'}%` },
+                      { num: 6,  label: 'Dominant Driver',      value: `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 7,  label: 'Strongest World',      value: `${strongWorld.name} (${strongWorld.pct}%)` },
+                      { num: 8,  label: 'Weakest World',        value: `${weakWorld.name} (${weakWorld.pct}%)` },
+                      { num: 9,  label: 'Weakest Driver',       value: `${weakDriver.name} (${weakDriver.pct}%)` },
+                      { num: 10, label: 'Strongest Function',   value: `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 11, label: 'Weakest Function',     value: `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 12, label: 'Largest Driver Gap',   value: `${driverGap}%` },
+                    ]
+
+                    return (
+                      <div className="rounded-2xl overflow-hidden" style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }}>
+                        <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-2">
+                          {isArabic ? 'المؤشرات الـ 12' : '12 Indicators'}
+                        </p>
+                        <table className="w-full">
+                          <thead>
+                            <tr>
+                              <th className={`${thCls} text-center w-8`}>#</th>
+                              <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'المؤشر' : 'Indicator'}</th>
+                              <th className={`${thCls} text-${isArabic ? 'left' : 'right'}`}>{isArabic ? 'القيمة' : 'Value'}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map(row => (
+                              <tr key={row.num} className="hover:bg-white/2 transition">
+                                <td className={`${tdCls} text-center text-gray-600 text-xs`}>{row.num}</td>
+                                <td className={tdCls}>{row.label}</td>
+                                <td className={`${tdCls} text-${isArabic ? 'left' : 'right'} font-semibold text-white`}>{row.value}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )
+                  })()}
                 </section>
               )
             })()}
