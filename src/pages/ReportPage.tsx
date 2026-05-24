@@ -15,6 +15,12 @@ import footerSvg from '../components/icons/footer.svg'
 import { getFontCSSProperties } from '../utils/fonts'
 import { supabase } from '../lib/supabase'
 import { generateChartData } from '../utils/reportService'
+import { useAuth } from '../context/AuthContext'
+
+const ADMIN_EMAIL = 'a.hajali@ajnee.com'
+
+const FN_NAMES_AR = ['الإدراك', 'الجاهزية', 'النية', 'الفعل', 'التفاعل', 'الناتج', 'الاستقبال', 'التطور', 'التشكيل']
+const FN_NAMES_EN = ['Perception', 'Readiness', 'Intention', 'Action', 'Interaction', 'Outcome', 'Reception', 'Evolution', 'Formation']
 
 // Interface definitions
 interface QuestionWithAnswer {
@@ -90,10 +96,12 @@ interface ReportData {
 
 // Report Page Component
 export default function ReportPage() {
+  const { user } = useAuth()
   const [reportData, setReportData] = useState<ReportData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
+  const [userRole, setUserRole] = useState<string>('user')
   const reportTopic = sessionStorage.getItem('reportTopic') || ''
   
   const navigate = (path: string) => {
@@ -173,7 +181,14 @@ export default function ReportPage() {
     loadReportData()
   }, [])
 
+  useEffect(() => {
+    if (!user) return
+    if (user.email === ADMIN_EMAIL) { setUserRole('trainer'); return }
+    supabase.from('profiles').select('role').eq('id', user.id).single()
+      .then(({ data }) => { if (data?.role) setUserRole(data.role) })
+  }, [user])
 
+  const isTrainer = userRole === 'trainer' || userRole === 'admin' || user?.email === ADMIN_EMAIL
 
   const handleDownloadPDF = async () => {
     if (!reportData) return
@@ -730,7 +745,7 @@ export default function ReportPage() {
 
 
             {/* Charts Section */}
-            {chartData && (
+            {isTrainer && chartData && (
               <section className="mt-4 md:mt-6 mb-3 md:mb-4">
 
                 {/* Summary Row — 3 cards */}
@@ -900,6 +915,131 @@ export default function ReportPage() {
 
               </section>
             )}
+
+            {/* ── Trainer Tables ── */}
+            {isTrainer && chartData && (() => {
+              const rc = chartData.radarCognitive
+              const re = chartData.radarEmotional
+              const rb = chartData.radarBehavioral
+              const fnCoh = (c: number, e: number, b: number) =>
+                Math.max(0, Math.round(100 - (Math.max(c, e, b) - Math.min(c, e, b)) * 25))
+              const worldCoh = (start: number) =>
+                Math.round([0, 1, 2].map(j => fnCoh(rc[start + j].value, re[start + j].value, rb[start + j].value))
+                  .reduce((a, b) => a + b, 0) / 3)
+              const fnNames = isArabic ? FN_NAMES_AR : FN_NAMES_EN
+              const thCls = 'py-2 px-3 text-xs font-semibold text-gray-400 border-b border-white/10'
+              const tdCls = 'py-2 px-3 text-sm border-b border-white/5'
+
+              return (
+                <section className="mt-4 mb-4 space-y-5" dir={isArabic ? 'rtl' : 'ltr'}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    {/* Table 1 — Drivers */}
+                    <div className="rounded-2xl overflow-hidden" style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }}>
+                      <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-2">
+                        {isArabic ? 'المحركات' : 'Drivers'}
+                      </p>
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'المحرك' : 'Driver'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'النسبة' : '%'}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            { name: isArabic ? 'الذهني'   : 'Cognitive',  pct: chartData.mental.percentage,    color: '#22c55e' },
+                            { name: isArabic ? 'المشاعري' : 'Emotional',  pct: chartData.emotional.percentage, color: '#ae1f23' },
+                            { name: isArabic ? 'السلوكي'  : 'Behavioral', pct: chartData.existential.percentage, color: '#3b82f6' },
+                          ].map((row, i) => (
+                            <tr key={i}>
+                              <td className={tdCls}>
+                                <span className="inline-block w-2 h-2 rounded-full mx-2" style={{ background: row.color }} />
+                                {row.name}
+                              </td>
+                              <td className={`${tdCls} text-center font-bold`} style={{ color: row.color }}>{row.pct}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Table 2 — Worlds */}
+                    <div className="rounded-2xl overflow-hidden" style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }}>
+                      <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-2">
+                        {isArabic ? 'العوالم' : 'Worlds'}
+                      </p>
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'العالم' : 'World'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'الأداء' : 'Score'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'التجانس' : 'Coh.'}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            { name: chartData.worldLabels?.inner       ?? (isArabic ? 'العالم الداخلي'   : 'Inner World'),       pct: chartData.worldMentalPct      ?? 0, coh: worldCoh(0), color: '#22c55e' },
+                            { name: chartData.worldLabels?.physical    ?? (isArabic ? 'العالم الفيزيائي' : 'Physical World'),    pct: chartData.worldEmotionalPct   ?? 0, coh: worldCoh(3), color: '#ae1f23' },
+                            { name: chartData.worldLabels?.existential ?? (isArabic ? 'العالم الوجودي'   : 'Existential World'), pct: chartData.worldExistentialPct ?? 0, coh: worldCoh(6), color: '#3b82f6' },
+                          ].map((row, i) => (
+                            <tr key={i}>
+                              <td className={tdCls}>
+                                <span className="inline-block w-2 h-2 rounded-full mx-2" style={{ background: row.color }} />
+                                {row.name}
+                              </td>
+                              <td className={`${tdCls} text-center font-bold text-white`}>{row.pct}%</td>
+                              <td className={`${tdCls} text-center font-bold`} style={{ color: row.color }}>{row.coh}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Table 3 — Functions (9 rows) */}
+                  <div className="rounded-2xl overflow-hidden" style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }}>
+                    <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-2">
+                      {isArabic ? 'الوظائف التسع' : 'Nine Functions'}
+                    </p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[500px]">
+                        <thead>
+                          <tr>
+                            <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'الوظيفة' : 'Function'}</th>
+                            <th className={`${thCls} text-center`} style={{ color: '#22c55e' }}>{isArabic ? 'ذهني' : 'Cog.'}</th>
+                            <th className={`${thCls} text-center`} style={{ color: '#ae1f23' }}>{isArabic ? 'مشاعري' : 'Emo.'}</th>
+                            <th className={`${thCls} text-center`} style={{ color: '#3b82f6' }}>{isArabic ? 'سلوكي' : 'Beh.'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'المتوسط' : 'Avg.'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'التجانس' : 'Coh.'}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {fnNames.map((name, i) => {
+                            const c = rc[i]?.value ?? 0
+                            const e = re[i]?.value ?? 0
+                            const b = rb[i]?.value ?? 0
+                            const avg = ((c + e + b) / 3).toFixed(1)
+                            const coh = fnCoh(c, e, b)
+                            const cohColor = coh >= 75 ? '#22c55e' : coh >= 50 ? '#f59e0b' : '#ef4444'
+                            return (
+                              <tr key={i} className="hover:bg-white/2 transition">
+                                <td className={`${tdCls} font-medium`}>{name}</td>
+                                <td className={`${tdCls} text-center`} style={{ color: '#22c55e' }}>{c.toFixed(1)}</td>
+                                <td className={`${tdCls} text-center`} style={{ color: '#ae1f23' }}>{e.toFixed(1)}</td>
+                                <td className={`${tdCls} text-center`} style={{ color: '#3b82f6' }}>{b.toFixed(1)}</td>
+                                <td className={`${tdCls} text-center text-white font-semibold`}>{avg}</td>
+                                <td className={`${tdCls} text-center font-bold`} style={{ color: cohColor }}>{coh}%</td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </section>
+              )
+            })()}
 
             {/* AI Report Section — split: intro | strengths/weaknesses | rest */}
             {(() => {

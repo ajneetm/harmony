@@ -15,7 +15,7 @@ import {
 const ADMIN_EMAIL = 'a.hajali@ajnee.com'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
 
-interface SupabaseUser { id: string; email: string; name: string | null; created_at: string; last_sign_in_at: string | null }
+interface SupabaseUser { id: string; email: string; name: string | null; created_at: string; last_sign_in_at: string | null; role?: string }
 
 type AdminTab = 'overview' | 'users' | 'conversations' | 'workshops' | 'certificates' | 'consultations'
 
@@ -68,6 +68,9 @@ export default function AdminPage() {
   // Certificate form
   const [certForm,      setCertForm]      = useState<{ userId: string; title_ar: string; title_en: string; issued_by: string; description: string } | null>(null)
   const [savingCert,    setSavingCert]    = useState(false)
+
+  // Role management
+  const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null)
 
   // Consultation reply
   const [replyingId,    setReplyingId]    = useState<string | null>(null)
@@ -200,6 +203,15 @@ export default function AdminPage() {
     } catch (e) { console.error(e) }
   }
 
+  const handleToggleRole = async (u: SupabaseUser) => {
+    const newRole = (u.role ?? 'user') === 'trainer' ? 'user' : 'trainer'
+    setUpdatingRoleId(u.id)
+    const { error } = await supabase.rpc('update_user_role', { target_id: u.id, new_role: newRole })
+    if (error) alert('فشل تغيير الدور: ' + error.message)
+    else setSupabaseUsers(prev => prev.map(x => x.id === u.id ? { ...x, role: newRole } : x))
+    setUpdatingRoleId(null)
+  }
+
   const Spinner = () => <div className="flex justify-center py-16"><Loader2 size={28} className="text-red-500 animate-spin" /></div>
 
   return (
@@ -318,6 +330,18 @@ export default function AdminPage() {
                           <p>{convCount} محادثة · {reportCount} تقرير</p>
                           <p>{new Date(u.created_at).toLocaleDateString('ar-SA')}</p>
                         </div>
+                        {/* Role badge + toggle */}
+                        <button
+                          onClick={() => handleToggleRole(u)}
+                          disabled={updatingRoleId === u.id}
+                          title={`الدور الحالي: ${u.role ?? 'user'} — اضغط للتغيير`}
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition flex-shrink-0 ${
+                            (u.role ?? 'user') === 'trainer'
+                              ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30 hover:bg-amber-600/30'
+                              : 'bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10'
+                          }`}>
+                          {updatingRoleId === u.id ? '...' : (u.role ?? 'user') === 'trainer' ? 'مدرب' : 'مستخدم'}
+                        </button>
                         <button
                           onClick={async () => {
                             if (!confirm(`حذف المستخدم ${u.email}؟ هذا الإجراء لا يمكن التراجع عنه.`)) return
