@@ -6,7 +6,8 @@ import { useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { sbConversations } from '../lib/supabaseConversations'
 
-const CONVERSATIONS_STORAGE_KEY = 'misbara-conversations'
+const CONVERSATIONS_STORAGE_KEY = 'harmony-conversations'
+const LEGACY_STORAGE_KEY = 'misbara-conversations'
 
 const saveToLocalStorage = (conversations: Conversation[]) => {
   try { localStorage.setItem(CONVERSATIONS_STORAGE_KEY, JSON.stringify(conversations)) } catch { /* ignore */ }
@@ -15,7 +16,15 @@ const saveToLocalStorage = (conversations: Conversation[]) => {
 const loadFromLocalStorage = (): Conversation[] => {
   try {
     const s = localStorage.getItem(CONVERSATIONS_STORAGE_KEY)
-    return s ? JSON.parse(s) : []
+    if (s) return JSON.parse(s)
+    // Migrate from old key on first load
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY)
+    if (legacy) {
+      localStorage.setItem(CONVERSATIONS_STORAGE_KEY, legacy)
+      localStorage.removeItem(LEGACY_STORAGE_KEY)
+      return JSON.parse(legacy)
+    }
+    return []
   } catch { return [] }
 }
 

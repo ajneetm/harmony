@@ -4,8 +4,8 @@ import originalLogoUrl from './misbara_original_logo.svg'
 
 export const AnimatedAiIcon = (
   props: React.ImgHTMLAttributes<HTMLImageElement>
-) => <img src={animatedLogoUrl} alt="Misbara animated logo" {...props} />
+) => <img src={animatedLogoUrl} alt="Harmony animated logo" {...props} />
 
 export const AiIcon = (
   props: React.ImgHTMLAttributes<HTMLImageElement>
-) => <img src={originalLogoUrl} alt="Misbara logo" {...props} />
+) => <img src={originalLogoUrl} alt="Harmony logo" {...props} />

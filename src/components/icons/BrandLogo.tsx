@@ -8,6 +8,6 @@ export const BrandLogo = (
     style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
     onClick={() => { if ((window as any).navigateTo) (window as any).navigateTo('/') }}
   >
-    <img src={logoUrl} alt="Misbara logo" width={50} {...props} />
+    <img src={logoUrl} alt="Harmony logo" width={50} {...props} />
   </button>
 )
