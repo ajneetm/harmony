@@ -144,12 +144,17 @@ export const generateReport = async (_answersData: any, chartData: any, language
   try {
     const reportPrompt = getReportPrompt(language)
 
-    const { mental, emotional, existential, harmony, overall, allElements, worldHarmony, dominantWorld } = chartData
+    const {
+      mental, emotional, existential, harmony, overall, allElements,
+      worldHarmony, dominantWorld, worldMentalPct, worldEmotionalPct, worldExistentialPct,
+      driverHarmony, actionPower,
+    } = chartData
 
+    // mental.percentage / emotional.percentage / existential.percentage are now DRIVER percentages
     const dimensionData = [
       { value: mental.percentage,      label_ar: 'الذهني',   label_en: 'Mental',      desc_ar: 'جانب التفكير والتحليل',         desc_en: 'the side of thinking and analysis',  world_ar: 'العالم الداخلي',   world_en: 'Inner World'       },
       { value: emotional.percentage,   label_ar: 'المشاعري', label_en: 'Emotional',   desc_ar: 'جانب المشاعر والتفاعل الداخلي', desc_en: 'the side of emotions and inner interaction', world_ar: 'العالم الفيزيائي', world_en: 'Physical World'    },
-      { value: existential.percentage, label_ar: 'السلوكي',  label_en: 'Existential', desc_ar: 'جانب الهوية والتشكيل الداخلي',   desc_en: 'the side of identity and inner formation',  world_ar: 'العالم الوجودي',   world_en: 'Existential World' },
+      { value: existential.percentage, label_ar: 'السلوكي',  label_en: 'Behavioral',  desc_ar: 'جانب الهوية والتشكيل الداخلي',   desc_en: 'the side of identity and inner formation',  world_ar: 'العالم الوجودي',   world_en: 'Existential World' },
     ].sort((a, b) => b.value - a.value)
 
     const highest    = dimensionData[0]
@@ -159,44 +164,53 @@ export const generateReport = async (_answersData: any, chartData: any, language
     const balance_gap = Math.max(mental.percentage, emotional.percentage, existential.percentage)
       - Math.min(mental.percentage, emotional.percentage, existential.percentage)
 
+    // World percentages (fall back to driver percentages for old cached reports missing the field)
+    const wMentalPct      = worldMentalPct      ?? mental.percentage
+    const wEmotionalPct   = worldEmotionalPct   ?? emotional.percentage
+    const wExistentialPct = worldExistentialPct ?? existential.percentage
+
     const chartDataText = language === 'ar'
       ? JSON.stringify({
-          'النسبة_العامة': overall,
-          'نسبة_التجانس':  harmony,
-          'نسبة_الذهني':   mental.percentage,
-          'نسبة_المشاعري': emotional.percentage,
-          'نسبة_السلوكي':  existential.percentage,
-          'البعد_الأعلى':  { الاسم: highest.label_ar, الوصف: highest.desc_ar, القيمة: highest.value },
-          'البعد_الأدنى':  { الاسم: lowest.label_ar,  القيمة: lowest.value },
-          'أقوى_3_وظائف':  top3.map((e: any)    => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
-          'أضعف_3_وظائف':  bottom3.map((e: any) => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
-          'فجوة_التوازن':  Number(balance_gap.toFixed(1)),
+          'النسبة_العامة':    overall,
+          'قوة_الفعل':        actionPower ?? Math.round(overall * harmony / 100),
+          'نسبة_التجانس':     harmony,
+          'تجانس_المحركات':   driverHarmony ?? harmony,
+          'تجانس_العوالم':    worldHarmony ?? harmony,
+          'نسبة_الذهني':      mental.percentage,
+          'نسبة_المشاعري':    emotional.percentage,
+          'نسبة_السلوكي':     existential.percentage,
+          'المحرك_الأعلى':    { الاسم: highest.label_ar, الوصف: highest.desc_ar, القيمة: highest.value },
+          'المحرك_الأدنى':    { الاسم: lowest.label_ar,  القيمة: lowest.value },
+          'أقوى_3_وظائف':     top3.map((e: any)    => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
+          'أضعف_3_وظائف':     bottom3.map((e: any) => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
+          'فجوة_التوازن':     Number(balance_gap.toFixed(1)),
           'العوالم_الثلاثة': {
-            'العالم_الداخلي':   { النسبة: mental.percentage,      البعد: 'الذهني'   },
-            'العالم_الفيزيائي': { النسبة: emotional.percentage,   البعد: 'المشاعري' },
-            'العالم_الوجودي':   { النسبة: existential.percentage, البعد: 'السلوكي'  },
+            'العالم_الداخلي':   { النسبة: wMentalPct,      البعد: 'الذهني'   },
+            'العالم_الفيزيائي': { النسبة: wEmotionalPct,   البعد: 'المشاعري' },
+            'العالم_الوجودي':   { النسبة: wExistentialPct, البعد: 'السلوكي'  },
           },
-          'تجانس_العوالم':  worldHarmony ?? harmony,
           'العالم_المتحكم': dominantWorld ?? highest.world_ar,
         }, null, 2)
       : JSON.stringify({
           overall_percentage:     overall,
+          action_power:           actionPower ?? Math.round(overall * harmony / 100),
           harmony_percentage:     harmony,
+          driver_harmony:         driverHarmony ?? harmony,
+          world_harmony:          worldHarmony ?? harmony,
           mental_percentage:      mental.percentage,
           emotional_percentage:   emotional.percentage,
-          existential_percentage: existential.percentage,
-          highest_dimension: { label: highest.label_en, description: highest.desc_en, value: highest.value },
-          lowest_dimension:  { label: lowest.label_en,  value: lowest.value },
+          behavioral_percentage:  existential.percentage,
+          highest_driver: { label: highest.label_en, description: highest.desc_en, value: highest.value },
+          lowest_driver:  { label: lowest.label_en,  value: lowest.value },
           top_3_functions:    top3.map((e: any)    => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
           bottom_3_functions: bottom3.map((e: any) => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
           balance_gap: Number(balance_gap.toFixed(1)),
           three_worlds: {
-            inner_world:       { percentage: mental.percentage,      dimension: 'Mental'      },
-            physical_world:    { percentage: emotional.percentage,   dimension: 'Emotional'   },
-            existential_world: { percentage: existential.percentage, dimension: 'Existential' },
+            inner_world:       { percentage: wMentalPct,      dimension: 'Mental'      },
+            physical_world:    { percentage: wEmotionalPct,   dimension: 'Emotional'   },
+            existential_world: { percentage: wExistentialPct, dimension: 'Behavioral'  },
           },
-          world_coherence:  worldHarmony ?? harmony,
-          dominant_world:   dominantWorld ?? highest.world_en,
+          dominant_world: dominantWorld ?? highest.world_en,
         }, null, 2)
 
     const fullPrompt = reportPrompt.replace('{CHART_DATA_PLACEHOLDER}', chartDataText)

@@ -35,7 +35,7 @@ interface DimensionData {
 }
 
 export interface ReportChartData {
-  // New dimensional scores (for numbers, AI, percentages display)
+  // Driver scores (mental=cognitive, emotional, existential=behavioral)
   mental: DimensionData
   emotional: DimensionData
   existential: DimensionData
@@ -68,6 +68,13 @@ export interface ReportChartData {
   }
   worldHarmony: number
   dominantWorld: string
+  // World percentages (separate from driver percentages)
+  worldMentalPct: number
+  worldEmotionalPct: number
+  worldExistentialPct: number
+  // Additional harmony components
+  driverHarmony: number
+  actionPower: number
 }
 
 interface ReportData {
@@ -77,11 +84,27 @@ interface ReportData {
 }
 
 /**
- * Processes questionnaire data to generate chart data for visualization
- * 3 dimensions: Mental (Q1-9), Emotional (Q10-18), Existential (Q19-27)
- * Each dimension score = sum / 45 * 100
- * Harmony = 100 - (max_dim% - min_dim%)
- * Overall = total_sum / 135 * 100
+ * Processes questionnaire data to generate chart data for visualization.
+ *
+ * 27 questions = 9 functions × 3 driver types (M/E/B):
+ *   answers[i*3]   = Mental/Cognitive driver for function i
+ *   answers[i*3+1] = Emotional driver for function i
+ *   answers[i*3+2] = Behavioral driver for function i
+ *
+ * 3 worlds (groups of 3 functions each):
+ *   Inner World     = functions 0-2 (questions 0-8)
+ *   Physical World  = functions 3-5 (questions 9-17)
+ *   Existential World = functions 6-8 (questions 18-26)
+ *
+ * Key metrics:
+ *   Driver %  = avg of 9 same-type answers / 5 * 100
+ *   World %   = avg of 9 consecutive answers / 5 * 100
+ *   Fi        = avg(M[i], E[i], B[i])
+ *   Hd        = 100 - (max_driver% - min_driver%)
+ *   Hw        = 100 - (max_world% - min_world%)
+ *   H         = (Hd + Hw) / 2
+ *   A         = avg(all Fi) = overall%
+ *   P         = A × H / 100
  */
 export const generateChartData = (data: QuestionnaireData): ReportChartData => {
   const { questions_with_answers, language } = data
@@ -89,75 +112,85 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
 
   const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
 
-  // Split into 3 dimensions
-  const mentalAnswers = answers.slice(0, 9)
-  const emotionalAnswers = answers.slice(9, 18)
-  const existentialAnswers = answers.slice(18, 27)
+  // ── Driver answers (interleaved: M at i%3==0, E at i%3==1, B at i%3==2) ──
+  const cognitiveAnswers  = answers.filter((_, i) => i % 3 === 0)   // M[0..8]
+  const emotionalTypeAnswers = answers.filter((_, i) => i % 3 === 1) // E[0..8]
+  const behavioralAnswers = answers.filter((_, i) => i % 3 === 2)    // B[0..8]
 
-  // Dimension percentages (max 45 per dimension)
-  const mentalPct = Math.round(sum(mentalAnswers) / 45 * 100)
-  const emotionalPct = Math.round(sum(emotionalAnswers) / 45 * 100)
-  const existentialPct = Math.round(sum(existentialAnswers) / 45 * 100)
+  // Driver percentages (max 45 per driver = 9 questions × max 5)
+  const driverMentalPct    = Math.round(sum(cognitiveAnswers)       / 45 * 100)
+  const driverEmotionalPct = Math.round(sum(emotionalTypeAnswers)   / 45 * 100)
+  const driverBehavioralPct = Math.round(sum(behavioralAnswers)     / 45 * 100)
 
+  // ── World answers (consecutive blocks of 9) ──
+  const internalWorldAnswers    = answers.slice(0, 9)
+  const physicalWorldAnswers    = answers.slice(9, 18)
+  const existentialWorldAnswers = answers.slice(18, 27)
 
-  // Overall: total / 135 * 100
+  // World percentages
+  const worldMentalPct      = Math.round(sum(internalWorldAnswers)    / 45 * 100)
+  const worldEmotionalPct   = Math.round(sum(physicalWorldAnswers)    / 45 * 100)
+  const worldExistentialPct = Math.round(sum(existentialWorldAnswers) / 45 * 100)
+
+  // ── Overall (A = action average = avg of all function scores) ──
   const overall = Math.round(sum(answers) / 135 * 100)
 
-  // Function names per language (9 functions total)
+  // ── Harmony ──
+  const driverHarmony = Math.max(0, 100 - (
+    Math.max(driverMentalPct, driverEmotionalPct, driverBehavioralPct) -
+    Math.min(driverMentalPct, driverEmotionalPct, driverBehavioralPct)
+  ))
+  const worldHarmonyVal = Math.max(0, 100 - (
+    Math.max(worldMentalPct, worldEmotionalPct, worldExistentialPct) -
+    Math.min(worldMentalPct, worldEmotionalPct, worldExistentialPct)
+  ))
+  const harmony = Math.round((driverHarmony + worldHarmonyVal) / 2)
+
+  // ── Action Power (P = A × H / 100) ──
+  const actionPower = Math.round(overall * harmony / 100)
+
+  // ── Function names (9 functions, in world order) ──
   const functionNames = language === 'ar'
-    ? ['الإدراك', 'الجاهزية', 'النية', 'الفعل', 'التفاعل', 'الاستجابة', 'الاستقبال', 'التطور', 'التشكيل']
-    : ['Perception', 'Readiness', 'Intention', 'Action', 'Interaction', 'Response', 'Reception', 'Evolution', 'Effect']
+    ? ['الإدراك', 'الجاهزية', 'النية', 'الفعل', 'التفاعل', 'الناتج', 'الاستقبال', 'التطور', 'التشكيل']
+    : ['Perception', 'Readiness', 'Intention', 'Action', 'Interaction', 'Outcome', 'Reception', 'Evolution', 'Formation']
 
-  // Each function has 3 indicators: answers[i*3]=Mental, [i*3+1]=Emotional, [i*3+2]=Behavioral
-  // Function average = mean of 3 indicators
-  // Function harmony = 100 - (gap × 25), where gap = max - min of 3 indicators
-  const functions = functionNames.map((name, i) => {
-    const a = answers[i * 3], b = answers[i * 3 + 1], c = answers[i * 3 + 2]
-    const score = (a + b + c) / 3
-    const gap = Math.max(a, b, c) - Math.min(a, b, c)
-    const functionHarmony = Math.max(0, 100 - gap * 25)
-    return { name, score, functionHarmony }
-  })
-
-  // Overall harmony = average of all 9 function harmonies
-  const harmony = Math.round(functions.reduce((s, f) => s + f.functionHarmony, 0) / 9)
-
-  // Map functions back to dimensions for radar charts
   const elementNames = {
     mental:      functionNames.slice(0, 3),
     emotional:   functionNames.slice(3, 6),
     existential: functionNames.slice(6, 9),
   }
 
+  // ── World elements (Fi per function = avg of 3 driver answers) ──
   const calcElements = (dimAnswers: number[], names: string[]): ChartData[] =>
     names.map((name, i) => ({
       dimension: name,
       value: (dimAnswers[i * 3] + dimAnswers[i * 3 + 1] + dimAnswers[i * 3 + 2]) / 3,
     }))
 
-  const mentalElements     = calcElements(mentalAnswers,      elementNames.mental)
-  const emotionalElements  = calcElements(emotionalAnswers,   elementNames.emotional)
-  const existentialElements = calcElements(existentialAnswers, elementNames.existential)
+  const mentalElements      = calcElements(internalWorldAnswers,    elementNames.mental)
+  const emotionalElements   = calcElements(physicalWorldAnswers,    elementNames.emotional)
+  const existentialElements = calcElements(existentialWorldAnswers, elementNames.existential)
 
-  // All elements ranked by score
+  // All 9 functions ranked by score
   const allElements: ElementData[] = [
-    ...mentalElements.map(e => ({ name: e.dimension, score: e.value, dimension: 'mental' as const })),
-    ...emotionalElements.map(e => ({ name: e.dimension, score: e.value, dimension: 'emotional' as const })),
+    ...mentalElements.map(e      => ({ name: e.dimension, score: e.value, dimension: 'mental'      as const })),
+    ...emotionalElements.map(e   => ({ name: e.dimension, score: e.value, dimension: 'emotional'   as const })),
     ...existentialElements.map(e => ({ name: e.dimension, score: e.value, dimension: 'existential' as const })),
   ].sort((a, b) => b.score - a.score)
 
+  // Labels for the 3 driver types (match the radar chart titles)
   const typeLabels = {
-    mental: language === 'ar' ? 'الذهني' : 'Mental',
-    emotional: language === 'ar' ? 'المشاعري / التفاعلي' : 'Emotional / Interactive',
-    existential: language === 'ar' ? 'السلوكي' : 'Existential',
+    mental:      language === 'ar' ? 'الذهني'      : 'Mental',
+    emotional:   language === 'ar' ? 'المشاعري'    : 'Emotional',
+    existential: language === 'ar' ? 'السلوكي'     : 'Behavioral',
   }
 
-  // ── Original 9-axis radar data (cognitive / emotional / behavioral) ──
-  // Structure: 27 questions = 3 worlds × 3 elements × 3 types
-  // typeIndex = question index % 3  (0=cognitive, 1=emotional, 2=behavioral)
-  // elementIndex within each world = Math.floor((index % 9) / 3)
-  // Always use English keys to match RadarChart component's internal lookup
-  const radarDimensions = ['Perception', 'Readiness', 'Intention', 'Action', 'Interaction', 'Response', 'Reception', 'Evolution', 'Mental Image']
+  // ── 9-axis radar data (one radar per driver type, 9 axes = 9 functions) ──
+  // Always use English keys so RadarChart's internal lookup matches
+  const radarDimensions = [
+    'Perception', 'Readiness', 'Intention', 'Action', 'Interaction',
+    'Response', 'Reception', 'Evolution', 'Mental Image'
+  ]
 
   const radarGroups = {
     cognitive: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
@@ -166,9 +199,9 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
   }
 
   questions_with_answers.forEach((q, index) => {
-    const worldIndex = Math.floor(index / 9)
-    const elementIndex = Math.floor((index % 9) / 3)
-    const typeIndex = index % 3
+    const worldIndex        = Math.floor(index / 9)
+    const elementIndex      = Math.floor((index % 9) / 3)
+    const typeIndex         = index % 3
     const globalElementIndex = worldIndex * 3 + elementIndex
     const types = ['cognitive', 'emotional', 'behavioral'] as const
     radarGroups[types[typeIndex]][globalElementIndex].total += q.user_answer
@@ -181,133 +214,105 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
       value: group[i].count > 0 ? group[i].total / group[i].count : 0,
     }))
 
-  // ── World radars (3 axes each = 3 functions per world, averaged across all 3 types) ──
-  // Each world = one dimension (9 questions). Each axis = one element (3 questions averaged).
+  // ── World radars (3 axes each = 3 functions per world) ──
   const buildWorldRadar = (dimAnswers: number[], names: string[]): ChartData[] =>
     names.map((name, i) => ({
       dimension: name,
       value: (dimAnswers[i * 3] + dimAnswers[i * 3 + 1] + dimAnswers[i * 3 + 2]) / 3,
     }))
 
-  const worldRadarInner    = buildWorldRadar(mentalAnswers,      elementNames.mental)
-  const worldRadarPhysical = buildWorldRadar(emotionalAnswers,   elementNames.emotional)
-  const worldRadarExistential = buildWorldRadar(existentialAnswers, elementNames.existential)
+  const worldRadarInner       = buildWorldRadar(internalWorldAnswers,    elementNames.mental)
+  const worldRadarPhysical    = buildWorldRadar(physicalWorldAnswers,    elementNames.emotional)
+  const worldRadarExistential = buildWorldRadar(existentialWorldAnswers, elementNames.existential)
 
   const worldLabels = {
-    inner:      language === 'ar' ? 'العالم الداخلي'   : 'Inner World',
-    physical:   language === 'ar' ? 'العالم الفيزيائي' : 'Physical World',
-    existential: language === 'ar' ? 'العالم الوجودي'  : 'Existential World',
+    inner:       language === 'ar' ? 'العالم الداخلي'   : 'Inner World',
+    physical:    language === 'ar' ? 'العالم الفيزيائي' : 'Physical World',
+    existential: language === 'ar' ? 'العالم الوجودي'   : 'Existential World',
   }
 
-  // Type percentages — each type covers 9 questions (one per function)
-  const cognitiveAnswers  = answers.filter((_, i) => i % 3 === 0)
-  const emotionalTypeAnswers = answers.filter((_, i) => i % 3 === 1)
-  const behavioralAnswers = answers.filter((_, i) => i % 3 === 2)
+  const worldPcts   = [worldMentalPct, worldEmotionalPct, worldExistentialPct]
+  const worldNames  = [worldLabels.inner, worldLabels.physical, worldLabels.existential]
+  const dominantWorld = worldNames[worldPcts.indexOf(Math.max(...worldPcts))]
+
   const radarPct = {
-    cognitive:  Math.round(sum(cognitiveAnswers)      / 45 * 100),
-    emotional:  Math.round(sum(emotionalTypeAnswers)  / 45 * 100),
-    behavioral: Math.round(sum(behavioralAnswers)     / 45 * 100),
+    cognitive:  driverMentalPct,
+    emotional:  driverEmotionalPct,
+    behavioral: driverBehavioralPct,
   }
-
-  // World harmony = 100 - (max_world% - min_world%)
-  const worldPcts = [mentalPct, emotionalPct, existentialPct]
-  const worldHarmony = Math.max(0, 100 - (Math.max(...worldPcts) - Math.min(...worldPcts)))
-
-  const worldNames = [worldLabels.inner, worldLabels.physical, worldLabels.existential]
-  const dominantIndex = worldPcts.indexOf(Math.max(...worldPcts))
-  const dominantWorld = worldNames[dominantIndex]
 
   return {
-    mental: { percentage: mentalPct, elements: mentalElements },
-    emotional: { percentage: emotionalPct, elements: emotionalElements },
-    existential: { percentage: existentialPct, elements: existentialElements },
+    // Driver percentages (match the 3 radar chart labels)
+    mental:      { percentage: driverMentalPct,    elements: mentalElements },
+    emotional:   { percentage: driverEmotionalPct, elements: emotionalElements },
+    existential: { percentage: driverBehavioralPct, elements: existentialElements },
     harmony,
     overall,
     allElements,
     typeLabels,
-    radarCognitive: buildRadarData(radarGroups.cognitive),
-    radarEmotional: buildRadarData(radarGroups.emotional),
+    radarCognitive:  buildRadarData(radarGroups.cognitive),
+    radarEmotional:  buildRadarData(radarGroups.emotional),
     radarBehavioral: buildRadarData(radarGroups.behavioral),
     radarPct,
     radarLabels: {
-      cognitive: language === 'ar' ? 'الذهني' : 'Cognitive',
-      emotional: language === 'ar' ? 'المشاعري' : 'Emotional',
-      behavioral: language === 'ar' ? 'السلوكي' : 'Existential',
+      cognitive:  language === 'ar' ? 'الذهني'   : 'Cognitive',
+      emotional:  language === 'ar' ? 'المشاعري' : 'Emotional',
+      behavioral: language === 'ar' ? 'السلوكي'  : 'Behavioral',
     },
     worldRadarInner,
     worldRadarPhysical,
     worldRadarExistential,
     worldLabels,
-    worldHarmony,
+    worldHarmony: worldHarmonyVal,
     dominantWorld,
+    worldMentalPct,
+    worldEmotionalPct,
+    worldExistentialPct,
+    driverHarmony,
+    actionPower,
   }
 }
 
 /**
  * Generates AI report and navigates to it in the same tab
- * @param data - Questionnaire data with answers
- * @param visualizationElement - Optional DOM element containing charts/visualizations (not used anymore)
- * @param chatId - Optional chat ID to return to after closing the report
- * @returns Promise<void>
  */
 export const generateAndOpenReport = async (
   data: QuestionnaireData,
-  visualizationElement?: HTMLElement,
+  _visualizationElement?: HTMLElement,
   chatId?: string,
   saveReportToConvex?: (id: string, reportJson: string) => Promise<void>
 ): Promise<void> => {
   try {
-    
-    // 🐛 DEBUG LOG: Show the complete questionnaire data structure
-    data.questions_with_answers.forEach((q, index) => {
-    });
-    
-    // Step 1: Generate chart data for visualization first
     const chartData = generateChartData(data)
-    
-    // Step 2: Generate AI report content using chart data
     const aiResponse = await generateReport(data, chartData, data.language)
-    
+
     if (!aiResponse || typeof aiResponse !== 'string' || aiResponse.trim().length === 0) {
       throw new Error('Empty AI response received')
     }
-    
-    // 🐛 DEBUG LOG: Show the 3 charts data
-    
-    // Step 3: Prepare complete report data
+
     const reportData: ReportData = {
       aiResponse: aiResponse.trim(),
       questionnaireData: data,
       chartData
     }
-    
-    // Step 4: Store complete report data
+
     sessionStorage.setItem('reportData', JSON.stringify(reportData))
 
-    // Also persist to localStorage keyed by chatId so it can be re-opened later
     const reportJson = JSON.stringify(reportData)
     if (chatId) {
-      try {
-        localStorage.setItem(`report-${chatId}`, reportJson)
-      } catch { /* ignore quota errors */ }
-
-      // Persist to Convex for admin visibility
+      try { localStorage.setItem(`report-${chatId}`, reportJson) } catch { /* ignore quota errors */ }
       if (saveReportToConvex) {
         try { await saveReportToConvex(chatId, reportJson) } catch { /* non-critical */ }
       }
     }
 
-    // Step 5: Navigate to report in same tab with chatId if provided
     const reportUrl = chatId ? `?page=report&chatId=${encodeURIComponent(chatId)}` : '?page=report'
-    
-    // Use the proper URL structure for the query parameter routing system
     window.location.href = window.location.origin + '/' + reportUrl
-    
-    
+
   } catch (error) {
     console.error('Error generating report:', error)
     throw new Error(
-      data.language === 'ar' 
+      data.language === 'ar'
         ? 'فشل في إنشاء التقرير. يرجى المحاولة مرة أخرى.'
         : 'Failed to generate report. Please try again.'
     )
@@ -316,69 +321,52 @@ export const generateAndOpenReport = async (
 
 /**
  * Formats questionnaire answers for display in report
- * @param data - Questionnaire data
- * @returns Formatted string of questions and answers
  */
 export const formatAnswersForReport = (data: QuestionnaireData): string => {
   const { questions_with_answers, language } = data
-
   return questions_with_answers
     .map((q) => {
       const answer = q.user_answer
-      const answerText = q.user_answer_text || (language === 'ar' 
+      const answerText = q.user_answer_text || (language === 'ar'
         ? ['ضعيف جداً', 'ضعيف', 'متوسط', 'جيد', 'ممتاز'][answer - 1]
         : ['Very Poor', 'Poor', 'Average', 'Good', 'Excellent'][answer - 1])
-      
       return `${language === 'ar' ? 'السؤال' : 'Question'} ${q.id}: ${q.text}\n${language === 'ar' ? 'الإجابة' : 'Answer'}: ${answerText} (${answer}/5)`
     })
     .join('\n\n')
 }
 
-/**
- * Detects questionnaire type based on question content
- * @param data - Questionnaire data
- * @returns Questionnaire type identifier
- */
 export const detectQuestionnaireType = (data: QuestionnaireData): string => {
-  const isLifeQuestionnaire = data.questions_with_answers?.some(q => 
+  const isLifeQuestionnaire = data.questions_with_answers?.some(q =>
     q.text?.includes('حياة') || q.text?.includes('life') || q.text?.includes('live')
   )
-  const isFamilyQuestionnaire = data.questions_with_answers?.some(q => 
+  const isFamilyQuestionnaire = data.questions_with_answers?.some(q =>
     q.text?.includes('أسرت') || q.text?.includes('العائلة') || q.text?.includes('family')
   )
-  const isRomanticQuestionnaire = data.questions_with_answers?.some(q => 
-    q.text?.includes('شريك') || q.text?.includes('علاقت') || q.text?.includes('حب') || 
+  const isRomanticQuestionnaire = data.questions_with_answers?.some(q =>
+    q.text?.includes('شريك') || q.text?.includes('علاقت') || q.text?.includes('حب') ||
     q.text?.includes('partner') || q.text?.includes('relationship') || q.text?.includes('love')
   )
-  const isWorkQuestionnaire = data.questions_with_answers?.some(q => 
-    q.text?.includes('عمل') || q.text?.includes('مهن') || q.text?.includes('وظيف') || 
+  const isWorkQuestionnaire = data.questions_with_answers?.some(q =>
+    q.text?.includes('عمل') || q.text?.includes('مهن') || q.text?.includes('وظيف') ||
     q.text?.includes('work') || q.text?.includes('job') || q.text?.includes('profession')
   )
-  
-  if (isLifeQuestionnaire) return 'life'
-  if (isFamilyQuestionnaire) return 'family'
+  if (isLifeQuestionnaire)    return 'life'
+  if (isFamilyQuestionnaire)  return 'family'
   if (isRomanticQuestionnaire) return 'romantic'
-  if (isWorkQuestionnaire) return 'work'
+  if (isWorkQuestionnaire)    return 'work'
   return 'general'
 }
 
-/**
- * Generates filename based on questionnaire type and language
- * @param data - Questionnaire data
- * @returns Generated filename
- */
 export const generateReportFilename = (data: QuestionnaireData): string => {
   const dateTimestamp = new Date().toISOString().slice(0, 10)
   const type = detectQuestionnaireType(data)
   const isArabic = data.language === 'ar'
-  
   const fileNames = {
-    life: isArabic ? 'تقرير_علاقتي_بالحياة' : 'life_relationship_report',
-    family: isArabic ? 'تقرير_علاقتي_بالأسرة' : 'family_relationship_report',
-    romantic: isArabic ? 'تقرير_علاقتي_الحسية' : 'romantic_relationship_report',
-    work: isArabic ? 'تقرير_علاقتي_بالعمل' : 'work_relationship_report',
-    general: isArabic ? 'تقرير_التحليل_النفسي' : 'psychological_analysis_report'
+    life:     isArabic ? 'تقرير_علاقتي_بالحياة'    : 'life_relationship_report',
+    family:   isArabic ? 'تقرير_علاقتي_بالأسرة'    : 'family_relationship_report',
+    romantic: isArabic ? 'تقرير_علاقتي_الحسية'     : 'romantic_relationship_report',
+    work:     isArabic ? 'تقرير_علاقتي_بالعمل'     : 'work_relationship_report',
+    general:  isArabic ? 'تقرير_التحليل_النفسي'    : 'psychological_analysis_report'
   }
-  
   return `${fileNames[type as keyof typeof fileNames]}_${dateTimestamp}.pdf`
-} 
+}

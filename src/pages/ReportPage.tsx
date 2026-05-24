@@ -59,6 +59,7 @@ interface ReportChartData {
   radarCognitive: ChartData[]
   radarEmotional: ChartData[]
   radarBehavioral: ChartData[]
+  radarPct?: { cognitive: number; emotional: number; behavioral: number }
   radarLabels: {
     cognitive: string
     emotional: string
@@ -74,6 +75,11 @@ interface ReportChartData {
   }
   worldHarmony?: number
   dominantWorld?: string
+  worldMentalPct?: number
+  worldEmotionalPct?: number
+  worldExistentialPct?: number
+  driverHarmony?: number
+  actionPower?: number
 }
 
 interface ReportData {
@@ -809,17 +815,17 @@ export default function ReportPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-2">
                   <div className="text-center">
                     <span className="text-xl font-bold" style={{ color: '#22c55e' }}>
-                      {chartData.radarPct.cognitive}%
+                      {(chartData.radarPct?.cognitive ?? chartData.mental.percentage)}%
                     </span>
                   </div>
                   <div className="text-center">
                     <span className="text-xl font-bold" style={{ color: '#ae1f23' }}>
-                      {chartData.radarPct.emotional}%
+                      {(chartData.radarPct?.emotional ?? chartData.emotional.percentage)}%
                     </span>
                   </div>
                   <div className="text-center">
                     <span className="text-xl font-bold" style={{ color: '#3b82f6' }}>
-                      {chartData.radarPct.behavioral}%
+                      {(chartData.radarPct?.behavioral ?? chartData.existential.percentage)}%
                     </span>
                   </div>
                 </div>
