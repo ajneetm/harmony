@@ -123,7 +123,8 @@ export default function ReportPage() {
     }
 
     const fixData = (data: any) => {
-      if (data.questionnaireData && (!data.chartData || data.chartData.harmony == null)) {
+      // Recompute if: no chartData, harmony missing, or old format (missing driverHarmony = pre-fix cached report)
+      if (data.questionnaireData && (!data.chartData || data.chartData.harmony == null || data.chartData.driverHarmony == null)) {
         data.chartData = generateChartData(data.questionnaireData)
       }
       return data
