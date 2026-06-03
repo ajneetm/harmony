@@ -1168,6 +1168,51 @@ export default function ReportPage() {
                       </div>
                     )
                   })()}
+                  {/* Table 5 — Questions & Answers */}
+                  <div className="rounded-2xl overflow-hidden" style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }}>
+                    <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-2">
+                      {isArabic ? 'الأسئلة والأجوبة' : 'Questions & Answers'}
+                    </p>
+                    <table className="w-full">
+                      <thead>
+                        <tr>
+                          <th className={`${thCls} text-center w-8`}>#</th>
+                          <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'السؤال' : 'Question'}</th>
+                          <th className={`${thCls} text-center w-10`}>{isArabic ? 'الجواب' : 'Ans'}</th>
+                          <th className={`${thCls} text-${isArabic ? 'left' : 'right'}`}>{isArabic ? 'النص' : 'Label'}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {questionnaireData.questions_with_answers.map((q, idx) => {
+                          const fnIdx  = Math.floor(idx / 3)
+                          const typeIdx = idx % 3
+                          const typeColor  = typeIdx === 0 ? '#22c55e' : typeIdx === 1 ? '#ae1f23' : '#3b82f6'
+                          const typeLabel  = isArabic
+                            ? (typeIdx === 0 ? 'ذ' : typeIdx === 1 ? 'م' : 'س')
+                            : (typeIdx === 0 ? 'C' : typeIdx === 1 ? 'E' : 'B')
+                          const scoreColor = q.user_answer >= 4 ? '#22c55e' : q.user_answer >= 3 ? '#f59e0b' : '#ef4444'
+                          const isFirstInFn = typeIdx === 0
+                          return (
+                            <>
+                              {isFirstInFn && (
+                                <tr key={`fn-${fnIdx}`} className="bg-white/3">
+                                  <td colSpan={4} className="py-1.5 px-3 text-xs font-bold text-gray-300">
+                                    {fnNames[fnIdx]}
+                                  </td>
+                                </tr>
+                              )}
+                              <tr key={idx} className="hover:bg-white/2 transition">
+                                <td className={`${tdCls} text-center text-[10px]`} style={{ color: typeColor }}>{typeLabel}</td>
+                                <td className={`${tdCls} text-xs text-gray-300 max-w-[200px]`}>{q.text}</td>
+                                <td className={`${tdCls} text-center font-bold text-sm`} style={{ color: scoreColor }}>{q.user_answer}</td>
+                                <td className={`${tdCls} text-xs text-gray-400 text-${isArabic ? 'left' : 'right'}`}>{q.user_answer_text}</td>
+                              </tr>
+                            </>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </section>
               )
             })()}
