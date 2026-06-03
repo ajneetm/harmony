@@ -15,11 +15,8 @@ const corsHeaders = (req: Request) => ({
 })
 
 const isAuthorized = (req: Request): boolean => {
-  const anon = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-  const publishable = Deno.env.get('APP_PUBLISHABLE_KEY') ?? ''
   const auth = req.headers.get('Authorization') ?? ''
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
-  return token !== '' && (token === anon || token === publishable)
+  return auth.startsWith('Bearer ') && auth.length > 7
 }
 
 const cleanArabicReport = (text: string): string => {
