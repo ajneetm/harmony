@@ -1116,38 +1116,36 @@ export default function ReportPage() {
 
                     const rows = isArabic ? [
                       { num: 1,  label: 'كفاءة الأداء',              value: `${ap}%` },
-                      { num: 2,  label: 'يقودك الجانب',              value: `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 3,  label: 'متوسط الأداء العام',         value: `${chartData.overall}%` },
-                      { num: 4,  label: 'التجانس العام',              value: `${chartData.harmony}%` },
-                      { num: 5,  label: 'تجانس المحركات',             value: `${chartData.driverHarmony ?? '-'}%` },
-                      { num: 6,  label: 'تجانس العوالم',              value: `${chartData.worldHarmony ?? '-'}%` },
-                      { num: 7,  label: 'المحرك المسيطر',             value: `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 8,  label: 'أقوى عالم',                  value: `${strongWorld.name} (${strongWorld.pct}%)` },
-                      { num: 9,  label: 'أضعف عالم',                  value: `${weakWorld.name} (${weakWorld.pct}%)` },
-                      { num: 10, label: 'أضعف محرك',                  value: `${weakDriver.name} (${weakDriver.pct}%)` },
-                      { num: 11, label: 'أقوى وظيفة',                 value: `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
-                      { num: 12, label: 'أضعف وظيفة',                 value: `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
-                      { num: 13, label: 'أكبر فجوة بين المحركات',     value: `${driverGap}%` },
+                      { num: 2,  label: 'متوسط الأداء العام',         value: `${chartData.overall}%` },
+                      { num: 3,  label: 'التجانس العام',              value: `${chartData.harmony}%` },
+                      { num: 4,  label: 'تجانس المحركات',             value: `${chartData.driverHarmony ?? '-'}%` },
+                      { num: 5,  label: 'تجانس العوالم',              value: `${chartData.worldHarmony ?? '-'}%` },
+                      { num: 6,  label: 'المحرك المسيطر',             value: `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 7,  label: 'أقوى عالم',                  value: `${strongWorld.name} (${strongWorld.pct}%)` },
+                      { num: 8,  label: 'أضعف عالم',                  value: `${weakWorld.name} (${weakWorld.pct}%)` },
+                      { num: 9,  label: 'أضعف محرك',                  value: `${weakDriver.name} (${weakDriver.pct}%)` },
+                      { num: 10, label: 'أقوى وظيفة',                 value: `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 11, label: 'أضعف وظيفة',                 value: `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 12, label: 'أكبر فجوة بين المحركات',     value: `${driverGap}%` },
                     ] : [
                       { num: 1,  label: 'Performance Efficiency',    value: `${ap}%` },
-                      { num: 2,  label: 'Leading Driver',            value: `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 3,  label: 'Action Average',            value: `${chartData.overall}%` },
-                      { num: 4,  label: 'General Harmony',           value: `${chartData.harmony}%` },
-                      { num: 5,  label: 'Driver Harmony',            value: `${chartData.driverHarmony ?? '-'}%` },
-                      { num: 6,  label: 'World Harmony',             value: `${chartData.worldHarmony ?? '-'}%` },
-                      { num: 7,  label: 'Dominant Driver',           value: `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 8,  label: 'Strongest World',           value: `${strongWorld.name} (${strongWorld.pct}%)` },
-                      { num: 9,  label: 'Weakest World',             value: `${weakWorld.name} (${weakWorld.pct}%)` },
-                      { num: 10, label: 'Weakest Driver',            value: `${weakDriver.name} (${weakDriver.pct}%)` },
-                      { num: 11, label: 'Strongest Function',        value: `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
-                      { num: 12, label: 'Weakest Function',          value: `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
-                      { num: 13, label: 'Largest Driver Gap',        value: `${driverGap}%` },
+                      { num: 2,  label: 'Action Average',            value: `${chartData.overall}%` },
+                      { num: 3,  label: 'General Harmony',           value: `${chartData.harmony}%` },
+                      { num: 4,  label: 'Driver Harmony',            value: `${chartData.driverHarmony ?? '-'}%` },
+                      { num: 5,  label: 'World Harmony',             value: `${chartData.worldHarmony ?? '-'}%` },
+                      { num: 6,  label: 'Dominant Driver',           value: `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 7,  label: 'Strongest World',           value: `${strongWorld.name} (${strongWorld.pct}%)` },
+                      { num: 8,  label: 'Weakest World',             value: `${weakWorld.name} (${weakWorld.pct}%)` },
+                      { num: 9,  label: 'Weakest Driver',            value: `${weakDriver.name} (${weakDriver.pct}%)` },
+                      { num: 10, label: 'Strongest Function',        value: `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 11, label: 'Weakest Function',          value: `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 12, label: 'Largest Driver Gap',        value: `${driverGap}%` },
                     ]
 
                     return (
                       <div className="rounded-2xl overflow-hidden" style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }}>
                         <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-2">
-                          {isArabic ? 'المؤشرات الـ 13' : '13 Indicators'}
+                          {isArabic ? 'المؤشرات الـ 12' : '12 Indicators'}
                         </p>
                         <table className="w-full">
                           <thead>
