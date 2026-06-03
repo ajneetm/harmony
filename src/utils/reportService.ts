@@ -201,6 +201,11 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
     emotional: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
     behavioral: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
   }
+  const radarGroupsRaw = {
+    cognitive: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
+    emotional: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
+    behavioral: Array(9).fill(0).map(() => ({ total: 0, count: 0 })),
+  }
 
   questions_with_answers.forEach((q, index) => {
     const worldIndex        = Math.floor(index / 9)
@@ -208,8 +213,10 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
     const typeIndex         = index % 3
     const globalElementIndex = worldIndex * 3 + elementIndex
     const types = ['cognitive', 'emotional', 'behavioral'] as const
-    radarGroups[types[typeIndex]][globalElementIndex].total += answers[index]
-    radarGroups[types[typeIndex]][globalElementIndex].count += 1
+    radarGroups[types[typeIndex]][globalElementIndex].total    += answers[index]   // effective
+    radarGroupsRaw[types[typeIndex]][globalElementIndex].total += q.user_answer    // raw (for coherence)
+    radarGroups[types[typeIndex]][globalElementIndex].count    += 1
+    radarGroupsRaw[types[typeIndex]][globalElementIndex].count += 1
   })
 
   const buildRadarData = (group: { total: number; count: number }[]): ChartData[] =>
@@ -254,9 +261,12 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
     overall,
     allElements,
     typeLabels,
-    radarCognitive:  buildRadarData(radarGroups.cognitive),
-    radarEmotional:  buildRadarData(radarGroups.emotional),
-    radarBehavioral: buildRadarData(radarGroups.behavioral),
+    radarCognitive:     buildRadarData(radarGroups.cognitive),
+    radarEmotional:     buildRadarData(radarGroups.emotional),
+    radarBehavioral:    buildRadarData(radarGroups.behavioral),
+    radarRawCognitive:  buildRadarData(radarGroupsRaw.cognitive),
+    radarRawEmotional:  buildRadarData(radarGroupsRaw.emotional),
+    radarRawBehavioral: buildRadarData(radarGroupsRaw.behavioral),
     radarPct,
     radarLabels: {
       cognitive:  language === 'ar' ? 'الذهني'   : 'Cognitive',
