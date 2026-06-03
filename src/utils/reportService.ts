@@ -208,7 +208,7 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
     const typeIndex         = index % 3
     const globalElementIndex = worldIndex * 3 + elementIndex
     const types = ['cognitive', 'emotional', 'behavioral'] as const
-    radarGroups[types[typeIndex]][globalElementIndex].total += q.user_answer
+    radarGroups[types[typeIndex]][globalElementIndex].total += answers[index]
     radarGroups[types[typeIndex]][globalElementIndex].count += 1
   })
 
