@@ -22,6 +22,61 @@ const ADMIN_EMAIL = 'a.hajali@ajnee.com'
 const FN_NAMES_AR = ['الإدراك', 'الجاهزية', 'النية', 'الفعل', 'التفاعل', 'الناتج', 'الاستقبال', 'التطور', 'التشكيل']
 const FN_NAMES_EN = ['Perception', 'Readiness', 'Intention', 'Action', 'Interaction', 'Outcome', 'Reception', 'Evolution', 'Formation']
 
+// ── Dynamic user summary (Arabic) ──────────────────────────────────────────
+function buildUserSummaryAR(cd: any): string {
+  const ap = cd.actionPower ?? Math.round(cd.overall * cd.harmony / 100)
+  const h  = cd.harmony
+
+  const driverOptions = [
+    { name: 'الذهني',   pct: cd.mental.percentage,
+      charDesc: 'شخص مفكر وتحليلي، تميل إلى التعامل مع الحياة من خلال التفكير والتخطيط والتأمل',
+      supportTip: 'بتحرك أكبر في الواقع العملي وتحويل الأفكار إلى خطوات ملموسة' },
+    { name: 'المشاعري', pct: cd.emotional.percentage,
+      charDesc: 'شخص تفاعلي وعاطفي، تميل إلى التعامل مع الحياة من خلال المشاعر والعلاقات والتواصل',
+      supportTip: 'بتوجيه أوضح وبنية أكثر تنظيمًا تحول مشاعرك إلى أثر فعلي' },
+    { name: 'السلوكي',  pct: cd.existential.percentage,
+      charDesc: 'شخص عملي وواقعي، تميل إلى التعامل مع الحياة من خلال الحركة والتصرف والممارسة',
+      supportTip: 'بتخطيط أوضح ووعي أعمق بالاتجاه' },
+  ]
+  const dom = driverOptions.reduce((a, b) => a.pct >= b.pct ? a : b)
+
+  const worldOptions = [
+    { name: cd.worldLabels?.inner       ?? 'العالم الداخلي',   pct: cd.worldMentalPct      ?? 0,
+      strongDesc: 'إدراكًا ونيّة واستعدادًا داخليًا جيدًا',
+      weakDesc:   'تحويل وعيك الداخلي إلى حضور واضح في المحيط المباشر' },
+    { name: cd.worldLabels?.physical    ?? 'العالم الخارجي',   pct: cd.worldEmotionalPct   ?? 0,
+      strongDesc: 'قدرةً على التفاعل مع محيطك والانخراط في الواقع',
+      weakDesc:   'تحويل ما تعرفه وتريده داخليًا إلى خطوات عملية ونتائج ملموسة في الواقع' },
+    { name: cd.worldLabels?.existential ?? 'العالم الوجودي',   pct: cd.worldExistentialPct ?? 0,
+      strongDesc: 'إحساسًا راسخًا بالهوية والمعنى والغاية',
+      weakDesc:   'تعميق الإحساس بالهدف والمعنى وربطه بأفعالك اليومية' },
+  ]
+  const strong = worldOptions.reduce((a, b) => a.pct >= b.pct ? a : b)
+  const weak   = worldOptions.reduce((a, b) => a.pct <= b.pct ? a : b)
+
+  const apLevel = ap >= 70 ? 'مرتفعة وتدل على تأثير ملحوظ في واقعك'
+                : ap >= 55 ? 'جيدة، لكنها تحتاج إلى مزيد من التنظيم والتركيز حتى تصبح أكثر تأثيرًا ووضوحًا في الواقع'
+                : ap >= 40 ? 'في مرحلة البناء وتحتاج إلى تفعيل أقوى وتوجيه أكثر وضوحًا'
+                : 'في مرحلتها الأولى وتستدعي مراجعة شاملة ونقطة انطلاق جديدة'
+
+  const harmReading = h >= 80 ? 'ممتازة تشير إلى توافق عالٍ'
+                    : h >= 65 ? 'جيدة تشير إلى وجود توافق مرضٍ'
+                    : h >= 50 ? 'متوسطة تشير إلى بعض التباين'
+                    : 'تشير إلى تباين واضح يستحق المعالجة'
+
+  const harmConclusion = h >= 65
+    ? 'وهذا يعني أن المشكلة ليست في وجود تشتت كبير داخلك، بل في حاجة الأداء إلى تفعيل أقوى في الواقع العملي'
+    : 'وهذا يعني أن تحقيق مزيد من التوافق بين أبعادك الداخلية المختلفة سيرفع كفاءتك بشكل ملحوظ'
+
+  return [
+    `تظهر نتائج هارموني أن كفاءة أدائك في الحياة العامة بلغت ${ap}%، وهذا يعني أن لديك حضورًا ${apLevel}.`,
+    `كما بلغت درجة الانسجام العام ${h}%، وهي نتيجة ${harmReading} بين ما تفكر فيه، وما تشعر به، وما تقوم به. ${harmConclusion}.`,
+    `يقودك الجانب ${dom.name} بنسبة ${dom.pct}%، مما يعكس أنك ${dom.charDesc}. وهذه نقطة قوة مهمة، لكنها تصبح أكثر كفاءةً عندما تكون مدعومة ${dom.supportTip}.`,
+    `أما من حيث العوالم، فيظهر أن ${strong.name} هو الأكثر انطلاقًا لديك بنسبة ${strong.pct}%، مما يدل على أن لديك ${strong.strongDesc}. في المقابل، فإن ${weak.name} هو الأقل انطلاقًا بنسبة ${weak.pct}%، وهذا يعني أن التحدي الأبرز لديك هو ${weak.weakDesc}.`,
+    `بشكل عام، يمكن القول إنك تمتلك قاعدة داخلية جيدة وإمكانات واضحة، وكلما استطعت تحويل رغباتك وخططك إلى أفعال أكثر وضوحًا وانتظامًا، ارتفعت كفاءة أدائك وأصبح أثره أقوى في حياتك العامة.`,
+  ].join('\n\n')
+}
+
 // Interface definitions
 interface QuestionWithAnswer {
   id: number
@@ -980,7 +1035,7 @@ export default function ReportPage() {
                         <tbody>
                           {[
                             { name: chartData.worldLabels?.inner       ?? (isArabic ? 'العالم الداخلي'   : 'Inner World'),       pct: chartData.worldMentalPct      ?? 0, coh: worldCoh(0), color: '#22c55e' },
-                            { name: chartData.worldLabels?.physical    ?? (isArabic ? 'العالم الفيزيائي' : 'Physical World'),    pct: chartData.worldEmotionalPct   ?? 0, coh: worldCoh(3), color: '#ae1f23' },
+                            { name: chartData.worldLabels?.physical    ?? (isArabic ? 'العالم الخارجي'   : 'Physical World'),    pct: chartData.worldEmotionalPct   ?? 0, coh: worldCoh(3), color: '#ae1f23' },
                             { name: chartData.worldLabels?.existential ?? (isArabic ? 'العالم الوجودي'   : 'Existential World'), pct: chartData.worldExistentialPct ?? 0, coh: worldCoh(6), color: '#3b82f6' },
                           ].map((row, i) => (
                             <tr key={i}>
@@ -1047,7 +1102,7 @@ export default function ReportPage() {
                     ]
                     const wlds = [
                       { name: chartData.worldLabels?.inner       ?? (isArabic ? 'الداخلي'   : 'Inner'),       pct: chartData.worldMentalPct      ?? 0 },
-                      { name: chartData.worldLabels?.physical    ?? (isArabic ? 'الفيزيائي' : 'Physical'),    pct: chartData.worldEmotionalPct   ?? 0 },
+                      { name: chartData.worldLabels?.physical    ?? (isArabic ? 'الخارجي'   : 'Physical'),    pct: chartData.worldEmotionalPct   ?? 0 },
                       { name: chartData.worldLabels?.existential ?? (isArabic ? 'الوجودي'   : 'Existential'), pct: chartData.worldExistentialPct ?? 0 },
                     ]
                     const domDriver   = drivers.reduce((a, b) => a.pct >= b.pct ? a : b)
@@ -1060,37 +1115,39 @@ export default function ReportPage() {
                     const ap          = chartData.actionPower ?? Math.round(chartData.overall * chartData.harmony / 100)
 
                     const rows = isArabic ? [
-                      { num: 1,  label: 'قوة الفعل',                 value: `${ap}%` },
-                      { num: 2,  label: 'متوسط الأداء العام',         value: `${chartData.overall}%` },
-                      { num: 3,  label: 'التجانس العام',              value: `${chartData.harmony}%` },
-                      { num: 4,  label: 'تجانس المحركات',             value: `${chartData.driverHarmony ?? '-'}%` },
-                      { num: 5,  label: 'تجانس العوالم',              value: `${chartData.worldHarmony ?? '-'}%` },
-                      { num: 6,  label: 'المحرك المسيطر',             value: `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 7,  label: 'أقوى عالم',                  value: `${strongWorld.name} (${strongWorld.pct}%)` },
-                      { num: 8,  label: 'أضعف عالم',                  value: `${weakWorld.name} (${weakWorld.pct}%)` },
-                      { num: 9,  label: 'أضعف محرك',                  value: `${weakDriver.name} (${weakDriver.pct}%)` },
-                      { num: 10, label: 'أقوى وظيفة',                 value: `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
-                      { num: 11, label: 'أضعف وظيفة',                 value: `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
-                      { num: 12, label: 'أكبر فجوة بين المحركات',     value: `${driverGap}%` },
+                      { num: 1,  label: 'كفاءة الأداء',              value: `${ap}%` },
+                      { num: 2,  label: 'يقودك الجانب',              value: `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 3,  label: 'متوسط الأداء العام',         value: `${chartData.overall}%` },
+                      { num: 4,  label: 'التجانس العام',              value: `${chartData.harmony}%` },
+                      { num: 5,  label: 'تجانس المحركات',             value: `${chartData.driverHarmony ?? '-'}%` },
+                      { num: 6,  label: 'تجانس العوالم',              value: `${chartData.worldHarmony ?? '-'}%` },
+                      { num: 7,  label: 'المحرك المسيطر',             value: `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 8,  label: 'أقوى عالم',                  value: `${strongWorld.name} (${strongWorld.pct}%)` },
+                      { num: 9,  label: 'أضعف عالم',                  value: `${weakWorld.name} (${weakWorld.pct}%)` },
+                      { num: 10, label: 'أضعف محرك',                  value: `${weakDriver.name} (${weakDriver.pct}%)` },
+                      { num: 11, label: 'أقوى وظيفة',                 value: `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 12, label: 'أضعف وظيفة',                 value: `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 13, label: 'أكبر فجوة بين المحركات',     value: `${driverGap}%` },
                     ] : [
-                      { num: 1,  label: 'Action Power',         value: `${ap}%` },
-                      { num: 2,  label: 'Action Average',       value: `${chartData.overall}%` },
-                      { num: 3,  label: 'General Harmony',      value: `${chartData.harmony}%` },
-                      { num: 4,  label: 'Driver Harmony',       value: `${chartData.driverHarmony ?? '-'}%` },
-                      { num: 5,  label: 'World Harmony',        value: `${chartData.worldHarmony ?? '-'}%` },
-                      { num: 6,  label: 'Dominant Driver',      value: `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 7,  label: 'Strongest World',      value: `${strongWorld.name} (${strongWorld.pct}%)` },
-                      { num: 8,  label: 'Weakest World',        value: `${weakWorld.name} (${weakWorld.pct}%)` },
-                      { num: 9,  label: 'Weakest Driver',       value: `${weakDriver.name} (${weakDriver.pct}%)` },
-                      { num: 10, label: 'Strongest Function',   value: `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
-                      { num: 11, label: 'Weakest Function',     value: `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
-                      { num: 12, label: 'Largest Driver Gap',   value: `${driverGap}%` },
+                      { num: 1,  label: 'Performance Efficiency',    value: `${ap}%` },
+                      { num: 2,  label: 'Leading Driver',            value: `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 3,  label: 'Action Average',            value: `${chartData.overall}%` },
+                      { num: 4,  label: 'General Harmony',           value: `${chartData.harmony}%` },
+                      { num: 5,  label: 'Driver Harmony',            value: `${chartData.driverHarmony ?? '-'}%` },
+                      { num: 6,  label: 'World Harmony',             value: `${chartData.worldHarmony ?? '-'}%` },
+                      { num: 7,  label: 'Dominant Driver',           value: `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 8,  label: 'Strongest World',           value: `${strongWorld.name} (${strongWorld.pct}%)` },
+                      { num: 9,  label: 'Weakest World',             value: `${weakWorld.name} (${weakWorld.pct}%)` },
+                      { num: 10, label: 'Weakest Driver',            value: `${weakDriver.name} (${weakDriver.pct}%)` },
+                      { num: 11, label: 'Strongest Function',        value: `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 12, label: 'Weakest Function',          value: `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 13, label: 'Largest Driver Gap',        value: `${driverGap}%` },
                     ]
 
                     return (
                       <div className="rounded-2xl overflow-hidden" style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }}>
                         <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-2">
-                          {isArabic ? 'المؤشرات الـ 12' : '12 Indicators'}
+                          {isArabic ? 'المؤشرات الـ 13' : '13 Indicators'}
                         </p>
                         <table className="w-full">
                           <thead>
@@ -1117,49 +1174,86 @@ export default function ReportPage() {
               )
             })()}
 
-            {/* AI Report Section — split: intro | strengths/weaknesses | rest */}
-            {(() => {
-              const split = splitAiResponse(aiResponse)
-              return (
-                <>
-                  {/* Intro section */}
-                  {split.intro && (
-                    <section className="mb-2">
-                      <div className="prose prose-lg max-w-none">
-                        {renderMarkdownContent(split.intro)}
-                      </div>
-                    </section>
-                  )}
+            {/* Report text section */}
+            {!isTrainer ? (
+              <section className="flex flex-col items-center justify-center py-10 px-4" dir="rtl">
+                <div className="rounded-2xl p-8 text-center w-full max-w-md" style={{ background: '#0f0f0f', border: '1px solid #2e2e2e' }}>
+                  <p className="text-xl font-bold text-white mb-2">احصل على تقريرك الكامل</p>
+                  <p className="text-sm text-gray-400 mb-8 leading-relaxed">
+                    تقرير هارموني يُعدّ حصرياً من قِبَل مختص معتمد.<br />
+                    تواصل معنا لتحديد موعد وتحليل نتائجك بشكل دقيق.
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <a
+                      href="https://wa.me/31000003"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-3 px-5 rounded-xl font-semibold text-white transition-opacity hover:opacity-90"
+                      style={{ background: '#25D366' }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      </svg>
+                      31000003
+                    </a>
+                    <a
+                      href="mailto:contact@ajnee.com"
+                      className="flex items-center justify-center gap-2 w-full py-3 px-5 rounded-xl font-semibold transition-opacity hover:opacity-90"
+                      style={{ background: '#1a1a1a', border: '1px solid #333', color: '#a0aec0' }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                      </svg>
+                      contact@ajnee.com
+                    </a>
+                  </div>
+                </div>
+              </section>
+            ) : (
+              /* AI Report Section — split: intro | strengths/weaknesses | rest */
+              (() => {
+                const split = splitAiResponse(aiResponse)
+                return (
+                  <>
+                    {/* Intro section */}
+                    {split.intro && (
+                      <section className="mb-2">
+                        <div className="prose prose-lg max-w-none">
+                          {renderMarkdownContent(split.intro)}
+                        </div>
+                      </section>
+                    )}
 
-                  {/* Hard page-break marker for PDF */}
-                  {split.sw && (
-                    <div
-                      data-pdf-newpage="true"
-                      id="pdf-page-2-start"
-                      style={{ height: 0, overflow: 'hidden' }}
-                    />
-                  )}
+                    {/* Hard page-break marker for PDF */}
+                    {split.sw && (
+                      <div
+                        data-pdf-newpage="true"
+                        id="pdf-page-2-start"
+                        style={{ height: 0, overflow: 'hidden' }}
+                      />
+                    )}
 
-                  {/* Strengths & Weaknesses — lands on page 2 in PDF */}
-                  {split.sw && (
-                    <section className="mb-2">
-                      <div className="prose prose-lg max-w-none">
-                        {renderMarkdownContent(split.sw)}
-                      </div>
-                    </section>
-                  )}
+                    {/* Strengths & Weaknesses — lands on page 2 in PDF */}
+                    {split.sw && (
+                      <section className="mb-2">
+                        <div className="prose prose-lg max-w-none">
+                          {renderMarkdownContent(split.sw)}
+                        </div>
+                      </section>
+                    )}
 
-                  {/* Remaining content */}
-                  {split.after && (
-                    <section className="mb-2">
-                      <div className="prose prose-lg max-w-none">
-                        {renderMarkdownContent(split.after)}
-                      </div>
-                    </section>
-                  )}
-                </>
-              )
-            })()}
+                    {/* Remaining content */}
+                    {split.after && (
+                      <section className="mb-2">
+                        <div className="prose prose-lg max-w-none">
+                          {renderMarkdownContent(split.after)}
+                        </div>
+                      </section>
+                    )}
+                  </>
+                )
+              })()
+            )}
             </div>
             
             {/* Footer — minimal */}

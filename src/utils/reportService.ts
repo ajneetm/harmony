@@ -227,7 +227,7 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
 
   const worldLabels = {
     inner:       language === 'ar' ? 'العالم الداخلي'   : 'Inner World',
-    physical:    language === 'ar' ? 'العالم الفيزيائي' : 'Physical World',
+    physical:    language === 'ar' ? 'العالم الخارجي'   : 'Physical World',
     existential: language === 'ar' ? 'العالم الوجودي'   : 'Existential World',
   }
 
