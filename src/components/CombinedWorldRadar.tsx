@@ -23,6 +23,8 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
   const levels = 5
   const n      = 3
   const labelR = maxR + 65
+  // Use titleColor (ASCII-safe) as unique ID to avoid Arabic chars in SVG gradient IDs
+  const safeId = titleColor.replace('#', '')
 
   const angleOf = (i: number) => (i * 360) / n - 90
 
@@ -57,7 +59,7 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
         <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-auto">
           <defs>
             {types.map(t => (
-              <radialGradient key={t.key} id={`cwrf-${t.key}-${title.replace(/\s/g,'')}`} cx="50%" cy="50%" r="50%">
+              <radialGradient key={t.key} id={`cwrf-${t.key}-${safeId}`} cx="50%" cy="50%" r="50%">
                 <stop offset="0%"   stopColor={t.color} stopOpacity="0.03" />
                 <stop offset="100%" stopColor={t.color} stopOpacity="0.30" />
               </radialGradient>
@@ -93,7 +95,7 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
             <g key={t.key}>
               <polygon
                 points={buildPoly(t.values)}
-                fill={`url(#cwrf-${t.key}-${title.replace(/\s/g,'')})`}
+                fill={`url(#cwrf-${t.key}-${safeId})`}
                 stroke={t.color}
                 strokeWidth="2.5"
                 strokeLinejoin="round"
