@@ -16,8 +16,10 @@ const corsHeaders = (req: Request) => ({
 
 const isAuthorized = (req: Request): boolean => {
   const anon = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+  const publishable = Deno.env.get('APP_PUBLISHABLE_KEY') ?? ''
   const auth = req.headers.get('Authorization') ?? ''
-  return anon !== '' && auth === `Bearer ${anon}`
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
+  return token !== '' && (token === anon || token === publishable)
 }
 
 Deno.serve(async (req) => {
