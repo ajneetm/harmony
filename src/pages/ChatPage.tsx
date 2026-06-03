@@ -559,13 +559,14 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
       submission_time: new Date().toISOString(),
       language: language,
       questions_with_answers: questions
-        .map(question => ({
+        .map((question: any) => ({
           id: question.id,
-          text: question.text,
+          text: question.text || question.statement || '',
+          reversed: question.reversed ?? false,
           user_answer: answers[question.id] || 0,
           scale: {
             1: language === 'ar' ? 'غير موافق بشدة' : 'Strongly Disagree',
-            2: language === 'ar' ? 'غير موافق' : 'Disagree', 
+            2: language === 'ar' ? 'غير موافق' : 'Disagree',
             3: language === 'ar' ? 'لا أعرف' : 'Neutral',
             4: language === 'ar' ? 'موافق' : 'Agree',
             5: language === 'ar' ? 'موافق بشدة' : 'Strongly Agree'
@@ -576,7 +577,7 @@ const processAIResponse = useCallback(async (conversationId: string, userMessage
               ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'][answers[question.id] - 1]
             ) : (language === 'ar' ? 'لا إجابة' : 'No Answer')
         }))
-        .filter(q => q.user_answer > 0), // Only include answered questions
+        .filter((q: any) => q.user_answer > 0), // Only include answered questions
       total_questions: questions.length,
       answered_questions: Object.keys(answers).length
     }

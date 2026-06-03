@@ -84,6 +84,7 @@ interface QuestionWithAnswer {
   user_answer: number
   scale: Record<string, string>
   user_answer_text: string
+  reversed?: boolean
 }
 
 interface QuestionnaireData {
@@ -1178,33 +1179,39 @@ export default function ReportPage() {
                         <tr>
                           <th className={`${thCls} text-center w-8`}>#</th>
                           <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'السؤال' : 'Question'}</th>
-                          <th className={`${thCls} text-center w-10`}>{isArabic ? 'الجواب' : 'Ans'}</th>
+                          <th className={`${thCls} text-center w-8`}>{isArabic ? 'خام' : 'Raw'}</th>
+                          <th className={`${thCls} text-center w-10`}>{isArabic ? 'فعلي' : 'Eff.'}</th>
                           <th className={`${thCls} text-${isArabic ? 'left' : 'right'}`}>{isArabic ? 'النص' : 'Label'}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {questionnaireData.questions_with_answers.map((q, idx) => {
-                          const fnIdx  = Math.floor(idx / 3)
+                          const fnIdx   = Math.floor(idx / 3)
                           const typeIdx = idx % 3
-                          const typeColor  = typeIdx === 0 ? '#22c55e' : typeIdx === 1 ? '#ae1f23' : '#3b82f6'
-                          const typeLabel  = isArabic
+                          const typeColor = typeIdx === 0 ? '#22c55e' : typeIdx === 1 ? '#ae1f23' : '#3b82f6'
+                          const typeLabel = isArabic
                             ? (typeIdx === 0 ? 'ذ' : typeIdx === 1 ? 'م' : 'س')
                             : (typeIdx === 0 ? 'C' : typeIdx === 1 ? 'E' : 'B')
-                          const scoreColor = q.user_answer >= 4 ? '#22c55e' : q.user_answer >= 3 ? '#f59e0b' : '#ef4444'
+                          const effectiveAnswer = q.reversed ? Math.max(1, Math.min(5, 6 - q.user_answer)) : q.user_answer
+                          const scoreColor = effectiveAnswer >= 4 ? '#22c55e' : effectiveAnswer >= 3 ? '#f59e0b' : '#ef4444'
                           const isFirstInFn = typeIdx === 0
                           return (
                             <>
                               {isFirstInFn && (
                                 <tr key={`fn-${fnIdx}`} className="bg-white/3">
-                                  <td colSpan={4} className="py-1.5 px-3 text-xs font-bold text-gray-300">
+                                  <td colSpan={5} className="py-1.5 px-3 text-xs font-bold text-gray-300">
                                     {fnNames[fnIdx]}
                                   </td>
                                 </tr>
                               )}
                               <tr key={idx} className="hover:bg-white/2 transition">
                                 <td className={`${tdCls} text-center text-[10px]`} style={{ color: typeColor }}>{typeLabel}</td>
-                                <td className={`${tdCls} text-xs text-gray-300 max-w-[200px]`}>{q.text}</td>
-                                <td className={`${tdCls} text-center font-bold text-sm`} style={{ color: scoreColor }}>{q.user_answer}</td>
+                                <td className={`${tdCls} text-xs text-gray-300 max-w-[180px]`}>
+                                  {q.reversed && <span className="text-amber-400 mr-1" title={isArabic ? 'سؤال معكوس' : 'Reversed'}>↺</span>}
+                                  {q.text}
+                                </td>
+                                <td className={`${tdCls} text-center text-xs text-gray-500`}>{q.user_answer}</td>
+                                <td className={`${tdCls} text-center font-bold text-sm`} style={{ color: scoreColor }}>{effectiveAnswer}</td>
                                 <td className={`${tdCls} text-xs text-gray-400 text-${isArabic ? 'left' : 'right'}`}>{q.user_answer_text}</td>
                               </tr>
                             </>

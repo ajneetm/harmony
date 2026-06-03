@@ -92,12 +92,19 @@ ${aiResponse}
 
 **المطلوب:** بناءً على التحليل أعلاه، قم بإنشاء 27 سؤالاً تقييمياً وفق نموذج هارموني.
 
+**تعليمات مهمة حول الأسئلة المعكوسة:**
+- يجب أن يكون 9 أسئلة بالضبط من أصل 27 ذات صياغة سلبية (reversed: true).
+- الأسئلة السلبية تصف حالة ضعف أو غياب، مثال: "أجد صعوبة في..." أو "لا أستطيع..." أو "أفتقر إلى...".
+- وزّع الأسئلة المعكوسة بشكل غير متوقع على الوظائف التسع (لا تجعلها في نهاية القائمة فقط).
+- الأسئلة العادية (reversed: false) تصف حالة إيجابية أو قوة.
+
 يجب أن يكون الناتج عبارة عن JSON object كامل ومتكامل بالشكل التالي:
 {
   "problem": "ملخص المشكلة",
   "questions": [
-    {"dimension": "...", "element": "...", "type": "...", "statement": "..."},
-    ... (27 سؤال بالضبط)
+    {"id": 1, "dimension": "...", "element": "...", "type": "...", "text": "...", "reversed": false},
+    {"id": 2, "dimension": "...", "element": "...", "type": "...", "text": "...", "reversed": true},
+    ... (27 سؤال بالضبط، 9 منها reversed: true و18 reversed: false)
   ]
 }
 
@@ -109,20 +116,27 @@ ${aiResponse}
 
 **Required:** Based on the analysis above, create 27 evaluative questions according to the Harmony model.
 
+**Important instructions about reversed questions:**
+- Exactly 9 of the 27 questions must be negatively-worded (reversed: true).
+- Reversed questions describe a weakness or absence, e.g. "I struggle to...", "I find it difficult to...", "I lack...".
+- Distribute the reversed questions unpredictably across the nine functions (not only at the end).
+- Regular questions (reversed: false) describe a positive state or strength.
+
 The output should be a complete JSON object in the following format:
 {
   "problem": "problem summary",
   "questions": [
-    {"dimension": "...", "element": "...", "type": "...", "statement": "..."},
-    ... (exactly 27 questions)
+    {"id": 1, "dimension": "...", "element": "...", "type": "...", "text": "...", "reversed": false},
+    {"id": 2, "dimension": "...", "element": "...", "type": "...", "text": "...", "reversed": true},
+    ... (exactly 27 questions, 9 with reversed: true and 18 with reversed: false)
   ]
 }
 
 Only return the complete JSON object, do not return any commands, comments, or anything else.`
 
     const systemInstruction = language === 'ar'
-      ? 'أنت خبير في نموذج هارموني. قم بإنشاء 27 سؤالاً بالضبط. أرجع JSON فقط مع حقلي "problem" و "questions".'
-      : 'You are a Harmony model expert. Generate exactly 27 questions. Return valid JSON only with "problem" and "questions" fields.'
+      ? 'أنت خبير في نموذج هارموني. قم بإنشاء 27 سؤالاً بالضبط: 18 إيجابية (reversed: false) و9 سلبية (reversed: true) موزعة بشكل عشوائي. أرجع JSON فقط.'
+      : 'You are a Harmony model expert. Generate exactly 27 questions: 18 positive (reversed: false) and 9 negative (reversed: true) distributed randomly. Return valid JSON only.'
 
     const res = await fetch(fnUrl('ai-questions'), {
       method: 'POST',

@@ -7,6 +7,7 @@ interface QuestionWithAnswer {
   user_answer: number
   scale: Record<string, string>
   user_answer_text: string
+  reversed?: boolean
 }
 
 interface QuestionnaireData {
@@ -108,7 +109,10 @@ interface ReportData {
  */
 export const generateChartData = (data: QuestionnaireData): ReportChartData => {
   const { questions_with_answers, language } = data
-  const answers = questions_with_answers.map(q => q.user_answer)
+  // Apply reverse scoring: for negatively-worded questions, flip the scale (6 - answer)
+  const answers = questions_with_answers.map(q =>
+    q.reversed ? Math.max(1, Math.min(5, 6 - q.user_answer)) : q.user_answer
+  )
 
   const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
 
