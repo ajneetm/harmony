@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from 'npm:@google/generative-ai'
 
-const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.0-flash-001', 'gemini-2.0-flash-lite-001']
+const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
 
 const getAllowedOrigin = () => Deno.env.get('ALLOWED_ORIGIN') ?? '*'
 
