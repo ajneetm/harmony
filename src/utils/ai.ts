@@ -195,8 +195,8 @@ export const generateReport = async (_answersData: any, chartData: any, language
           'نسبة_السلوكي':     existential.percentage,
           'المحرك_الأعلى':    { الاسم: highest.label_ar, الوصف: highest.desc_ar, القيمة: highest.value },
           'المحرك_الأدنى':    { الاسم: lowest.label_ar,  القيمة: lowest.value },
-          'أقوى_3_وظائف':     top3.map((e: any)    => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
-          'أضعف_3_وظائف':     bottom3.map((e: any) => ({ الاسم: e.name, الدرجة: Number(e.score.toFixed(2)) })),
+          'أقوى_3_وظائف':     top3.map((e: any)    => ({ الاسم: e.name, الدرجة: Number((e.score ?? 0).toFixed(2)) })),
+          'أضعف_3_وظائف':     bottom3.map((e: any) => ({ الاسم: e.name, الدرجة: Number((e.score ?? 0).toFixed(2)) })),
           'فجوة_التوازن':     Number(balance_gap.toFixed(1)),
           'العوالم_الثلاثة': {
             'العالم_الداخلي':   { النسبة: wMentalPct,      البعد: 'الذهني'   },
@@ -216,8 +216,8 @@ export const generateReport = async (_answersData: any, chartData: any, language
           behavioral_percentage:  existential.percentage,
           highest_driver: { label: highest.label_en, description: highest.desc_en, value: highest.value },
           lowest_driver:  { label: lowest.label_en,  value: lowest.value },
-          top_3_functions:    top3.map((e: any)    => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
-          bottom_3_functions: bottom3.map((e: any) => ({ name: e.name, score: Number(e.score.toFixed(2)) })),
+          top_3_functions:    top3.map((e: any)    => ({ name: e.name, score: Number((e.score ?? 0).toFixed(2)) })),
+          bottom_3_functions: bottom3.map((e: any) => ({ name: e.name, score: Number((e.score ?? 0).toFixed(2)) })),
           balance_gap: Number(balance_gap.toFixed(1)),
           three_worlds: {
             inner_world:       { percentage: wMentalPct,      dimension: 'Mental'      },

@@ -390,10 +390,10 @@ export default function DashboardPage() {
                         <div className="flex-1">
                           <div className="flex justify-between mb-1">
                             <span className="text-sm text-white">{el.name}</span>
-                            <span className="text-xs text-green-400">{el.score.toFixed(1)}/5</span>
+                            <span className="text-xs text-green-400">{(el.score ?? 0).toFixed(1)}/5</span>
                           </div>
                           <div className="w-full bg-white/5 rounded-full h-1">
-                            <div className="h-1 rounded-full bg-green-500/70 transition-all duration-700" style={{ width: `${(el.score / 5) * 100}%` }} />
+                            <div className="h-1 rounded-full bg-green-500/70 transition-all duration-700" style={{ width: `${((el.score ?? 0) / 5) * 100}%` }} />
                           </div>
                         </div>
                       </div>
@@ -412,10 +412,10 @@ export default function DashboardPage() {
                         <div className="flex-1">
                           <div className="flex justify-between mb-1">
                             <span className="text-sm text-white">{el.name}</span>
-                            <span className="text-xs text-orange-400">{el.score.toFixed(1)}/5</span>
+                            <span className="text-xs text-orange-400">{(el.score ?? 0).toFixed(1)}/5</span>
                           </div>
                           <div className="w-full bg-white/5 rounded-full h-1">
-                            <div className="h-1 rounded-full bg-orange-500/70 transition-all duration-700" style={{ width: `${(el.score / 5) * 100}%` }} />
+                            <div className="h-1 rounded-full bg-orange-500/70 transition-all duration-700" style={{ width: `${((el.score ?? 0) / 5) * 100}%` }} />
                           </div>
                         </div>
                       </div>

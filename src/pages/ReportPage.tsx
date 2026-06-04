@@ -1143,8 +1143,8 @@ export default function ReportPage() {
                       { num: 8,  label: 'أقوى عالم',                  value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)` },
                       { num: 9,  label: 'أضعف عالم',                  value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)` },
                       { num: 10, label: 'أضعف محرك',                  value: allDriversEqual ? tied : `${weakDriver.name} (${weakDriver.pct}%)` },
-                      { num: 11, label: 'أقوى وظيفة',                 value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
-                      { num: 12, label: 'أضعف وظيفة',                 value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 11, label: 'أقوى وظيفة',                 value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${(strongFn?.score ?? 0).toFixed(1)})` },
+                      { num: 12, label: 'أضعف وظيفة',                 value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${(weakFn?.score ?? 0).toFixed(1)})` },
                       { num: 13, label: 'أكبر فجوة بين المحركات',     value: `${driverGap}%` },
                     ] : [
                       { num: 1,  label: 'Performance Efficiency',    value: `${ap}%` },
@@ -1157,8 +1157,8 @@ export default function ReportPage() {
                       { num: 8,  label: 'Strongest World',           value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)` },
                       { num: 9,  label: 'Weakest World',             value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)` },
                       { num: 10, label: 'Weakest Driver',            value: allDriversEqual ? tied : `${weakDriver.name} (${weakDriver.pct}%)` },
-                      { num: 11, label: 'Strongest Function',        value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
-                      { num: 12, label: 'Weakest Function',          value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 11, label: 'Strongest Function',        value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${(strongFn?.score ?? 0).toFixed(1)})` },
+                      { num: 12, label: 'Weakest Function',          value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${(weakFn?.score ?? 0).toFixed(1)})` },
                       { num: 13, label: 'Largest Driver Gap',        value: `${driverGap}%` },
                     ]
 
