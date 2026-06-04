@@ -1115,41 +1115,45 @@ export default function ReportPage() {
                       { name: chartData.worldLabels?.existential ?? (isArabic ? 'الوجودي'   : 'Existential'), pct: chartData.worldExistentialPct ?? 0 },
                     ]
                     const domDriver   = drivers.reduce((a, b) => a.pct >= b.pct ? a : b)
-                    const weakDriver  = drivers.reduce((a, b) => a.pct <= b.pct ? a : b)
+                    const weakDriver  = drivers.reduce((a, b) => b.pct < a.pct ? b : a)
                     const strongWorld = wlds.reduce((a, b) => a.pct >= b.pct ? a : b)
-                    const weakWorld   = wlds.reduce((a, b) => a.pct <= b.pct ? a : b)
+                    const weakWorld   = wlds.reduce((a, b) => b.pct < a.pct ? b : a)
                     const strongFn    = chartData.allElements[0]
                     const weakFn      = chartData.allElements[chartData.allElements.length - 1]
+                    const allDriversEqual = drivers.every(d => d.pct === drivers[0].pct)
+                    const allWorldsEqual  = wlds.every(w => w.pct === wlds[0].pct)
+                    const allFnsEqual     = chartData.allElements.every(f => f.score === chartData.allElements[0].score)
+                    const tied = isArabic ? 'متساوية' : 'Equal'
                     const driverGap   = Math.max(...drivers.map(d => d.pct)) - Math.min(...drivers.map(d => d.pct))
                     const ap          = chartData.actionPower ?? Math.round(chartData.overall * chartData.harmony / 100)
 
                     const rows = isArabic ? [
                       { num: 1,  label: 'كفاءة الأداء',              value: `${ap}%` },
-                      { num: 2,  label: 'يقودك الجانب',              value: `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 2,  label: 'يقودك الجانب',              value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
                       { num: 3,  label: 'متوسط الأداء العام',         value: `${chartData.overall}%` },
                       { num: 4,  label: 'التجانس العام',              value: `${chartData.harmony}%` },
                       { num: 5,  label: 'تجانس المحركات',             value: `${chartData.driverHarmony ?? '-'}%` },
                       { num: 6,  label: 'تجانس العوالم',              value: `${chartData.worldHarmony ?? '-'}%` },
-                      { num: 7,  label: 'المحرك المسيطر',             value: `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 8,  label: 'أقوى عالم',                  value: `${strongWorld.name} (${strongWorld.pct}%)` },
-                      { num: 9,  label: 'أضعف عالم',                  value: `${weakWorld.name} (${weakWorld.pct}%)` },
-                      { num: 10, label: 'أضعف محرك',                  value: `${weakDriver.name} (${weakDriver.pct}%)` },
-                      { num: 11, label: 'أقوى وظيفة',                 value: `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
-                      { num: 12, label: 'أضعف وظيفة',                 value: `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 7,  label: 'المحرك المسيطر',             value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 8,  label: 'أقوى عالم',                  value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)` },
+                      { num: 9,  label: 'أضعف عالم',                  value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)` },
+                      { num: 10, label: 'أضعف محرك',                  value: allDriversEqual ? tied : `${weakDriver.name} (${weakDriver.pct}%)` },
+                      { num: 11, label: 'أقوى وظيفة',                 value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 12, label: 'أضعف وظيفة',                 value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
                       { num: 13, label: 'أكبر فجوة بين المحركات',     value: `${driverGap}%` },
                     ] : [
                       { num: 1,  label: 'Performance Efficiency',    value: `${ap}%` },
-                      { num: 2,  label: 'Leading Driver',            value: `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 2,  label: 'Leading Driver',            value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
                       { num: 3,  label: 'Action Average',            value: `${chartData.overall}%` },
                       { num: 4,  label: 'General Harmony',           value: `${chartData.harmony}%` },
                       { num: 5,  label: 'Driver Harmony',            value: `${chartData.driverHarmony ?? '-'}%` },
                       { num: 6,  label: 'World Harmony',             value: `${chartData.worldHarmony ?? '-'}%` },
-                      { num: 7,  label: 'Dominant Driver',           value: `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 8,  label: 'Strongest World',           value: `${strongWorld.name} (${strongWorld.pct}%)` },
-                      { num: 9,  label: 'Weakest World',             value: `${weakWorld.name} (${weakWorld.pct}%)` },
-                      { num: 10, label: 'Weakest Driver',            value: `${weakDriver.name} (${weakDriver.pct}%)` },
-                      { num: 11, label: 'Strongest Function',        value: `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
-                      { num: 12, label: 'Weakest Function',          value: `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 7,  label: 'Dominant Driver',           value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 8,  label: 'Strongest World',           value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)` },
+                      { num: 9,  label: 'Weakest World',             value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)` },
+                      { num: 10, label: 'Weakest Driver',            value: allDriversEqual ? tied : `${weakDriver.name} (${weakDriver.pct}%)` },
+                      { num: 11, label: 'Strongest Function',        value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${strongFn?.score.toFixed(1) ?? '—'})` },
+                      { num: 12, label: 'Weakest Function',          value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${weakFn?.score.toFixed(1) ?? '—'})` },
                       { num: 13, label: 'Largest Driver Gap',        value: `${driverGap}%` },
                     ]
 
