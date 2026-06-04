@@ -9,6 +9,7 @@ import rehypeRaw from 'rehype-raw'
 import rehypeHighlight from 'rehype-highlight'
 import RadarChart from '../components/RadarChart'
 import CombinedWorldRadar from '../components/CombinedWorldRadar'
+import DrillDownPanel from '../components/DrillDownPanel'
 import misbaraLogo from '../components/icons/misbara_original_logo.svg'
 import headerSvg from '../components/icons/header.svg'
 import footerSvg from '../components/icons/footer.svg'
@@ -161,6 +162,7 @@ export default function ReportPage() {
   const [error, setError] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
   const [userRole, setUserRole] = useState<string>('user')
+  const [drillDown, setDrillDown] = useState<{ functionName: string; cogScore: number; emoScore: number; behScore: number; coherence: number } | null>(null)
   const reportTopic = sessionStorage.getItem('reportTopic') || ''
   
   const navigate = (path: string) => {
@@ -1069,6 +1071,7 @@ export default function ReportPage() {
                             <th className={`${thCls} text-center`} style={{ color: '#3b82f6' }}>{isArabic ? 'سلوكي' : 'Beh.'}</th>
                             <th className={`${thCls} text-center`}>{isArabic ? 'المتوسط' : 'Avg.'}</th>
                             <th className={`${thCls} text-center`}>{isArabic ? 'التجانس' : 'Coh.'}</th>
+                            <th className={`${thCls} text-center w-10`} />
                           </tr>
                         </thead>
                         <tbody>
@@ -1087,6 +1090,15 @@ export default function ReportPage() {
                                 <td className={`${tdCls} text-center`} style={{ color: '#3b82f6' }}>{b.toFixed(1)}</td>
                                 <td className={`${tdCls} text-center text-white font-semibold`}>{avg}</td>
                                 <td className={`${tdCls} text-center font-bold`} style={{ color: cohColor }}>{coh}%</td>
+                                <td className={`${tdCls} text-center`}>
+                                  <button
+                                    onClick={() => setDrillDown({ functionName: name, cogScore: c, emoScore: e, behScore: b, coherence: coh })}
+                                    title={isArabic ? 'أسئلة تعمقية' : 'Drill-down questions'}
+                                    className="text-gray-500 hover:text-blue-400 transition text-base leading-none"
+                                  >
+                                    🔍
+                                  </button>
+                                </td>
                               </tr>
                             )
                           })}
@@ -1467,6 +1479,15 @@ export default function ReportPage() {
           }
         `}</style>
       </div>
+
+      {drillDown && (
+        <DrillDownPanel
+          {...drillDown}
+          questionnaireTopic={reportTopic}
+          language={reportData?.questionnaireData.language ?? 'ar'}
+          onClose={() => setDrillDown(null)}
+        />
+      )}
     </>
   )
 }
