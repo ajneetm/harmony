@@ -921,10 +921,12 @@ export default function ReportPage() {
                         Math.max(0, Math.round(100 - (Math.max(c, e, b) - Math.min(c, e, b)) * 15))
 
                       const worldInternalCoherence = (start: number) => {
-                        const scores = [0, 1, 2].map(j =>
-                          fnCoherence(rc[start + j].value, re[start + j].value, rb[start + j].value)
+                        // Compare average scores of the 3 functions within the world
+                        const fnAvgs = [0, 1, 2].map(j =>
+                          (rc[start + j].value + re[start + j].value + rb[start + j].value) / 3
                         )
-                        return Math.round(scores.reduce((a, b) => a + b, 0) / 3)
+                        const gap = Math.max(...fnAvgs) - Math.min(...fnAvgs)
+                        return Math.max(0, Math.round(100 - gap * 15))
                       }
 
                       const innerCoh  = worldInternalCoherence(0)
@@ -982,9 +984,13 @@ export default function ReportPage() {
               const rb = chartData.radarBehavioral
               const fnCoh = (c: number, e: number, b: number) =>
                 Math.max(0, Math.round(100 - (Math.max(c, e, b) - Math.min(c, e, b)) * 15))
-              const worldCoh = (start: number) =>
-                Math.round([0, 1, 2].map(j => fnCoh(rc[start + j].value, re[start + j].value, rb[start + j].value))
-                  .reduce((a, b) => a + b, 0) / 3)
+              const worldCoh = (start: number) => {
+                const fnAvgs = [0, 1, 2].map(j =>
+                  (rc[start + j].value + re[start + j].value + rb[start + j].value) / 3
+                )
+                const gap = Math.max(...fnAvgs) - Math.min(...fnAvgs)
+                return Math.max(0, Math.round(100 - gap * 15))
+              }
               const fnNames = isArabic ? FN_NAMES_AR : FN_NAMES_EN
               const thCls = 'py-2 px-3 text-xs font-semibold text-gray-400 border-b border-white/10'
               const tdCls = 'py-2 px-3 text-sm border-b border-white/5'
