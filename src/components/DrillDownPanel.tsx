@@ -28,12 +28,10 @@ interface Analysis {
 export default function DrillDownPanel({
   functionName, cogScore, emoScore, behScore, coherence, questionnaireTopic, language, onClose,
 }: DrillDownPanelProps) {
-  const [tab,            setTab]            = useState<'questions' | 'analysis'>('questions')
-  const [answers,        setAnswers]        = useState('')
-  const [analysis,       setAnalysis]       = useState<Analysis | null>(null)
-  const [analyzing,      setAnalyzing]      = useState(false)
-  const [analysisError,  setAnalysisError]  = useState('')
-  const [copied,         setCopied]         = useState(false)
+  const [answers,       setAnswers]       = useState<string[]>([])
+  const [analysis,      setAnalysis]      = useState<Analysis | null>(null)
+  const [analyzing,     setAnalyzing]     = useState(false)
+  const [analysisError, setAnalysisError] = useState('')
 
   const isAr     = language === 'ar'
   const avg      = ((cogScore + emoScore + behScore) / 3).toFixed(1)
@@ -46,6 +44,11 @@ export default function DrillDownPanel({
       ? (isAr ? 'المشاعري' : 'Emotional')
       : (isAr ? 'السلوكي'  : 'Behavioral')
 
+  // Initialise answer slots when questions load
+  useEffect(() => {
+    setAnswers(questions.map(() => ''))
+  }, [questions.length])
+
   // Close on Escape
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -53,14 +56,11 @@ export default function DrillDownPanel({
     return () => window.removeEventListener('keydown', h)
   }, [onClose])
 
-  const copyQuestions = () => {
-    navigator.clipboard.writeText(questions.map((q, i) => `${i + 1}. ${q}`).join('\n'))
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+  const answeredCount = answers.filter(a => a.trim()).length
+  const hasAnyAnswer  = answeredCount > 0
 
   const analyze = async () => {
-    if (!answers.trim()) return
+    if (!hasAnyAnswer) return
     setAnalyzing(true)
     setAnalysisError('')
     setAnalysis(null)
@@ -103,28 +103,27 @@ Important: The problem is not determined by the lowest number alone, but by the 
 Respond in JSON only, exactly like this:
 {"problem":"problem type","explanation":"2-3 sentence explanation","intervention":"first function name for intervention","selfRecs":["rec1","rec2","rec3","rec4"],"coachRecs":["rec1","rec2","rec3"]}`
 
-    const questionsList = questions.map((q, i) => `${i + 1}. ${q}`).join('\n')
+    // Build structured Q&A — only include answered questions
+    const qaLines = questions
+      .map((q, i) => answers[i]?.trim() ? `س${i + 1}: ${q}\nج: ${answers[i].trim()}` : null)
+      .filter(Boolean)
+      .join('\n\n')
+
     const userMsg = isAr
       ? `الوظيفة: ${functionName}
 النتائج: ذهني=${cogScore.toFixed(1)}/5، مشاعري=${emoScore.toFixed(1)}/5، سلوكي=${behScore.toFixed(1)}/5، متوسط=${avg}/5، تجانس=${coherence}%
 السياق: "${questionnaireTopic || 'تحليل الذات'}"
 
-الأسئلة التي طُرحت على المستفيد:
-${questionsList}
-
-إجابات المستفيد:
-${answers}
+الأسئلة والإجابات (${answeredCount} من ${questions.length}):
+${qaLines}
 
 قدم التحليل بتنسيق JSON.`
       : `Function: ${functionName}
 Scores: Cognitive=${cogScore.toFixed(1)}/5, Emotional=${emoScore.toFixed(1)}/5, Behavioral=${behScore.toFixed(1)}/5, Avg=${avg}/5, Coherence=${coherence}%
 Context: "${questionnaireTopic || 'self-analysis'}"
 
-Questions asked:
-${questionsList}
-
-Participant's answers:
-${answers}
+Questions & Answers (${answeredCount} of ${questions.length}):
+${qaLines}
 
 Provide analysis in JSON format.`
 
@@ -157,6 +156,12 @@ Provide analysis in JSON format.`
     }
   }
 
+  const reset = () => {
+    setAnalysis(null)
+    setAnswers(questions.map(() => ''))
+    setAnalysisError('')
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -183,7 +188,7 @@ Provide analysis in JSON format.`
           </div>
 
           {/* Scores */}
-          <div className="grid grid-cols-4 gap-2 text-center text-xs mb-4">
+          <div className="grid grid-cols-4 gap-2 text-center text-xs">
             {[
               { label: isAr ? 'ذهني'    : 'Cog.',  value: cogScore, color: '#22c55e' },
               { label: isAr ? 'مشاعري' : 'Emo.',  value: emoScore, color: '#ae1f23' },
@@ -198,137 +203,95 @@ Provide analysis in JSON format.`
               </div>
             ))}
           </div>
-
-          {/* Tabs */}
-          <div className="flex gap-1 rounded-xl p-1" style={{ background: '#1a1a1a' }}>
-            {([
-              { key: 'questions', label: isAr ? 'الأسئلة'      : 'Questions' },
-              { key: 'analysis',  label: isAr ? 'تحليل الإجابات' : 'Analysis' },
-            ] as const).map(t => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition"
-                style={{
-                  background: tab === t.key ? '#1d4ed8' : 'transparent',
-                  color:      tab === t.key ? '#fff'    : '#9ca3af',
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Body — scrollable */}
-        <div className="overflow-y-auto px-6 pb-6 flex-1 space-y-3">
+        <div className="overflow-y-auto px-6 pb-6 flex-1">
 
-          {/* ── Tab: Questions ── */}
-          {tab === 'questions' && (
-            <>
+          {!analysis ? (
+            <div className="space-y-4 mt-2">
+              {/* Q&A list */}
               {questions.map((q, i) => (
-                <div key={i} className="flex gap-3 rounded-xl p-3" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }}>
-                  <span className="text-blue-400 font-bold text-sm shrink-0 mt-0.5">{i + 1}.</span>
-                  <p className="text-gray-200 text-sm leading-relaxed">{q}</p>
+                <div key={i} className="rounded-xl p-3 space-y-2" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }}>
+                  <div className="flex gap-2">
+                    <span className="text-blue-400 font-bold text-sm shrink-0 mt-0.5">{i + 1}.</span>
+                    <p className="text-gray-200 text-sm leading-relaxed">{q}</p>
+                  </div>
+                  <textarea
+                    value={answers[i] ?? ''}
+                    onChange={e => setAnswers(prev => { const next = [...prev]; next[i] = e.target.value; return next })}
+                    rows={2}
+                    placeholder={isAr ? 'الجواب...' : 'Answer...'}
+                    className="w-full rounded-lg text-sm text-gray-300 resize-none outline-none p-2"
+                    style={{ background: '#0f0f0f', border: '1px solid #333' }}
+                  />
                 </div>
               ))}
+
+              {analysisError && <p className="text-red-400 text-xs">{analysisError}</p>}
+
               <button
-                onClick={copyQuestions}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold transition mt-1"
-                style={{
-                  background: copied ? '#14532d' : '#1a1a1a',
-                  color:      copied ? '#4ade80' : '#d1d5db',
-                  border: '1px solid #2e2e2e',
-                }}
+                onClick={analyze}
+                disabled={analyzing || !hasAnyAnswer}
+                className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition disabled:opacity-40"
+                style={{ background: '#1d4ed8' }}
               >
-                {copied ? (isAr ? '✓ تم النسخ' : '✓ Copied!') : (isAr ? 'نسخ الأسئلة' : 'Copy Questions')}
+                {analyzing
+                  ? (isAr ? 'جاري التحليل...' : 'Analyzing...')
+                  : (isAr
+                      ? `تحليل (${answeredCount}/${questions.length} إجابة)`
+                      : `Analyze (${answeredCount}/${questions.length} answered)`)}
               </button>
-            </>
-          )}
+            </div>
+          ) : (
+            <div className="space-y-3 mt-2">
+              {/* Problem */}
+              <div className="rounded-xl p-4 space-y-1" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+                <p className="text-gray-400 text-xs">{isAr ? 'المشكلة الرئيسية' : 'Main Problem'}</p>
+                <p className="text-white font-bold">{analysis.problem}</p>
+                <p className="text-gray-300 text-sm leading-relaxed mt-1">{analysis.explanation}</p>
+              </div>
 
-          {/* ── Tab: Analysis ── */}
-          {tab === 'analysis' && (
-            <>
-              {!analysis && (
-                <>
-                  <p className="text-gray-400 text-xs">
-                    {isAr
-                      ? 'أدخل إجابات الشخص على الأسئلة أو ملخص الجلسة، ثم اضغط تحليل.'
-                      : 'Enter the person\'s answers to the questions or a session summary, then click Analyze.'}
-                  </p>
-                  <textarea
-                    value={answers}
-                    onChange={e => setAnswers(e.target.value)}
-                    rows={6}
-                    placeholder={isAr ? 'اكتب هنا...' : 'Write here...'}
-                    className="w-full rounded-xl text-sm text-gray-200 resize-none outline-none p-3"
-                    style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}
-                  />
-                  {analysisError && <p className="text-red-400 text-xs">{analysisError}</p>}
-                  <button
-                    onClick={analyze}
-                    disabled={analyzing || !answers.trim()}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition disabled:opacity-40"
-                    style={{ background: '#1d4ed8' }}
-                  >
-                    {analyzing
-                      ? (isAr ? 'جاري التحليل...' : 'Analyzing...')
-                      : (isAr ? 'تحليل الإجابات' : 'Analyze Answers')}
-                  </button>
-                </>
-              )}
+              {/* Intervention */}
+              <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+                <span className="text-yellow-400 text-lg shrink-0">⚡</span>
+                <div>
+                  <p className="text-gray-400 text-xs">{isAr ? 'نقطة التدخل الأولى' : 'First Intervention'}</p>
+                  <p className="text-yellow-300 font-semibold text-sm">{analysis.intervention}</p>
+                </div>
+              </div>
 
-              {analysis && (
-                <>
-                  {/* Problem */}
-                  <div className="rounded-xl p-4 space-y-1" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
-                    <p className="text-gray-400 text-xs">{isAr ? 'المشكلة الرئيسية' : 'Main Problem'}</p>
-                    <p className="text-white font-bold">{analysis.problem}</p>
-                    <p className="text-gray-300 text-sm leading-relaxed mt-1">{analysis.explanation}</p>
+              {/* Self Recs */}
+              <div className="rounded-xl p-4 space-y-2" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+                <p className="text-gray-400 text-xs font-semibold">{isAr ? '✦ توصيات ذاتية' : '✦ Self-directed'}</p>
+                {analysis.selfRecs.map((r, i) => (
+                  <div key={i} className="flex gap-2 text-sm text-gray-200">
+                    <span className="text-green-400 shrink-0 mt-0.5">•</span>
+                    <span>{r}</span>
                   </div>
+                ))}
+              </div>
 
-                  {/* Intervention */}
-                  <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
-                    <span className="text-yellow-400 text-lg shrink-0">⚡</span>
-                    <div>
-                      <p className="text-gray-400 text-xs">{isAr ? 'نقطة التدخل الأولى' : 'First Intervention'}</p>
-                      <p className="text-yellow-300 font-semibold text-sm">{analysis.intervention}</p>
-                    </div>
+              {/* Coach Recs */}
+              <div className="rounded-xl p-4 space-y-2" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
+                <p className="text-gray-400 text-xs font-semibold">{isAr ? '✦ توصيات موجهة (بمساندة مختص)' : '✦ Coach-guided'}</p>
+                {analysis.coachRecs.map((r, i) => (
+                  <div key={i} className="flex gap-2 text-sm text-gray-200">
+                    <span className="text-blue-400 shrink-0 mt-0.5">•</span>
+                    <span>{r}</span>
                   </div>
+                ))}
+              </div>
 
-                  {/* Self Recs */}
-                  <div className="rounded-xl p-4 space-y-2" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
-                    <p className="text-gray-400 text-xs font-semibold">{isAr ? '✦ توصيات ذاتية' : '✦ Self-directed'}</p>
-                    {analysis.selfRecs.map((r, i) => (
-                      <div key={i} className="flex gap-2 text-sm text-gray-200">
-                        <span className="text-green-400 shrink-0 mt-0.5">•</span>
-                        <span>{r}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Coach Recs */}
-                  <div className="rounded-xl p-4 space-y-2" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
-                    <p className="text-gray-400 text-xs font-semibold">{isAr ? '✦ توصيات موجهة (بمساندة مختص)' : '✦ Coach-guided'}</p>
-                    {analysis.coachRecs.map((r, i) => (
-                      <div key={i} className="flex gap-2 text-sm text-gray-200">
-                        <span className="text-blue-400 shrink-0 mt-0.5">•</span>
-                        <span>{r}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Redo button */}
-                  <button
-                    onClick={() => { setAnalysis(null); setAnswers('') }}
-                    className="w-full py-2 rounded-xl text-xs text-gray-500 hover:text-gray-300 transition"
-                    style={{ border: '1px solid #2e2e2e' }}
-                  >
-                    {isAr ? 'تحليل جديد' : 'New analysis'}
-                  </button>
-                </>
-              )}
-            </>
+              {/* Redo */}
+              <button
+                onClick={reset}
+                className="w-full py-2 rounded-xl text-xs text-gray-500 hover:text-gray-300 transition"
+                style={{ border: '1px solid #2e2e2e' }}
+              >
+                {isAr ? 'تحليل جديد' : 'New analysis'}
+              </button>
+            </div>
           )}
         </div>
       </div>
