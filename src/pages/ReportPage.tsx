@@ -914,17 +914,13 @@ export default function ReportPage() {
                       const rc = chartData.radarCognitive
                       const re = chartData.radarEmotional
                       const rb = chartData.radarBehavioral
-                      // Use raw radar for coherence to avoid reversed-question distortion
-                      const rcr = chartData.radarRawCognitive  ?? rc
-                      const rer = chartData.radarRawEmotional  ?? re
-                      const rbr = chartData.radarRawBehavioral ?? rb
 
                       const fnCoherence = (c: number, e: number, b: number) =>
-                        Math.max(0, Math.round(100 - (Math.max(c, e, b) - Math.min(c, e, b)) * 25))
+                        Math.max(0, Math.round(100 - (Math.max(c, e, b) - Math.min(c, e, b)) * 15))
 
                       const worldInternalCoherence = (start: number) => {
                         const scores = [0, 1, 2].map(j =>
-                          fnCoherence(rcr[start + j].value, rer[start + j].value, rbr[start + j].value)
+                          fnCoherence(rc[start + j].value, re[start + j].value, rb[start + j].value)
                         )
                         return Math.round(scores.reduce((a, b) => a + b, 0) / 3)
                       }
@@ -982,13 +978,10 @@ export default function ReportPage() {
               const rc = chartData.radarCognitive
               const re = chartData.radarEmotional
               const rb = chartData.radarBehavioral
-              const rcr = chartData.radarRawCognitive  ?? rc
-              const rer = chartData.radarRawEmotional  ?? re
-              const rbr = chartData.radarRawBehavioral ?? rb
               const fnCoh = (c: number, e: number, b: number) =>
-                Math.max(0, Math.round(100 - (Math.max(c, e, b) - Math.min(c, e, b)) * 25))
+                Math.max(0, Math.round(100 - (Math.max(c, e, b) - Math.min(c, e, b)) * 15))
               const worldCoh = (start: number) =>
-                Math.round([0, 1, 2].map(j => fnCoh(rcr[start + j].value, rer[start + j].value, rbr[start + j].value))
+                Math.round([0, 1, 2].map(j => fnCoh(rc[start + j].value, re[start + j].value, rb[start + j].value))
                   .reduce((a, b) => a + b, 0) / 3)
               const fnNames = isArabic ? FN_NAMES_AR : FN_NAMES_EN
               const thCls = 'py-2 px-3 text-xs font-semibold text-gray-400 border-b border-white/10'
@@ -1084,7 +1077,7 @@ export default function ReportPage() {
                             const e = re[i]?.value ?? 0
                             const b = rb[i]?.value ?? 0
                             const avg = ((c + e + b) / 3).toFixed(1)
-                            const coh = fnCoh(rcr[i]?.value ?? 0, rer[i]?.value ?? 0, rbr[i]?.value ?? 0)
+                            const coh = fnCoh(c, e, b)
                             const cohColor = coh >= 75 ? '#22c55e' : coh >= 50 ? '#f59e0b' : '#ef4444'
                             return (
                               <tr key={i} className="hover:bg-white/2 transition">
