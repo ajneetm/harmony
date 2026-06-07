@@ -9,7 +9,7 @@ import rehypeRaw from 'rehype-raw'
 import rehypeHighlight from 'rehype-highlight'
 import RadarChart from '../components/RadarChart'
 import CombinedWorldRadar from '../components/CombinedWorldRadar'
-import DrillDownPanel from '../components/DrillDownPanel'
+import DrillDownPanel, { type SavedAnalysis } from '../components/DrillDownPanel'
 import misbaraLogo from '../components/icons/misbara_original_logo.svg'
 import headerSvg from '../components/icons/header.svg'
 import footerSvg from '../components/icons/footer.svg'
@@ -163,8 +163,81 @@ export default function ReportPage() {
   const [isDownloading, setIsDownloading] = useState(false)
   const [userRole, setUserRole] = useState<string>('user')
   const [drillDown, setDrillDown] = useState<{ functionName: string; cogScore: number; emoScore: number; behScore: number; coherence: number } | null>(null)
+  const [savedAnalyses, setSavedAnalyses] = useState<Record<string, SavedAnalysis>>({})
+  const [comprehensiveReport, setComprehensiveReport] = useState('')
+  const [generatingReport, setGeneratingReport] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
   const reportTopic = sessionStorage.getItem('reportTopic') || ''
-  
+
+  const generateComprehensiveReport = async (language: 'ar' | 'en', topic: string, chartData: any) => {
+    const analyses = Object.values(savedAnalyses)
+    if (analyses.length === 0) return
+    setGeneratingReport(true)
+    setComprehensiveReport('')
+    setShowReportModal(true)
+
+    const isAr = language === 'ar'
+    const analysesText = analyses.map(a =>
+      isAr
+        ? `وظيفة: ${a.functionName} (ذهني=${a.cogScore.toFixed(1)} / مشاعري=${a.emoScore.toFixed(1)} / سلوكي=${a.behScore.toFixed(1)} / تجانس=${a.coherence}%)\nالمشكلة: ${a.problem}\nالشرح: ${a.explanation}\nنقطة التدخل: ${a.intervention}\nتوصيات ذاتية: ${a.selfRecs.join(' — ')}\nتوصيات موجهة: ${a.coachRecs.join(' — ')}`
+        : `Function: ${a.functionName} (Cog=${a.cogScore.toFixed(1)} / Emo=${a.emoScore.toFixed(1)} / Beh=${a.behScore.toFixed(1)} / Coh=${a.coherence}%)\nProblem: ${a.problem}\nExplanation: ${a.explanation}\nIntervention: ${a.intervention}\nSelf-recs: ${a.selfRecs.join(' — ')}\nCoach-recs: ${a.coachRecs.join(' — ')}`
+    ).join('\n\n---\n\n')
+
+    const systemPrompt = isAr
+      ? `أنت خبير في نموذج هارموني للفعل الإنساني (ثلاثة عوالم × تسع وظائف × ثلاثة محركات). بناءً على التحليلات المفصلة المقدمة، اكتب تقريراً نهائياً شاملاً موجهاً للمختص.
+
+اكتب التقرير بصيغة مركزة وعملية، مقسماً إلى:
+## المشكلة الجذرية
+(المشكلة الأساسية التي تربط جميع التحليلات — ليس مجرد أضعف رقم)
+
+## نمط التأثير المتبادل
+(كيف تتشابك المشاكل المحددة وتؤثر على بعضها)
+
+## نقطة التدخل الأولى
+(الوظيفة التي إذا تغيرت ستحرك البقية)
+
+## خطة العمل الذاتية
+(4-5 خطوات عملية يقوم بها الشخص)
+
+## توصيات للمختص
+(3-4 برامج أو جلسات موجهة)`
+      : `You are a Harmony human-action model expert (3 worlds × 9 functions × 3 drivers). Based on the detailed analyses provided, write a comprehensive final report for the coach.
+
+Write a focused, practical report divided into:
+## Root Problem
+(The core issue connecting all analyses — not just the lowest number)
+
+## Interaction Pattern
+(How the identified problems interlock and affect each other)
+
+## First Intervention Point
+(The function that, if changed, will move the others)
+
+## Self-Action Plan
+(4-5 practical steps the person takes)
+
+## Coach Recommendations
+(3-4 guided programs or sessions)`
+
+    const top3    = chartData?.allElements?.slice(0, 3)?.map((e: any) => `${e.name} (${(e.score ?? 0).toFixed(1)})`)?.join(', ') ?? ''
+    const bottom3 = chartData?.allElements ? [...chartData.allElements].slice(-3).reverse().map((e: any) => `${e.name} (${(e.score ?? 0).toFixed(1)})`).join(', ') : ''
+
+    const userMsg = isAr
+      ? `السياق: "${topic || 'تحليل الذات'}"\nالنسبة العامة: ${chartData?.overall ?? '—'}% | التجانس: ${chartData?.harmony ?? '—'}%\nأقوى 3 وظائف: ${top3}\nأضعف 3 وظائف: ${bottom3}\n\nالتحليلات المكتملة (${analyses.length} وظيفة):\n\n${analysesText}\n\naكتب التقرير النهائي الشامل.`
+      : `Context: "${topic || 'self-analysis'}"\nOverall: ${chartData?.overall ?? '—'}% | Harmony: ${chartData?.harmony ?? '—'}%\nTop 3 functions: ${top3}\nBottom 3 functions: ${bottom3}\n\nCompleted analyses (${analyses.length} function${analyses.length > 1 ? 's' : ''}):\n\n${analysesText}\n\nWrite the comprehensive final report.`
+
+    const { genAIResponseStream } = await import('../utils/ai')
+    await genAIResponseStream(
+      {
+        messages: [{ id: '1', role: 'user' as const, content: userMsg }],
+        systemPrompt: { enabled: true, value: systemPrompt },
+      },
+      chunk => setComprehensiveReport(prev => prev + chunk),
+      () => setGeneratingReport(false),
+      () => { setGeneratingReport(false) }
+    )
+  }
+
   const navigate = (path: string) => {
     if (typeof window !== 'undefined' && (window as any).navigateTo) {
       // Extract chatId if present in path and store in sessionStorage
@@ -1100,9 +1173,10 @@ export default function ReportPage() {
                                   <button
                                     onClick={() => setDrillDown({ functionName: name, cogScore: c, emoScore: e, behScore: b, coherence: coh })}
                                     title={isArabic ? 'أسئلة تعمقية' : 'Drill-down questions'}
-                                    className="text-gray-500 hover:text-blue-400 transition text-base leading-none"
+                                    className="transition text-base leading-none"
+                                    style={{ color: savedAnalyses[name] ? '#4ade80' : '' }}
                                   >
-                                    🔍
+                                    {savedAnalyses[name] ? '✓' : '🔍'}
                                   </button>
                                 </td>
                               </tr>
@@ -1248,6 +1322,28 @@ export default function ReportPage() {
                 </section>
               )
             })()}
+
+            {/* ── Comprehensive Report Button (trainer only) ── */}
+            {isTrainer && chartData && Object.keys(savedAnalyses).length > 0 && (
+              <div className="px-4 pb-4" dir={isArabic ? 'rtl' : 'ltr'}>
+                <button
+                  onClick={() => generateComprehensiveReport(
+                    reportData?.questionnaireData.language ?? 'ar',
+                    reportTopic,
+                    chartData
+                  )}
+                  disabled={generatingReport}
+                  className="w-full py-3 rounded-2xl text-sm font-bold text-white transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  style={{ background: 'linear-gradient(135deg, #166534, #15803d)' }}
+                >
+                  {generatingReport
+                    ? (isArabic ? '⏳ جاري توليد التقرير...' : '⏳ Generating report...')
+                    : (isArabic
+                        ? `📋 توليد التقرير الشامل (${Object.keys(savedAnalyses).length} تحليل)`
+                        : `📋 Generate Final Report (${Object.keys(savedAnalyses).length} analysis)`)}
+                </button>
+              </div>
+            )}
 
             {/* Report text section */}
             {!isTrainer ? (
@@ -1491,8 +1587,54 @@ export default function ReportPage() {
           {...drillDown}
           questionnaireTopic={reportTopic}
           language={reportData?.questionnaireData.language ?? 'ar'}
+          alreadySaved={!!savedAnalyses[drillDown.functionName]}
+          onAnalysisSaved={a => setSavedAnalyses(prev => ({ ...prev, [a.functionName]: a }))}
           onClose={() => setDrillDown(null)}
         />
+      )}
+
+      {/* ── Comprehensive Report Modal ── */}
+      {showReportModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.85)' }}
+          onClick={e => { if (e.target === e.currentTarget && !generatingReport) setShowReportModal(false) }}
+        >
+          <div
+            className="w-full max-w-2xl rounded-2xl flex flex-col"
+            style={{ background: '#111', border: '1px solid #2e2e2e', maxHeight: '88vh' }}
+            dir={reportData?.questionnaireData.language === 'ar' ? 'rtl' : 'ltr'}
+          >
+            <div className="px-6 pt-5 pb-3 shrink-0 flex items-center justify-between border-b border-white/10">
+              <div>
+                <h3 className="text-white font-bold text-base">
+                  {reportData?.questionnaireData.language === 'ar' ? 'التقرير الشامل' : 'Comprehensive Report'}
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {reportData?.questionnaireData.language === 'ar'
+                    ? `بناءً على ${Object.keys(savedAnalyses).length} تحليل تعمقي`
+                    : `Based on ${Object.keys(savedAnalyses).length} drill-down analysis`}
+                </p>
+              </div>
+              {!generatingReport && (
+                <button onClick={() => setShowReportModal(false)} className="text-gray-500 hover:text-white text-lg leading-none">✕</button>
+              )}
+            </div>
+            <div className="overflow-y-auto px-6 py-5 flex-1 prose prose-invert max-w-none text-sm leading-relaxed">
+              {generatingReport && !comprehensiveReport && (
+                <p className="text-gray-500 animate-pulse">
+                  {reportData?.questionnaireData.language === 'ar' ? 'جاري التحليل...' : 'Analyzing...'}
+                </p>
+              )}
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {comprehensiveReport}
+              </ReactMarkdown>
+              {generatingReport && comprehensiveReport && (
+                <span className="inline-block w-1.5 h-4 bg-blue-400 animate-pulse rounded ml-1" />
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </>
   )

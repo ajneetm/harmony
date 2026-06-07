@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react'
 import { selectQuestions } from '../utils/drillDownQuestions'
 
+export interface SavedAnalysis {
+  functionName: string
+  cogScore: number
+  emoScore: number
+  behScore: number
+  coherence: number
+  problem: string
+  explanation: string
+  intervention: string
+  selfRecs: string[]
+  coachRecs: string[]
+}
+
 interface DrillDownPanelProps {
   functionName: string
   cogScore: number
@@ -9,6 +22,8 @@ interface DrillDownPanelProps {
   coherence: number
   questionnaireTopic: string
   language: 'ar' | 'en'
+  alreadySaved?: boolean
+  onAnalysisSaved?: (a: SavedAnalysis) => void
   onClose: () => void
 }
 
@@ -26,12 +41,14 @@ interface Analysis {
 }
 
 export default function DrillDownPanel({
-  functionName, cogScore, emoScore, behScore, coherence, questionnaireTopic, language, onClose,
+  functionName, cogScore, emoScore, behScore, coherence, questionnaireTopic, language,
+  alreadySaved, onAnalysisSaved, onClose,
 }: DrillDownPanelProps) {
   const [answers,       setAnswers]       = useState<string[]>([])
   const [analysis,      setAnalysis]      = useState<Analysis | null>(null)
   const [analyzing,     setAnalyzing]     = useState(false)
   const [analysisError, setAnalysisError] = useState('')
+  const [saved,         setSaved]         = useState(alreadySaved ?? false)
 
   const isAr     = language === 'ar'
   const avg      = ((cogScore + emoScore + behScore) / 3).toFixed(1)
@@ -156,10 +173,17 @@ Provide analysis in JSON format.`
     }
   }
 
+  const saveAnalysis = () => {
+    if (!analysis) return
+    onAnalysisSaved?.({ functionName, cogScore, emoScore, behScore, coherence, ...analysis })
+    setSaved(true)
+  }
+
   const reset = () => {
     setAnalysis(null)
     setAnswers(questions.map(() => ''))
     setAnalysisError('')
+    setSaved(false)
   }
 
   return (
@@ -282,6 +306,24 @@ Provide analysis in JSON format.`
                   </div>
                 ))}
               </div>
+
+              {/* Save / Saved */}
+              {onAnalysisSaved && (
+                saved ? (
+                  <div className="w-full py-2.5 rounded-xl text-sm font-semibold text-center"
+                    style={{ background: '#14532d', color: '#4ade80', border: '1px solid #166534' }}>
+                    ✓ {isAr ? 'تم الحفظ في التقرير الشامل' : 'Saved to Final Report'}
+                  </div>
+                ) : (
+                  <button
+                    onClick={saveAnalysis}
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition"
+                    style={{ background: '#166534', border: '1px solid #15803d' }}
+                  >
+                    {isAr ? 'حفظ في التقرير الشامل' : 'Save to Final Report'}
+                  </button>
+                )
+              )}
 
               {/* Redo */}
               <button
