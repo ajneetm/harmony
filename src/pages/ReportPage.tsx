@@ -145,6 +145,7 @@ interface ReportChartData {
   worldEmotionalPct?: number
   worldExistentialPct?: number
   driverHarmony?: number
+  fnHarmony?: number
   actionPower?: number
 }
 
@@ -266,7 +267,7 @@ Write a focused, practical report divided into:
 
     const fixData = (data: any) => {
       // Recompute if: no chartData, harmony missing, or old format (missing driverHarmony = pre-fix cached report)
-      if (data.questionnaireData && (!data.chartData || data.chartData.harmony == null || data.chartData.driverHarmony == null)) {
+      if (data.questionnaireData && (!data.chartData || data.chartData.harmony == null || data.chartData.driverHarmony == null || data.chartData.fnHarmony == null)) {
         data.chartData = generateChartData(data.questionnaireData)
       }
       return data
@@ -1148,7 +1149,7 @@ Write a focused, practical report divided into:
                             <th className={`${thCls} text-center`} style={{ color: '#22c55e' }}>{isArabic ? 'ذهني' : 'Cog.'}</th>
                             <th className={`${thCls} text-center`} style={{ color: '#ae1f23' }}>{isArabic ? 'مشاعري' : 'Emo.'}</th>
                             <th className={`${thCls} text-center`} style={{ color: '#3b82f6' }}>{isArabic ? 'سلوكي' : 'Beh.'}</th>
-                            <th className={`${thCls} text-center`}>{isArabic ? 'المتوسط' : 'Avg.'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'الكفاءة' : 'Eff.'}</th>
                             <th className={`${thCls} text-center`}>{isArabic ? 'التجانس' : 'Coh.'}</th>
                             <th className={`${thCls} text-center w-10`} />
                           </tr>
@@ -1158,7 +1159,9 @@ Write a focused, practical report divided into:
                             const c = rc[i]?.value ?? 0
                             const e = re[i]?.value ?? 0
                             const b = rb[i]?.value ?? 0
-                            const avg = ((c + e + b) / 3).toFixed(1)
+                            const avgRaw = (c + e + b) / 3
+                            const eff = Math.round((avgRaw - 1) / 4 * 100)
+                            const effColor = eff >= 75 ? '#22c55e' : eff >= 50 ? '#f59e0b' : '#ef4444'
                             const coh = fnCoh(c, e, b)
                             const cohColor = coh >= 75 ? '#22c55e' : coh >= 50 ? '#f59e0b' : '#ef4444'
                             return (
@@ -1167,7 +1170,7 @@ Write a focused, practical report divided into:
                                 <td className={`${tdCls} text-center`} style={{ color: '#22c55e' }}>{c.toFixed(1)}</td>
                                 <td className={`${tdCls} text-center`} style={{ color: '#ae1f23' }}>{e.toFixed(1)}</td>
                                 <td className={`${tdCls} text-center`} style={{ color: '#3b82f6' }}>{b.toFixed(1)}</td>
-                                <td className={`${tdCls} text-center text-white font-semibold`}>{avg}</td>
+                                <td className={`${tdCls} text-center font-semibold`} style={{ color: effColor }}>{eff}%</td>
                                 <td className={`${tdCls} text-center font-bold`} style={{ color: cohColor }}>{coh}%</td>
                                 <td className={`${tdCls} text-center`}>
                                   <button
@@ -1219,6 +1222,7 @@ Write a focused, practical report divided into:
                       { num: 4,  label: 'التجانس العام',              value: `${chartData.harmony}%` },
                       { num: 5,  label: 'تجانس المحركات',             value: `${chartData.driverHarmony ?? '-'}%` },
                       { num: 6,  label: 'تجانس العوالم',              value: `${chartData.worldHarmony ?? '-'}%` },
+                      { num: 6.5, label: 'تجانس الوظائف',             value: `${chartData.fnHarmony ?? '-'}%` },
                       { num: 7,  label: 'المحرك المسيطر',             value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
                       { num: 8,  label: 'أقوى عالم',                  value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)` },
                       { num: 9,  label: 'أضعف عالم',                  value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)` },
@@ -1233,6 +1237,7 @@ Write a focused, practical report divided into:
                       { num: 4,  label: 'General Harmony',           value: `${chartData.harmony}%` },
                       { num: 5,  label: 'Driver Harmony',            value: `${chartData.driverHarmony ?? '-'}%` },
                       { num: 6,  label: 'World Harmony',             value: `${chartData.worldHarmony ?? '-'}%` },
+                      { num: 6.5, label: 'Function Harmony',         value: `${chartData.fnHarmony ?? '-'}%` },
                       { num: 7,  label: 'Dominant Driver',           value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
                       { num: 8,  label: 'Strongest World',           value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)` },
                       { num: 9,  label: 'Weakest World',             value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)` },

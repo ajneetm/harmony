@@ -75,6 +75,7 @@ export interface ReportChartData {
   worldExistentialPct: number
   // Additional harmony components
   driverHarmony: number
+  fnHarmony: number
   actionPower: number
 }
 
@@ -139,7 +140,7 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
   // ── Overall (A = action average = avg of all function scores) ──
   const overall = Math.round(sum(answers) / 135 * 100)
 
-  // ── Harmony ──
+  // ── Harmony (driver + world components) ──
   const driverHarmony = Math.max(0, 100 - (
     Math.max(driverMentalPct, driverEmotionalPct, driverBehavioralPct) -
     Math.min(driverMentalPct, driverEmotionalPct, driverBehavioralPct)
@@ -148,11 +149,6 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
     Math.max(worldMentalPct, worldEmotionalPct, worldExistentialPct) -
     Math.min(worldMentalPct, worldEmotionalPct, worldExistentialPct)
   ))
-  const harmony = Math.round((driverHarmony + worldHarmonyVal) / 2)
-
-  // ── Action Power (P = A × H / 100) ──
-  const actionPower = Math.round(overall * harmony / 100)
-
   // ── Function names (9 functions, in world order) ──
   const functionNames = language === 'ar'
     ? ['الإدراك', 'الجاهزية', 'النية', 'الفعل', 'التفاعل', 'الناتج', 'الاستقبال', 'التطور', 'التشكيل']
@@ -181,6 +177,16 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
     ...emotionalElements.map(e   => ({ name: e.dimension, score: e.value, dimension: 'emotional'   as const })),
     ...existentialElements.map(e => ({ name: e.dimension, score: e.value, dimension: 'existential' as const })),
   ].sort((a, b) => b.score - a.score)
+
+  // Function harmony: spread between highest and lowest function efficiency (scale: 1→0%, 5→100%)
+  const fnEfficiencies = allElements.map(e => (e.score - 1) / 4 * 100)
+  const fnHarmony = Math.max(0, Math.round(100 - (Math.max(...fnEfficiencies) - Math.min(...fnEfficiencies))))
+
+  // Overall harmony = average of 3 harmony components
+  const harmony = Math.round((driverHarmony + worldHarmonyVal + fnHarmony) / 3)
+
+  // Action Power
+  const actionPower = Math.round(overall * harmony / 100)
 
   // Labels for the 3 driver types (match the radar chart titles)
   const typeLabels = {
@@ -283,6 +289,7 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
     worldEmotionalPct,
     worldExistentialPct,
     driverHarmony,
+    fnHarmony,
     actionPower,
   }
 }
