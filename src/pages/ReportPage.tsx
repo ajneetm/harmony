@@ -1082,7 +1082,7 @@ Write a focused, practical report divided into:
                         <thead>
                           <tr>
                             <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'المحرك' : 'Driver'}</th>
-                            <th className={`${thCls} text-center`}>{isArabic ? 'النسبة' : '%'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'مستوى الحضور' : 'Presence'}</th>
                           </tr>
                         </thead>
                         <tbody>
