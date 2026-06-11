@@ -137,9 +137,6 @@ const CombinedWorldRadar: React.FC<CombinedWorldRadarProps> = ({
 
       {/* Coherence indicator */}
       <div className="rounded-xl px-4 py-2 text-center w-full" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
-        <p className="text-[10px] text-gray-400 mb-1">
-          {language === 'ar' ? 'التجانس الداخلي' : 'Internal Coherence'}
-        </p>
         <p className="text-lg font-bold leading-none" style={{ color: titleColor }}>{coherence}%</p>
       </div>
     </div>
