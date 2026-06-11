@@ -1138,17 +1138,21 @@ Write a focused, practical report divided into:
 
                   {/* Table 3 — Functions (9 rows) */}
                   <div className="rounded-2xl overflow-hidden" style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }}>
-                    <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-2">
-                      {isArabic ? 'الوظائف التسع' : 'Nine Functions'}
-                    </p>
+                    <div className="px-4 pt-3 pb-2 flex items-baseline justify-between gap-2">
+                      <p className="text-xs font-semibold text-gray-400">{isArabic ? 'الوظائف التسع' : 'Nine Functions'}</p>
+                      <p className="text-[10px] text-gray-600" dir="ltr">
+                        {isArabic ? 'الكفاءة = (متوسط − 1) ÷ 4 × 100' : 'Efficiency = (avg − 1) ÷ 4 × 100'}
+                      </p>
+                    </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[500px]">
+                      <table className="w-full min-w-[520px]">
                         <thead>
                           <tr>
                             <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'الوظيفة' : 'Function'}</th>
                             <th className={`${thCls} text-center`} style={{ color: '#22c55e' }}>{isArabic ? 'ذهني' : 'Cog.'}</th>
                             <th className={`${thCls} text-center`} style={{ color: '#ae1f23' }}>{isArabic ? 'مشاعري' : 'Emo.'}</th>
                             <th className={`${thCls} text-center`} style={{ color: '#3b82f6' }}>{isArabic ? 'سلوكي' : 'Beh.'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'النسبة' : 'Avg.'}</th>
                             <th className={`${thCls} text-center`}>{isArabic ? 'الكفاءة' : 'Eff.'}</th>
                             <th className={`${thCls} text-center`}>{isArabic ? 'التجانس' : 'Coh.'}</th>
                             <th className={`${thCls} text-center w-10`} />
@@ -1160,6 +1164,7 @@ Write a focused, practical report divided into:
                             const e = re[i]?.value ?? 0
                             const b = rb[i]?.value ?? 0
                             const avgRaw = (c + e + b) / 3
+                            const pct = Math.round(avgRaw / 5 * 100)
                             const eff = Math.round((avgRaw - 1) / 4 * 100)
                             const effColor = eff >= 75 ? '#22c55e' : eff >= 50 ? '#f59e0b' : '#ef4444'
                             const coh = fnCoh(c, e, b)
@@ -1170,6 +1175,7 @@ Write a focused, practical report divided into:
                                 <td className={`${tdCls} text-center`} style={{ color: '#22c55e' }}>{c.toFixed(1)}</td>
                                 <td className={`${tdCls} text-center`} style={{ color: '#ae1f23' }}>{e.toFixed(1)}</td>
                                 <td className={`${tdCls} text-center`} style={{ color: '#3b82f6' }}>{b.toFixed(1)}</td>
+                                <td className={`${tdCls} text-center text-gray-300`}>{pct}%</td>
                                 <td className={`${tdCls} text-center font-semibold`} style={{ color: effColor }}>{eff}%</td>
                                 <td className={`${tdCls} text-center font-bold`} style={{ color: cohColor }}>{coh}%</td>
                                 <td className={`${tdCls} text-center`}>
