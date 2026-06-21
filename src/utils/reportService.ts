@@ -179,8 +179,10 @@ export const generateChartData = (data: QuestionnaireData): ReportChartData => {
   ].sort((a, b) => b.score - a.score)
 
   // Function harmony: spread between highest and lowest function efficiency (scale: 1→0%, 5→100%)
-  const fnEfficiencies = allElements.map(e => (e.score - 1) / 4 * 100)
-  const fnHarmony = Math.max(0, Math.round(100 - (Math.max(...fnEfficiencies) - Math.min(...fnEfficiencies))))
+  const fnEfficiencies = allElements.map(e => (e.score - 1) / 4 * 100).filter(n => isFinite(n))
+  const fnHarmony = fnEfficiencies.length >= 2
+    ? Math.max(0, Math.round(100 - (Math.max(...fnEfficiencies) - Math.min(...fnEfficiencies))))
+    : 0
 
   // Overall harmony = average of 3 harmony components
   const harmony = Math.round((driverHarmony + worldHarmonyVal + fnHarmony) / 3)
