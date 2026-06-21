@@ -1376,51 +1376,7 @@ Write a focused, practical report divided into:
                   </button>
                 </div>
               </section>
-            ) : (
-              /* AI Report Section — split: intro | strengths/weaknesses | rest */
-              (() => {
-                const split = splitAiResponse(aiResponse)
-                return (
-                  <>
-                    {/* Intro section */}
-                    {split.intro && (
-                      <section className="mb-2">
-                        <div className="prose prose-lg max-w-none">
-                          {renderMarkdownContent(split.intro)}
-                        </div>
-                      </section>
-                    )}
-
-                    {/* Hard page-break marker for PDF */}
-                    {split.sw && (
-                      <div
-                        data-pdf-newpage="true"
-                        id="pdf-page-2-start"
-                        style={{ height: 0, overflow: 'hidden' }}
-                      />
-                    )}
-
-                    {/* Strengths & Weaknesses — lands on page 2 in PDF */}
-                    {split.sw && (
-                      <section className="mb-2">
-                        <div className="prose prose-lg max-w-none">
-                          {renderMarkdownContent(split.sw)}
-                        </div>
-                      </section>
-                    )}
-
-                    {/* Remaining content */}
-                    {split.after && (
-                      <section className="mb-2">
-                        <div className="prose prose-lg max-w-none">
-                          {renderMarkdownContent(split.after)}
-                        </div>
-                      </section>
-                    )}
-                  </>
-                )
-              })()
-            )}
+            ) : null}
             </div>
             
             {/* Footer — minimal */}

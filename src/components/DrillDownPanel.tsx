@@ -45,6 +45,7 @@ export default function DrillDownPanel({
   alreadySaved, onAnalysisSaved, onClose,
 }: DrillDownPanelProps) {
   const [answers,       setAnswers]       = useState<string[]>([])
+  const [notes,         setNotes]         = useState('')
   const [analysis,      setAnalysis]      = useState<Analysis | null>(null)
   const [analyzing,     setAnalyzing]     = useState(false)
   const [analysisError, setAnalysisError] = useState('')
@@ -74,7 +75,7 @@ export default function DrillDownPanel({
   }, [onClose])
 
   const answeredCount = answers.filter(a => a.trim()).length
-  const hasAnyAnswer  = answeredCount > 0
+  const hasAnyAnswer  = answeredCount > 0 || notes.trim().length > 0
 
   const analyze = async () => {
     if (!hasAnyAnswer) return
@@ -126,13 +127,17 @@ Respond in JSON only, exactly like this:
       .filter(Boolean)
       .join('\n\n')
 
+    const notesSection = notes.trim()
+      ? (isAr ? `\nملاحظات المختص:\n${notes.trim()}` : `\nCoach notes:\n${notes.trim()}`)
+      : ''
+
     const userMsg = isAr
       ? `الوظيفة: ${functionName}
 النتائج: ذهني=${cogScore.toFixed(1)}/5، مشاعري=${emoScore.toFixed(1)}/5، سلوكي=${behScore.toFixed(1)}/5، متوسط=${avg}/5، تجانس=${coherence}%
 السياق: "${questionnaireTopic || 'تحليل الذات'}"
 
 الأسئلة والإجابات (${answeredCount} من ${questions.length}):
-${qaLines}
+${qaLines}${notesSection}
 
 قدم التحليل بتنسيق JSON.`
       : `Function: ${functionName}
@@ -140,7 +145,7 @@ Scores: Cognitive=${cogScore.toFixed(1)}/5, Emotional=${emoScore.toFixed(1)}/5, 
 Context: "${questionnaireTopic || 'self-analysis'}"
 
 Questions & Answers (${answeredCount} of ${questions.length}):
-${qaLines}
+${qaLines}${notesSection}
 
 Provide analysis in JSON format.`
 
@@ -182,6 +187,7 @@ Provide analysis in JSON format.`
   const reset = () => {
     setAnalysis(null)
     setAnswers(questions.map(() => ''))
+    setNotes('')
     setAnalysisError('')
     setSaved(false)
   }
@@ -251,6 +257,21 @@ Provide analysis in JSON format.`
                   />
                 </div>
               ))}
+
+              {/* Notes field */}
+              <div className="rounded-xl p-3 space-y-2" style={{ background: '#1a1a1a', border: '1px solid #2a2a2a' }}>
+                <p className="text-gray-400 text-xs font-semibold">
+                  {isAr ? '7. ملاحظات أخرى' : '7. Other notes'}
+                </p>
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  rows={2}
+                  placeholder={isAr ? 'أي ملاحظات إضافية...' : 'Any additional observations...'}
+                  className="w-full rounded-lg text-sm text-gray-300 resize-none outline-none p-2"
+                  style={{ background: '#0f0f0f', border: '1px solid #333' }}
+                />
+              </div>
 
               {analysisError && <p className="text-red-400 text-xs">{analysisError}</p>}
 
