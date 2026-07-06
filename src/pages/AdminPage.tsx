@@ -30,8 +30,9 @@ const TABS: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
 
 // ─── Blank workshop form ──────────────────────────────────────────────────────
 const blankWs = (): Omit<Workshop, 'id' | 'created_at'> => ({
-  name_ar: '', name_en: '', description_ar: '', description_en: '',
-  duration: '', category: '', image_url: '', is_active: true,
+  title_ar: '', title_en: '', desc_ar: '', desc_en: '',
+  duration_ar: '', duration_en: '', category_ar: '', category_en: '',
+  image_url: '', is_active: true,
 })
 
 export default function AdminPage() {
@@ -65,7 +66,7 @@ export default function AdminPage() {
   const [savingWs,      setSavingWs]      = useState(false)
 
   // Certificate form
-  const [certForm,      setCertForm]      = useState<{ userId: string; userEmail: string; userName: string; workshopId: string } | null>(null)
+  const [certForm,      setCertForm]      = useState<{ userId: string; title_ar: string; title_en: string; issued_by: string; description: string } | null>(null)
   const [savingCert,    setSavingCert]    = useState(false)
 
   // Role management
@@ -160,17 +161,18 @@ export default function AdminPage() {
 
   // ── Certificate handlers ──────────────────────────────────────────────────
   const handleIssueCert = async () => {
-    if (!certForm || !certForm.userId) return
+    if (!certForm || !certForm.userId || !certForm.title_ar) return
     setSavingCert(true)
     try {
-      const u = userMap[certForm.userId]
       const created = await sbCertificates.issue({
         user_id: certForm.userId,
-        user_email: certForm.userEmail || u?.email || null,
-        user_name: certForm.userName || u?.name || null,
-        workshop_id: certForm.workshopId || null,
+        title_ar: certForm.title_ar,
+        title_en: certForm.title_en,
+        issued_by: certForm.issued_by || 'Harmony',
+        description: certForm.description || null,
       })
-      setCertificates(prev => [created, ...prev])
+      const u = userMap[certForm.userId]
+      setCertificates(prev => [{ ...created, user_email: u?.email }, ...prev])
       setCertForm(null)
     } catch (e) { console.error(e) }
     finally { setSavingCert(false) }
@@ -454,10 +456,12 @@ export default function AdminPage() {
                 <p className="font-semibold text-sm">{editingWsId ? 'تعديل الدورة' : 'دورة جديدة'}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {([
-                    { key: 'name_ar',     label: 'الاسم بالعربي' },
-                    { key: 'name_en',     label: 'الاسم بالإنجليزي' },
-                    { key: 'category',    label: 'التصنيف' },
-                    { key: 'duration',    label: 'المدة' },
+                    { key: 'title_ar',    label: 'الاسم بالعربي' },
+                    { key: 'title_en',    label: 'الاسم بالإنجليزي' },
+                    { key: 'category_ar', label: 'التصنيف بالعربي' },
+                    { key: 'category_en', label: 'التصنيف بالإنجليزي' },
+                    { key: 'duration_ar', label: 'المدة بالعربي' },
+                    { key: 'duration_en', label: 'المدة بالإنجليزي' },
                   ] as { key: keyof typeof wsForm; label: string }[]).map(f => (
                     <div key={f.key}>
                       <label className="text-xs text-gray-400 block mb-1">{f.label}</label>
@@ -469,14 +473,14 @@ export default function AdminPage() {
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 block mb-1">الوصف بالعربي</label>
-                  <textarea value={wsForm.description_ar ?? ''} rows={2}
-                    onChange={e => setWsForm(w => w ? { ...w, description_ar: e.target.value } : w)}
+                  <textarea value={wsForm.desc_ar ?? ''} rows={2}
+                    onChange={e => setWsForm(w => w ? { ...w, desc_ar: e.target.value } : w)}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition resize-none" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 block mb-1">الوصف بالإنجليزي</label>
-                  <textarea value={wsForm.description_en ?? ''} rows={2}
-                    onChange={e => setWsForm(w => w ? { ...w, description_en: e.target.value } : w)}
+                  <textarea value={wsForm.desc_en ?? ''} rows={2}
+                    onChange={e => setWsForm(w => w ? { ...w, desc_en: e.target.value } : w)}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition resize-none" />
                 </div>
                 <div className="flex items-center gap-2">
@@ -487,7 +491,7 @@ export default function AdminPage() {
                 </div>
                 <div className="flex gap-3 justify-end">
                   <button onClick={() => { setWsForm(null); setEditingWsId(null) }} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition">إلغاء</button>
-                  <button onClick={handleSaveWorkshop} disabled={savingWs || !wsForm.name_ar}
+                  <button onClick={handleSaveWorkshop} disabled={savingWs || !wsForm.title_ar}
                     className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-50">
                     {savingWs ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                     حفظ
@@ -507,15 +511,15 @@ export default function AdminPage() {
                   <div key={ws.id} className="bg-[#0f0f0f] border border-white/8 rounded-2xl px-5 py-4 flex items-center gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-white">{ws.name_ar}</p>
+                        <p className="font-medium text-white">{ws.title_ar}</p>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full ${ws.is_active ? 'bg-green-600/15 text-green-400' : 'bg-gray-600/15 text-gray-500'}`}>
                           {ws.is_active ? 'نشطة' : 'معطّلة'}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{ws.name_en} · {ws.category} · {ws.duration}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{ws.title_en} · {ws.category_ar} · {ws.duration_ar}</p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <button onClick={() => { setWsForm({ name_ar: ws.name_ar, name_en: ws.name_en, description_ar: ws.description_ar, description_en: ws.description_en, duration: ws.duration, category: ws.category, image_url: ws.image_url, is_active: ws.is_active }); setEditingWsId(ws.id) }}
+                      <button onClick={() => { setWsForm({ title_ar: ws.title_ar, title_en: ws.title_en, desc_ar: ws.desc_ar, desc_en: ws.desc_en, duration_ar: ws.duration_ar, duration_en: ws.duration_en, category_ar: ws.category_ar, category_en: ws.category_en, image_url: ws.image_url, is_active: ws.is_active }); setEditingWsId(ws.id) }}
                         className="p-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:border-white/30 transition">
                         <Edit2 size={13} />
                       </button>
@@ -536,7 +540,7 @@ export default function AdminPage() {
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold">الشهادات</h1>
-              <button onClick={() => setCertForm({ userId: '', userEmail: '', userName: '', workshopId: '' })}
+              <button onClick={() => setCertForm({ userId: '', title_ar: '', title_en: '', issued_by: 'Harmony', description: '' })}
                 className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition">
                 <Plus size={15} />إصدار شهادة
               </button>
@@ -548,26 +552,37 @@ export default function AdminPage() {
                 <p className="font-semibold text-sm">إصدار شهادة جديدة</p>
                 <div>
                   <label className="text-xs text-gray-400 block mb-1">المستخدم</label>
-                  <select value={certForm.userId} onChange={e => {
-                    const u = supabaseUsers.find(x => x.id === e.target.value)
-                    setCertForm(f => f ? { ...f, userId: e.target.value, userEmail: u?.email ?? '', userName: u?.name ?? '' } : f)
-                  }}
+                  <select value={certForm.userId} onChange={e => setCertForm(f => f ? { ...f, userId: e.target.value } : f)}
                     className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition">
                     <option value="">اختر المستخدم</option>
                     {supabaseUsers.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
                   </select>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">اسم الشهادة بالعربي</label>
+                    <input value={certForm.title_ar} onChange={e => setCertForm(f => f ? { ...f, title_ar: e.target.value } : f)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">اسم الشهادة بالإنجليزي</label>
+                    <input value={certForm.title_en} onChange={e => setCertForm(f => f ? { ...f, title_en: e.target.value } : f)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition" />
+                  </div>
+                </div>
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1">الدورة (اختياري)</label>
-                  <select value={certForm.workshopId} onChange={e => setCertForm(f => f ? { ...f, workshopId: e.target.value } : f)}
-                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition">
-                    <option value="">بدون دورة</option>
-                    {workshops.map(w => <option key={w.id} value={w.id}>{w.name_ar}</option>)}
-                  </select>
+                  <label className="text-xs text-gray-400 block mb-1">صادرة من</label>
+                  <input value={certForm.issued_by} onChange={e => setCertForm(f => f ? { ...f, issued_by: e.target.value } : f)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">الوصف (اختياري)</label>
+                  <input value={certForm.description} onChange={e => setCertForm(f => f ? { ...f, description: e.target.value } : f)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition" />
                 </div>
                 <div className="flex gap-3 justify-end">
                   <button onClick={() => setCertForm(null)} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition">إلغاء</button>
-                  <button onClick={handleIssueCert} disabled={savingCert || !certForm.userId}
+                  <button onClick={handleIssueCert} disabled={savingCert || !certForm.userId || !certForm.title_ar}
                     className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-50">
                     {savingCert ? <Loader2 size={14} className="animate-spin" /> : <Award size={14} />}
                     إصدار
@@ -589,9 +604,9 @@ export default function AdminPage() {
                       <Award size={16} className="text-amber-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white">{cert.user_name || userMap[cert.user_id ?? '']?.name || cert.user_email || '—'}</p>
+                      <p className="font-medium text-white">{cert.title_ar}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        {cert.user_email || userMap[cert.user_id ?? '']?.email || '—'} · {cert.serial_number} · {new Date(cert.issued_at).toLocaleDateString('ar-SA')}
+                        {(cert as any).user_email || userMap[cert.user_id]?.email || cert.user_id} · {cert.issued_by} · {new Date(cert.issued_at).toLocaleDateString('ar-SA')}
                       </p>
                     </div>
                     <button onClick={() => handleRevokeCert(cert.id)}
