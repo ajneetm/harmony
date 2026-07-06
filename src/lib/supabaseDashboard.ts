@@ -2,34 +2,26 @@ import { supabase } from './supabase'
 
 export interface Workshop {
   id: string
-  title_ar: string
-  title_en: string
-  desc_ar: string | null
-  desc_en: string | null
-  duration_ar: string | null
-  duration_en: string | null
-  category_ar: string | null
-  category_en: string | null
+  name_ar: string
+  name_en: string | null
+  description_ar: string | null
+  description_en: string | null
+  duration: string | null
+  category: string | null
   image_url: string | null
   is_active: boolean
   created_at: string
 }
 
-export interface WorkshopEnrollment {
-  id: string
-  user_id: string
-  workshop_id: string
-  enrolled_at: string
-}
-
 export interface Certificate {
   id: string
-  user_id: string
-  title_ar: string
-  title_en: string
-  issued_by: string
+  workshop_id: string | null
+  user_id: string | null
+  user_email: string | null
+  user_name: string | null
+  serial_number: string
+  cert_url: string | null
   issued_at: string
-  description: string | null
 }
 
 export interface Consultation {
@@ -87,7 +79,7 @@ export const sbWorkshops = {
 
 // ─── Enrollments ──────────────────────────────────────────────────────────────
 export const sbEnrollments = {
-  async listForUser(userId: string): Promise<WorkshopEnrollment[]> {
+  async listForUser(userId: string) {
     const { data, error } = await supabase
       .from('workshop_enrollments')
       .select('*')
@@ -125,7 +117,7 @@ export const sbCertificates = {
     return data ?? []
   },
 
-  async listAll(): Promise<(Certificate & { email?: string })[]> {
+  async listAll(): Promise<Certificate[]> {
     const { data, error } = await supabase
       .from('certificates')
       .select('*')
@@ -134,7 +126,7 @@ export const sbCertificates = {
     return data ?? []
   },
 
-  async issue(cert: Omit<Certificate, 'id' | 'issued_at'>): Promise<Certificate> {
+  async issue(cert: { workshop_id?: string | null; user_id: string; user_email?: string | null; user_name?: string | null }): Promise<Certificate> {
     const { data, error } = await supabase
       .from('certificates')
       .insert(cert)

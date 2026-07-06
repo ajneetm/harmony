@@ -526,19 +526,19 @@ export default function DashboardPage() {
                   return (
                     <div key={ws.id} className="bg-[#0f0f0f] border border-white/8 rounded-2xl p-5 flex flex-col gap-3">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-white text-base">{isAr ? ws.title_ar : ws.title_en}</h3>
-                        {(isAr ? ws.desc_ar : ws.desc_en) && (
-                          <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{isAr ? ws.desc_ar : ws.desc_en}</p>
+                        <h3 className="font-semibold text-white text-base">{isAr ? ws.name_ar : (ws.name_en ?? ws.name_ar)}</h3>
+                        {(isAr ? ws.description_ar : ws.description_en) && (
+                          <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{isAr ? ws.description_ar : ws.description_en}</p>
                         )}
                         <div className="flex flex-wrap gap-3 mt-3">
-                          {(isAr ? ws.category_ar : ws.category_en) && (
+                          {ws.category && (
                             <span className="text-xs bg-red-600/10 text-red-400 px-2.5 py-1 rounded-full border border-red-600/20">
-                              {isAr ? ws.category_ar : ws.category_en}
+                              {ws.category}
                             </span>
                           )}
-                          {(isAr ? ws.duration_ar : ws.duration_en) && (
+                          {ws.duration && (
                             <span className="text-xs bg-white/5 text-gray-400 px-2.5 py-1 rounded-full border border-white/10">
-                              {isAr ? ws.duration_ar : ws.duration_en}
+                              {ws.duration}
                             </span>
                           )}
                         </div>
@@ -585,11 +585,10 @@ export default function DashboardPage() {
                         <Award size={18} className="text-amber-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-white">{isAr ? cert.title_ar : cert.title_en}</h3>
-                        {cert.description && <p className="text-sm text-gray-500 mt-1">{cert.description}</p>}
+                        <h3 className="font-semibold text-white">{cert.user_name ?? cert.user_email ?? '—'}</h3>
                         <div className="mt-3 flex flex-col gap-1">
                           <p className="text-xs text-gray-600">
-                            <span className="text-gray-500">{t.issuedBy}:</span> {cert.issued_by}
+                            <span className="text-gray-500">{isAr ? 'الرقم التسلسلي' : 'Serial'}:</span> {cert.serial_number}
                           </p>
                           <p className="text-xs text-gray-600">
                             <span className="text-gray-500">{t.issuedAt}:</span>{' '}
