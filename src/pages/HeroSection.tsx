@@ -4,7 +4,7 @@ import { getFontCSSProperties } from '../utils/fonts'
 import { useAppState } from '../store'
 import { translations } from '../utils/translations'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
+import { db } from '../lib/supabase'
 
 const ADMIN_EMAIL = 'a.hajali@ajnee.com'
 
@@ -79,7 +79,7 @@ export default function HeroSection() {
   useEffect(() => {
     if (!user) { setIsTrainer(false); return }
     if (user.email === ADMIN_EMAIL) { setIsTrainer(true); return }
-    supabase.from('profiles').select('role').eq('id', user.id).single()
+    db.from('profiles').select('role').eq('id', user.id).single()
       .then(({ data }) => setIsTrainer(data?.role === 'trainer' || data?.role === 'admin'))
   }, [user])
 

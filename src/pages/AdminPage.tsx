@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { sbConversations, type DBConversation } from '../lib/supabaseConversations'
-import { supabase } from '../lib/supabase'
+import { supabase, db } from '../lib/supabase'
 import {
   sbWorkshops, sbCertificates, sbConsultations,
   type Workshop, type Certificate, type Consultation,
@@ -85,7 +85,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isAdmin) return
-    supabase.from('profiles').select('*').order('created_at', { ascending: false })
+    db.from('profiles').select('*').order('created_at', { ascending: false })
       .then(({ data, error }) => {
         if (error) setUsersError(error.message)
         else setSupabaseUsers(data ?? [])

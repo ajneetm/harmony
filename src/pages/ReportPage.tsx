@@ -14,7 +14,7 @@ import misbaraLogo from '../components/icons/misbara_original_logo.svg'
 import headerSvg from '../components/icons/header.svg'
 import footerSvg from '../components/icons/footer.svg'
 import { getFontCSSProperties } from '../utils/fonts'
-import { supabase } from '../lib/supabase'
+import { db } from '../lib/supabase'
 import { generateChartData } from '../utils/reportService'
 import { useAuth } from '../context/AuthContext'
 
@@ -319,7 +319,7 @@ Write a focused, practical report divided into:
   useEffect(() => {
     if (!user) return
     if (user.email === ADMIN_EMAIL) { setUserRole('trainer'); return }
-    supabase.from('profiles').select('role').eq('id', user.id).single()
+    db.from('profiles').select('role').eq('id', user.id).single()
       .then(({ data }) => { if (data?.role) setUserRole(data.role) })
   }, [user])
 
