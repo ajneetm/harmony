@@ -1,83 +1,137 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { sbConversations, type DBConversation } from '../lib/supabaseConversations'
-import { supabase, db } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import {
   sbWorkshops, sbCertificates, sbConsultations,
   type Workshop, type Certificate, type Consultation,
 } from '../lib/supabaseDashboard'
 import {
-  BarChart2, Users, MessageSquare, BookOpen, Award, MessageCircle,
+  LayoutDashboard, Users, MessageSquare, BookOpen, Award, MessageCircle,
   LogOut, ChevronLeft, Plus, Trash2, Edit2, Check, X, Loader2,
-  CheckCircle, Clock, XCircle, Send,
+  CheckCircle, Clock, XCircle, Send, Search, RefreshCw, ChevronDown, ChevronUp,
 } from 'lucide-react'
 
 const ADMIN_EMAIL = 'a.hajali@ajnee.com'
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
 
-interface SupabaseUser { id: string; email: string; name: string | null; created_at: string; last_sign_in_at: string | null; role?: string }
+interface AdminUser {
+  id: string
+  email: string
+  name: string | null
+  role: string
+  created_at: string
+  last_sign_in_at: string | null
+}
 
 type AdminTab = 'overview' | 'users' | 'conversations' | 'workshops' | 'certificates' | 'consultations'
 
-const TABS: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
-  { key: 'overview',      label: 'نظرة عامة',   icon: <BarChart2     size={16} /> },
-  { key: 'users',         label: 'المستخدمون',  icon: <Users         size={16} /> },
-  { key: 'conversations', label: 'المحادثات',   icon: <MessageSquare size={16} /> },
-  { key: 'workshops',     label: 'الدورات',     icon: <BookOpen      size={16} /> },
-  { key: 'certificates',  label: 'الشهادات',    icon: <Award         size={16} /> },
-  { key: 'consultations', label: 'الاستشارات',  icon: <MessageCircle size={16} /> },
+const TABS = [
+  { key: 'overview'      as AdminTab, label: 'نظرة عامة',  icon: LayoutDashboard },
+  { key: 'users'         as AdminTab, label: 'المستخدمون', icon: Users           },
+  { key: 'conversations' as AdminTab, label: 'المحادثات',  icon: MessageSquare   },
+  { key: 'workshops'     as AdminTab, label: 'الدورات',    icon: BookOpen        },
+  { key: 'certificates'  as AdminTab, label: 'الشهادات',   icon: Award           },
+  { key: 'consultations' as AdminTab, label: 'الاستشارات', icon: MessageCircle   },
 ]
 
-// ─── Blank workshop form ──────────────────────────────────────────────────────
-const blankWs = (): Omit<Workshop, 'id' | 'created_at'> => ({
+const ROLES = [
+  { value: 'user',        label: 'مستخدم',   color: 'text-gray-400 bg-white/5 border-white/10'              },
+  { value: 'trainer',     label: 'مدرب',     color: 'text-amber-400 bg-amber-500/10 border-amber-500/25'    },
+  { value: 'institution', label: 'مؤسسة',    color: 'text-blue-400 bg-blue-500/10 border-blue-500/25'       },
+  { value: 'admin',       label: 'مدير',     color: 'text-red-400 bg-red-500/10 border-red-500/25'          },
+]
+
+const roleStyle = (role: string) => ROLES.find(r => r.value === role) ?? ROLES[0]
+const initial  = (u: AdminUser) => (u.name || u.email || '?').charAt(0).toUpperCase()
+const fmt      = (d: string) => new Date(d).toLocaleDateString('ar-SA')
+const blankWs  = (): Omit<Workshop, 'id' | 'created_at'> => ({
   title_ar: '', title_en: '', desc_ar: '', desc_en: '',
   duration_ar: '', duration_en: '', category_ar: '', category_en: '',
   image_url: '', is_active: true,
 })
 
+// ─── Sub-components ───────────────────────────────────────────────────────────
+const Spinner = () => (
+  <div className="flex items-center justify-center py-20">
+    <Loader2 size={28} className="text-red-500 animate-spin" />
+  </div>
+)
+
+const Empty = ({ icon: Icon, label }: { icon: React.ElementType; label: string }) => (
+  <div className="flex flex-col items-center justify-center py-20 text-center">
+    <div className="w-16 h-16 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center mb-4">
+      <Icon size={24} className="text-gray-600" />
+    </div>
+    <p className="text-gray-500 text-sm">{label}</p>
+  </div>
+)
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div>
+    <label className="block text-xs text-gray-500 mb-1.5">{label}</label>
+    {children}
+  </div>
+)
+
+const inp = 'w-full bg-white/4 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 focus:bg-white/6 transition'
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { user, signOut } = useAuth()
   const isAdmin = user?.email === ADMIN_EMAIL
 
-  const [activeTab,   setActiveTab]   = useState<AdminTab>('overview')
+  const [tab, setTab] = useState<AdminTab>('overview')
 
-  // ── Data ──────────────────────────────────────────────────────────────────
-  const [conversations,  setConversations]  = useState<DBConversation[]>([])
-  const [supabaseUsers,  setSupabaseUsers]  = useState<SupabaseUser[]>([])
-  const [workshops,      setWorkshops]      = useState<Workshop[]>([])
-  const [certificates,   setCertificates]   = useState<Certificate[]>([])
-  const [consultations,  setConsultations]  = useState<Consultation[]>([])
+  // data
+  const [users,         setUsers]         = useState<AdminUser[]>([])
+  const [conversations, setConversations] = useState<DBConversation[]>([])
+  const [workshops,     setWorkshops]     = useState<Workshop[]>([])
+  const [certificates,  setCertificates]  = useState<Certificate[]>([])
+  const [consultations, setConsultations] = useState<Consultation[]>([])
 
-  // ── Loading ───────────────────────────────────────────────────────────────
-  const [loadingConvs, setLoadingConvs]   = useState(true)
+  // loading
   const [loadingUsers, setLoadingUsers]   = useState(true)
-  const [usersError,   setUsersError]     = useState<string | null>(null)
+  const [loadingConvs, setLoadingConvs]   = useState(true)
   const [loadingWs,    setLoadingWs]      = useState(false)
   const [loadingCerts, setLoadingCerts]   = useState(false)
   const [loadingConss, setLoadingConss]   = useState(false)
+  const [usersErr,     setUsersErr]       = useState<string | null>(null)
 
-  // ── UI state ──────────────────────────────────────────────────────────────
-  const [selectedUser,  setSelectedUser]  = useState<string | null>(null)
+  // ui
+  const [userSearch,    setUserSearch]    = useState('')
+  const [convFilter,    setConvFilter]    = useState<string | null>(null)
   const [expandedConv,  setExpandedConv]  = useState<string | null>(null)
+  const [consFilter,    setConsFilter]    = useState<'all' | 'pending' | 'replied' | 'closed'>('all')
 
-  // Workshop form
-  const [wsForm,        setWsForm]        = useState<Omit<Workshop, 'id' | 'created_at'> | null>(null)
-  const [editingWsId,   setEditingWsId]   = useState<string | null>(null)
-  const [savingWs,      setSavingWs]      = useState(false)
+  // workshop form
+  const [wsForm,      setWsForm]      = useState<Omit<Workshop, 'id' | 'created_at'> | null>(null)
+  const [editingWsId, setEditingWsId] = useState<string | null>(null)
+  const [savingWs,    setSavingWs]    = useState(false)
 
-  // Certificate form
-  const [certForm,      setCertForm]      = useState<{ userId: string; title_ar: string; title_en: string; issued_by: string; description: string } | null>(null)
-  const [savingCert,    setSavingCert]    = useState(false)
+  // certificate form
+  const [certForm,  setCertForm]  = useState<{ userId: string; title_ar: string; title_en: string; issued_by: string; description: string } | null>(null)
+  const [savingCert, setSavingCert] = useState(false)
 
-  // Role management
-  const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null)
+  // role
+  const [updatingRole, setUpdatingRole] = useState<string | null>(null)
 
-  // Consultation reply
-  const [replyingId,    setReplyingId]    = useState<string | null>(null)
-  const [replyText,     setReplyText]     = useState('')
-  const [sendingReply,  setSendingReply]  = useState(false)
+  // reply
+  const [replyingId,  setReplyingId]  = useState<string | null>(null)
+  const [replyText,   setReplyText]   = useState('')
+  const [sendingReply, setSendingReply] = useState(false)
 
-  // ── Load base data ────────────────────────────────────────────────────────
+  // ── Loaders ─────────────────────────────────────────────────────────────────
+  const loadUsers = () => {
+    setLoadingUsers(true); setUsersErr(null)
+    void supabase.rpc('admin_get_users').then(({ data, error }) => {
+      if (error) setUsersErr(error.message)
+      else setUsers((data ?? []) as AdminUser[])
+      setLoadingUsers(false)
+    })
+  }
+
+  useEffect(() => { if (!isAdmin) return; loadUsers() }, [isAdmin])
+
   useEffect(() => {
     if (!isAdmin) return
     sbConversations.listAll()
@@ -85,58 +139,55 @@ export default function AdminPage() {
   }, [isAdmin])
 
   useEffect(() => {
-    if (!isAdmin) return
-    db.from('profiles').select('*').order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) setUsersError(error.message)
-        else setSupabaseUsers(data ?? [])
-      })
-      .catch(e => setUsersError(e.message))
-      .finally(() => setLoadingUsers(false))
-  }, [isAdmin])
-
-  // ── Load tab-specific data ────────────────────────────────────────────────
-  useEffect(() => {
-    if (!isAdmin || activeTab !== 'workshops') return
+    if (!isAdmin || tab !== 'workshops') return
     setLoadingWs(true)
     sbWorkshops.listAll().then(setWorkshops).catch(console.error).finally(() => setLoadingWs(false))
-  }, [activeTab, isAdmin])
+  }, [tab, isAdmin])
 
   useEffect(() => {
-    if (!isAdmin || activeTab !== 'certificates') return
+    if (!isAdmin || tab !== 'certificates') return
     setLoadingCerts(true)
     sbCertificates.listAll().then(setCertificates).catch(console.error).finally(() => setLoadingCerts(false))
-  }, [activeTab, isAdmin])
+  }, [tab, isAdmin])
 
   useEffect(() => {
-    if (!isAdmin || activeTab !== 'consultations') return
+    if (!isAdmin || tab !== 'consultations') return
     setLoadingConss(true)
     sbConsultations.listAll().then(setConsultations).catch(console.error).finally(() => setLoadingConss(false))
-  }, [activeTab, isAdmin])
+  }, [tab, isAdmin])
 
-  // ── Guards ────────────────────────────────────────────────────────────────
-  if (!user) return (
-    <div className="min-h-screen bg-black flex items-center justify-center text-white">
-      <p>Please sign in.</p>
-    </div>
-  )
-  if (!isAdmin) return (
-    <div className="min-h-screen bg-black flex items-center justify-center text-white">
-      <div className="text-center space-y-3">
-        <p className="text-red-500 text-xl font-bold">Access Denied</p>
-        <button onClick={() => (window as any).navigateTo('/dashboard')}
-          className="mt-4 px-4 py-2 bg-gray-800 rounded-lg text-sm hover:bg-gray-700">
-          Go to Dashboard
-        </button>
-      </div>
-    </div>
-  )
+  // ── Derived data ─────────────────────────────────────────────────────────────
+  const userMap       = useMemo(() => Object.fromEntries(users.map(u => [u.id, u])), [users])
+  const filteredUsers = useMemo(() =>
+    userSearch ? users.filter(u =>
+      (u.name ?? '').toLowerCase().includes(userSearch.toLowerCase()) ||
+      u.email.toLowerCase().includes(userSearch.toLowerCase())
+    ) : users
+  , [users, userSearch])
 
-  const userMap = Object.fromEntries(supabaseUsers.map(u => [u.id, u]))
-  const filteredConvs = selectedUser ? conversations.filter(c => c.user_id === selectedUser) : conversations
+  const filteredConvs = convFilter ? conversations.filter(c => c.user_id === convFilter) : conversations
+  const filteredConss = consFilter === 'all' ? consultations : consultations.filter(c => c.status === consFilter)
   const totalReports  = conversations.filter(c => c.report_data).length
+  const pendingConss  = consultations.filter(c => c.status === 'pending').length
 
-  // ── Workshop handlers ─────────────────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────────────
+  const handleToggleRole = async (u: AdminUser) => {
+    const cycle: Record<string, string> = { user: 'trainer', trainer: 'institution', institution: 'user' }
+    const newRole = cycle[u.role] ?? 'user'
+    setUpdatingRole(u.id)
+    const { error } = await supabase.rpc('update_user_role', { target_id: u.id, new_role: newRole })
+    if (error) alert('فشل تغيير الدور: ' + error.message)
+    else setUsers(prev => prev.map(x => x.id === u.id ? { ...x, role: newRole } : x))
+    setUpdatingRole(null)
+  }
+
+  const handleDeleteUser = async (u: AdminUser) => {
+    if (!confirm(`حذف ${u.email}؟ لا يمكن التراجع.`)) return
+    const { error } = await supabase.rpc('delete_user', { target_id: u.id })
+    if (error) alert('فشل الحذف: ' + error.message)
+    else setUsers(prev => prev.filter(x => x.id !== u.id))
+  }
+
   const handleSaveWorkshop = async () => {
     if (!wsForm) return
     setSavingWs(true)
@@ -159,20 +210,16 @@ export default function AdminPage() {
     catch (e) { console.error(e) }
   }
 
-  // ── Certificate handlers ──────────────────────────────────────────────────
   const handleIssueCert = async () => {
-    if (!certForm || !certForm.userId || !certForm.title_ar) return
+    if (!certForm?.userId || !certForm.title_ar) return
     setSavingCert(true)
     try {
       const created = await sbCertificates.issue({
-        user_id: certForm.userId,
-        title_ar: certForm.title_ar,
-        title_en: certForm.title_en,
-        issued_by: certForm.issued_by || 'Harmony',
+        user_id: certForm.userId, title_ar: certForm.title_ar,
+        title_en: certForm.title_en, issued_by: certForm.issued_by || 'Harmony',
         description: certForm.description || null,
       })
-      const u = userMap[certForm.userId]
-      setCertificates(prev => [{ ...created, user_email: u?.email }, ...prev])
+      setCertificates(prev => [created, ...prev])
       setCertForm(null)
     } catch (e) { console.error(e) }
     finally { setSavingCert(false) }
@@ -184,13 +231,14 @@ export default function AdminPage() {
     catch (e) { console.error(e) }
   }
 
-  // ── Consultation reply ────────────────────────────────────────────────────
   const handleSendReply = async (id: string) => {
     if (!replyText.trim()) return
     setSendingReply(true)
     try {
       await sbConsultations.reply(id, replyText.trim())
-      setConsultations(c => c.map(x => x.id === id ? { ...x, status: 'replied', admin_reply: replyText.trim(), replied_at: new Date().toISOString() } : x))
+      setConsultations(c => c.map(x => x.id === id
+        ? { ...x, status: 'replied', admin_reply: replyText.trim(), replied_at: new Date().toISOString() }
+        : x))
       setReplyingId(null); setReplyText('')
     } catch (e) { console.error(e) }
     finally { setSendingReply(false) }
@@ -203,229 +251,303 @@ export default function AdminPage() {
     } catch (e) { console.error(e) }
   }
 
-  const handleToggleRole = async (u: SupabaseUser) => {
-    const newRole = (u.role ?? 'user') === 'trainer' ? 'user' : 'trainer'
-    setUpdatingRoleId(u.id)
-    const { error } = await supabase.rpc('update_user_role', { target_id: u.id, new_role: newRole })
-    if (error) alert('فشل تغيير الدور: ' + error.message)
-    else setSupabaseUsers(prev => prev.map(x => x.id === u.id ? { ...x, role: newRole } : x))
-    setUpdatingRoleId(null)
-  }
+  // ── Guards ────────────────────────────────────────────────────────────────────
+  if (!user) return (
+    <div className="min-h-screen bg-black flex items-center justify-center text-white">
+      <p className="text-gray-500 text-sm">يرجى تسجيل الدخول.</p>
+    </div>
+  )
+  if (!isAdmin) return (
+    <div className="min-h-screen bg-black flex items-center justify-center" dir="rtl">
+      <div className="text-center space-y-4">
+        <div className="w-16 h-16 rounded-2xl bg-red-600/10 border border-red-600/20 flex items-center justify-center mx-auto">
+          <X size={28} className="text-red-500" />
+        </div>
+        <p className="text-white font-semibold">غير مصرّح</p>
+        <button onClick={() => (window as any).navigateTo('/dashboard')}
+          className="text-sm text-gray-500 hover:text-white border border-white/10 rounded-xl px-4 py-2 transition">
+          العودة للرئيسية
+        </button>
+      </div>
+    </div>
+  )
 
-  const Spinner = () => <div className="flex justify-center py-16"><Loader2 size={28} className="text-red-500 animate-spin" /></div>
-
+  // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-black text-white flex" dir="rtl">
+    <div className="min-h-screen bg-[#080808] text-white flex" dir="rtl">
 
-      {/* ── Sidebar ────────────────────────────────────────────────────────── */}
-      <aside className="w-56 flex-shrink-0 border-l border-white/8 bg-[#0a0a0a] flex flex-col min-h-screen">
-        {/* Header */}
-        <div className="px-5 py-6 border-b border-white/8">
+      {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
+      <aside className="w-60 flex-shrink-0 flex flex-col border-l border-white/6 bg-[#0c0c0c]">
+
+        {/* Brand */}
+        <div className="px-5 pt-6 pb-5 border-b border-white/6">
           <button onClick={() => (window as any).navigateTo('/dashboard')}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition mb-3">
-            <ChevronLeft size={13} />الصفحة الرئيسية
+            className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-400 transition mb-4">
+            <ChevronLeft size={12} />الصفحة الرئيسية
           </button>
-          <p className="font-bold text-white text-base">لوحة تحكم المدير</p>
-          <p className="text-xs text-gray-500 mt-0.5">هارموني</p>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-red-600/20 border border-red-600/25 flex items-center justify-center">
+              <LayoutDashboard size={16} className="text-red-400" />
+            </div>
+            <div>
+              <p className="font-bold text-white text-sm">لوحة التحكم</p>
+              <p className="text-[11px] text-gray-600">Harmony Admin</p>
+            </div>
+          </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {TABS.map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition ${
-                activeTab === tab.key
+        <nav className="flex-1 px-3 py-4 space-y-0.5">
+          {TABS.map(({ key, label, icon: Icon }) => (
+            <button key={key} onClick={() => setTab(key)}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition ${
+                tab === key
                   ? 'bg-white text-black font-semibold'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
               }`}>
-              {tab.icon}
-              {tab.label}
+              <Icon size={15} />
+              {label}
+              {key === 'consultations' && pendingConss > 0 && (
+                <span className={`mr-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  tab === key ? 'bg-black/20 text-black' : 'bg-red-600/20 text-red-400'
+                }`}>{pendingConss}</span>
+              )}
             </button>
           ))}
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-white/8 space-y-1">
+        <div className="px-3 pb-5 pt-3 border-t border-white/6">
+          <div className="px-3.5 py-2.5 mb-1 rounded-xl bg-white/3 border border-white/6">
+            <p className="text-xs text-white font-medium truncate">{user.email}</p>
+            <p className="text-[11px] text-red-400 mt-0.5">مدير النظام</p>
+          </div>
           <button onClick={signOut}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-500 hover:bg-red-600/10 transition">
-            <LogOut size={16} />تسجيل الخروج
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm text-gray-600 hover:text-red-400 hover:bg-red-600/8 transition">
+            <LogOut size={14} />تسجيل الخروج
           </button>
         </div>
       </aside>
 
-      {/* ── Main content ───────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-auto p-6">
+      {/* ── Content ──────────────────────────────────────────────────────────── */}
+      <main className="flex-1 overflow-auto">
 
-        {/* ── Overview ───────────────────────────────────────────────────── */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold">نظرة عامة</h1>
-            {usersError && (
-              <div className="bg-red-900/20 border border-red-600/30 rounded-xl px-4 py-3 text-sm text-red-400">
-                تعذّر جلب المستخدمين: {usersError}
-              </div>
-            )}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* ── Overview ─────────────────────────────────────────────────────── */}
+        {tab === 'overview' && (
+          <div className="p-8 space-y-7 max-w-5xl">
+            <div>
+              <h1 className="text-xl font-bold text-white">نظرة عامة</h1>
+              <p className="text-sm text-gray-500 mt-1">مرحباً، {user.email}</p>
+            </div>
+
+            {/* KPI cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: 'إجمالي المستخدمين', value: supabaseUsers.length,  color: 'text-red-500'  },
-                { label: 'المحادثات',          value: conversations.length,  color: 'text-blue-400' },
-                { label: 'التقارير المُنشأة',  value: totalReports,          color: 'text-green-400'},
-                { label: 'نشطون اليوم',        value: supabaseUsers.filter(u => u.last_sign_in_at && new Date(u.last_sign_in_at).toDateString() === new Date().toDateString()).length, color: 'text-amber-400' },
+                { label: 'المستخدمون',      value: users.length,         icon: Users,         color: 'text-blue-400',  bg: 'bg-blue-500/8  border-blue-500/15'  },
+                { label: 'المحادثات',        value: conversations.length, icon: MessageSquare, color: 'text-purple-400', bg: 'bg-purple-500/8 border-purple-500/15' },
+                { label: 'التقارير المُنشأة', value: totalReports,         icon: Award,         color: 'text-green-400', bg: 'bg-green-500/8  border-green-500/15'  },
+                { label: 'استشارات معلّقة',  value: pendingConss,          icon: MessageCircle, color: 'text-amber-400', bg: 'bg-amber-500/8  border-amber-500/15'  },
               ].map(s => (
-                <div key={s.label} className="bg-[#0f0f0f] border border-white/8 rounded-2xl p-5 text-center">
-                  <p className={`text-4xl font-black ${s.color}`}>{s.value}</p>
-                  <p className="text-gray-400 text-sm mt-1">{s.label}</p>
+                <div key={s.label} className={`rounded-2xl border p-5 ${s.bg}`}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-2">{s.label}</p>
+                      <p className={`text-3xl font-black ${s.color}`}>{s.value}</p>
+                    </div>
+                    <s.icon size={18} className={`${s.color} opacity-60 mt-0.5`} />
+                  </div>
                 </div>
               ))}
             </div>
+
             {/* Recent users */}
-            <div className="bg-[#0f0f0f] border border-white/8 rounded-2xl p-5">
-              <h2 className="font-semibold mb-4 text-sm text-gray-400 uppercase tracking-wider">آخر المستخدمين</h2>
-              <div className="space-y-3">
-                {[...supabaseUsers].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5).map(u => (
-                  <div key={u.id} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-red-600/10 border border-red-600/20 flex items-center justify-center text-xs font-bold text-red-400">
-                      {(u.name || u.email).charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white truncate">{u.name || u.email}</p>
-                      <p className="text-xs text-gray-600">{new Date(u.created_at).toLocaleDateString('ar-SA')}</p>
-                    </div>
-                    <span className="text-xs text-gray-600">{conversations.filter(c => c.user_id === u.id).length} محادثة</span>
-                  </div>
-                ))}
+            <div className="bg-[#0f0f0f] border border-white/6 rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-white/6 flex items-center justify-between">
+                <p className="text-sm font-semibold text-white">آخر المستخدمين</p>
+                <p className="text-xs text-gray-600">{users.length} إجمالاً</p>
               </div>
+              {loadingUsers ? <Spinner /> : (
+                <div className="divide-y divide-white/4">
+                  {[...users].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                    .slice(0, 6).map(u => {
+                      const rs = roleStyle(u.role)
+                      return (
+                        <div key={u.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/2 transition">
+                          <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center text-xs font-bold text-gray-300 flex-shrink-0">
+                            {initial(u)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-white">{u.name || u.email}</p>
+                            {u.name && <p className="text-xs text-gray-600 truncate">{u.email}</p>}
+                          </div>
+                          <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${rs.color}`}>{rs.label}</span>
+                          <p className="text-xs text-gray-700 flex-shrink-0">{fmt(u.created_at)}</p>
+                        </div>
+                      )
+                    })}
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* ── Users ──────────────────────────────────────────────────────── */}
-        {activeTab === 'users' && (
-          <div className="space-y-5">
-            <h1 className="text-2xl font-bold">المستخدمون <span className="text-base font-normal text-gray-500">({supabaseUsers.length})</span></h1>
-            {usersError && (
-              <div className="bg-red-900/20 border border-red-600/30 rounded-xl px-4 py-3 text-sm text-red-400">
-                خطأ في جلب المستخدمين: {usersError}
+        {/* ── Users ────────────────────────────────────────────────────────── */}
+        {tab === 'users' && (
+          <div className="p-8 space-y-5 max-w-5xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-bold">المستخدمون</h1>
+                <p className="text-sm text-gray-500 mt-0.5">{users.length} مستخدم مسجّل</p>
+              </div>
+              <button onClick={loadUsers} className="flex items-center gap-2 px-3.5 py-2 text-sm text-gray-400 border border-white/10 rounded-xl hover:bg-white/5 transition">
+                <RefreshCw size={13} />تحديث
+              </button>
+            </div>
+
+            {usersErr && (
+              <div className="bg-red-950/30 border border-red-600/25 rounded-xl px-4 py-3 text-sm text-red-400">
+                {usersErr}
               </div>
             )}
+
+            {/* Search */}
+            <div className="relative">
+              <Search size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-600" />
+              <input value={userSearch} onChange={e => setUserSearch(e.target.value)}
+                placeholder="بحث بالاسم أو البريد..."
+                className="w-full bg-white/4 border border-white/8 rounded-xl pr-9 pl-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-white/20 transition" />
+            </div>
+
             {loadingUsers ? <Spinner /> : (
-              <div className="bg-[#0f0f0f] border border-white/8 rounded-2xl overflow-hidden">
-                <div className="divide-y divide-white/5">
-                  {supabaseUsers.map(u => {
+              <div className="bg-[#0f0f0f] border border-white/6 rounded-2xl overflow-hidden">
+                {/* Table head */}
+                <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-white/6 text-[11px] text-gray-600 uppercase tracking-wider">
+                  <span>المستخدم</span>
+                  <span>الدور</span>
+                  <span>المحادثات</span>
+                  <span>تاريخ الانضمام</span>
+                  <span></span>
+                </div>
+                <div className="divide-y divide-white/4">
+                  {filteredUsers.map(u => {
                     const convCount   = conversations.filter(c => c.user_id === u.id).length
                     const reportCount = conversations.filter(c => c.user_id === u.id && c.report_data).length
+                    const rs = roleStyle(u.role)
                     return (
-                      <div key={u.id} className="px-5 py-4 flex items-center gap-4 hover:bg-white/3 transition group">
-                        <div className="w-10 h-10 rounded-xl bg-red-600/10 border border-red-600/20 flex items-center justify-center font-bold text-red-400 flex-shrink-0 cursor-pointer"
-                          onClick={() => { setSelectedUser(u.id === selectedUser ? null : u.id); setActiveTab('conversations') }}>
-                          {(u.name || u.email).charAt(0).toUpperCase()}
+                      <div key={u.id}
+                        className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-5 py-3.5 hover:bg-white/2 transition group">
+                        {/* User */}
+                        <div className="flex items-center gap-3 min-w-0 cursor-pointer"
+                          onClick={() => { setConvFilter(u.id); setTab('conversations') }}>
+                          <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center font-bold text-sm text-gray-300 flex-shrink-0">
+                            {initial(u)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm text-white font-medium truncate">{u.name || '—'}</p>
+                            <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0 cursor-pointer"
-                          onClick={() => { setSelectedUser(u.id === selectedUser ? null : u.id); setActiveTab('conversations') }}>
-                          <p className="text-sm font-medium text-white">{u.name || '—'}</p>
-                          <p className="text-xs text-gray-500">{u.email}</p>
-                        </div>
-                        <div className="text-xs text-gray-600 space-y-0.5 text-left cursor-pointer"
-                          onClick={() => { setSelectedUser(u.id === selectedUser ? null : u.id); setActiveTab('conversations') }}>
-                          <p>{convCount} محادثة · {reportCount} تقرير</p>
-                          <p>{new Date(u.created_at).toLocaleDateString('ar-SA')}</p>
-                        </div>
-                        {/* Role badge + toggle */}
-                        <button
-                          onClick={() => handleToggleRole(u)}
-                          disabled={updatingRoleId === u.id}
-                          title={`الدور الحالي: ${u.role ?? 'user'} — اضغط للتغيير`}
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition flex-shrink-0 ${
-                            (u.role ?? 'user') === 'trainer'
-                              ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30 hover:bg-amber-600/30'
-                              : 'bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10'
-                          }`}>
-                          {updatingRoleId === u.id ? '...' : (u.role ?? 'user') === 'trainer' ? 'مدرب' : 'مستخدم'}
+                        {/* Role */}
+                        <button onClick={() => handleToggleRole(u)} disabled={updatingRole === u.id}
+                          title="اضغط لتغيير الدور"
+                          className={`text-[11px] px-2.5 py-1 rounded-full border font-medium transition hover:opacity-80 flex-shrink-0 ${rs.color}`}>
+                          {updatingRole === u.id ? '...' : rs.label}
                         </button>
-                        <button
-                          onClick={async () => {
-                            if (!confirm(`حذف المستخدم ${u.email}؟ هذا الإجراء لا يمكن التراجع عنه.`)) return
-                            const { error } = await supabase.rpc('delete_user', { target_id: u.id })
-                            if (error) alert('فشل الحذف: ' + error.message)
-                            else setSupabaseUsers(prev => prev.filter(x => x.id !== u.id))
-                          }}
-                          className="p-2 rounded-lg border border-white/10 text-gray-600 hover:text-red-400 hover:border-red-600/30 transition opacity-0 group-hover:opacity-100 flex-shrink-0">
+                        {/* Stats */}
+                        <p className="text-xs text-gray-500 text-center flex-shrink-0">
+                          {convCount} <span className="text-gray-700">·</span> {reportCount} تقرير
+                        </p>
+                        {/* Date */}
+                        <p className="text-xs text-gray-700 flex-shrink-0">{fmt(u.created_at)}</p>
+                        {/* Delete */}
+                        <button onClick={() => handleDeleteUser(u)}
+                          className="p-1.5 rounded-lg text-gray-700 hover:text-red-400 hover:bg-red-600/10 transition opacity-0 group-hover:opacity-100 flex-shrink-0">
                           <Trash2 size={13} />
                         </button>
                       </div>
                     )
                   })}
+                  {filteredUsers.length === 0 && (
+                    <p className="text-center text-gray-600 text-sm py-10">لا نتائج</p>
+                  )}
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* ── Conversations ───────────────────────────────────────────────── */}
-        {activeTab === 'conversations' && (
-          <div className="space-y-5">
+        {/* ── Conversations ─────────────────────────────────────────────────── */}
+        {tab === 'conversations' && (
+          <div className="p-8 space-y-5 max-w-4xl">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">
-                {selectedUser ? `محادثات — ${userMap[selectedUser]?.name || userMap[selectedUser]?.email}` : 'المحادثات'}
-                <span className="text-base font-normal text-gray-500 mr-2">({filteredConvs.length})</span>
-              </h1>
-              {selectedUser && (
-                <button onClick={() => setSelectedUser(null)} className="text-xs text-red-400 hover:text-red-300 border border-red-600/30 rounded-full px-3 py-1.5">
-                  إلغاء الفلتر
-                </button>
+              <div>
+                <h1 className="text-xl font-bold">المحادثات</h1>
+                <p className="text-sm text-gray-500 mt-0.5">{filteredConvs.length} محادثة</p>
+              </div>
+              {convFilter && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-400">
+                    مفلتر على: <strong className="text-white">{userMap[convFilter]?.name || userMap[convFilter]?.email}</strong>
+                  </span>
+                  <button onClick={() => setConvFilter(null)}
+                    className="text-xs text-red-400 border border-red-600/25 rounded-lg px-3 py-1.5 hover:bg-red-600/10 transition">
+                    <X size={11} className="inline ml-1" />إلغاء الفلتر
+                  </button>
+                </div>
               )}
             </div>
-            {loadingConvs ? <Spinner /> : (
-              <div className="space-y-3">
+
+            {loadingConvs ? <Spinner /> : filteredConvs.length === 0 ? <Empty icon={MessageSquare} label="لا توجد محادثات" /> : (
+              <div className="space-y-2">
                 {filteredConvs.map(conv => {
-                  const owner      = userMap[conv.user_id]
-                  const isExpanded = expandedConv === conv.id
-                  const hasReport  = !!conv.report_data
-                  let reportSummary: any = null
-                  if (hasReport) { try { reportSummary = JSON.parse(conv.report_data!).chartData } catch { /* ignore */ } }
+                  const owner     = userMap[conv.user_id]
+                  const expanded  = expandedConv === conv.id
+                  const hasReport = !!conv.report_data
+                  let report: any = null
+                  if (hasReport) { try { report = JSON.parse(conv.report_data!).chartData } catch { /* */ } }
 
                   return (
-                    <div key={conv.id} className="bg-[#0f0f0f] border border-white/8 rounded-2xl overflow-hidden">
-                      <div className="px-5 py-4 flex items-start justify-between cursor-pointer hover:bg-white/3 transition"
-                        onClick={() => setExpandedConv(isExpanded ? null : conv.id)}>
+                    <div key={conv.id} className="bg-[#0f0f0f] border border-white/6 rounded-2xl overflow-hidden">
+                      <button className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/2 transition text-right"
+                        onClick={() => setExpandedConv(expanded ? null : conv.id)}>
+                        <div className="w-9 h-9 rounded-xl bg-white/4 border border-white/8 flex items-center justify-center text-xs font-bold text-gray-400 flex-shrink-0">
+                          {owner ? initial(owner) : '?'}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium">{conv.title || 'بدون عنوان'}</p>
-                            {hasReport && <span className="text-[10px] bg-red-600/20 text-red-400 px-2 py-0.5 rounded-full">تقرير</span>}
+                            <p className="text-sm font-medium text-white">{conv.title || 'بدون عنوان'}</p>
+                            {hasReport && <span className="text-[10px] bg-green-600/15 text-green-400 px-2 py-0.5 rounded-full">تقرير</span>}
                           </div>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {owner?.name || owner?.email || '—'} · {conv.messages.length} رسالة · {new Date(conv.updated_at).toLocaleDateString('ar-SA')}
+                          <p className="text-xs text-gray-600 mt-0.5 truncate">
+                            {owner?.name || owner?.email || conv.user_id} · {conv.messages.length} رسالة · {fmt(conv.updated_at)}
                           </p>
                         </div>
-                        <span className="text-gray-600 text-xs">{isExpanded ? '▲' : '▼'}</span>
-                      </div>
-                      {isExpanded && (
+                        {expanded ? <ChevronUp size={14} className="text-gray-600 flex-shrink-0" /> : <ChevronDown size={14} className="text-gray-600 flex-shrink-0" />}
+                      </button>
+
+                      {expanded && (
                         <div className="px-5 pb-5 space-y-3 border-t border-white/5">
-                          {reportSummary && (
-                            <div className="bg-black/40 rounded-xl p-4 mt-4">
-                              <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">نتائج التقرير</p>
-                              <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
-                                {[
-                                  { label: 'الإجمالي', value: reportSummary.overall + '%' },
-                                  { label: 'الانسجام', value: reportSummary.harmony + '%' },
-                                  { label: 'الذهني',   value: reportSummary.mental?.percentage + '%' },
-                                  { label: 'المشاعري', value: reportSummary.emotional?.percentage + '%' },
-                                  { label: 'السلوكي',  value: reportSummary.existential?.percentage + '%' },
-                                ].map(s => (
-                                  <div key={s.label} className="text-center bg-white/5 rounded-xl p-2.5">
-                                    <p className="text-lg font-bold text-red-400">{s.value}</p>
-                                    <p className="text-xs text-gray-500">{s.label}</p>
-                                  </div>
-                                ))}
-                              </div>
+                          {report && (
+                            <div className="mt-4 grid grid-cols-5 gap-2">
+                              {[
+                                { label: 'الإجمالي', value: report.overall },
+                                { label: 'الانسجام', value: report.harmony },
+                                { label: 'الذهني',   value: report.mental?.percentage },
+                                { label: 'المشاعري', value: report.emotional?.percentage },
+                                { label: 'السلوكي',  value: report.existential?.percentage },
+                              ].map(s => (
+                                <div key={s.label} className="text-center bg-white/4 rounded-xl py-3">
+                                  <p className="text-base font-black text-red-400">{s.value ?? '—'}%</p>
+                                  <p className="text-[10px] text-gray-600 mt-0.5">{s.label}</p>
+                                </div>
+                              ))}
                             </div>
                           )}
-                          <div className="bg-black/40 rounded-xl p-4 max-h-48 overflow-y-auto space-y-2">
-                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">الرسائل</p>
+                          <div className="bg-black/40 rounded-xl p-4 max-h-52 overflow-y-auto space-y-2">
                             {conv.messages.slice(-6).map((m, i) => (
-                              <div key={i} className={`text-xs px-3 py-2 rounded-lg ${m.role === 'user' ? 'bg-white/10' : 'bg-red-900/20'}`}>
-                                <span className="text-gray-500 text-[10px] block mb-0.5">{m.role === 'user' ? 'المستخدم' : 'هارموني'}</span>
-                                <span className="text-gray-300 line-clamp-2">{m.content}</span>
+                              <div key={i} className={`text-xs px-3 py-2 rounded-xl ${m.role === 'user' ? 'bg-white/7' : 'bg-red-900/15'}`}>
+                                <p className="text-gray-600 text-[10px] mb-0.5">{m.role === 'user' ? 'المستخدم' : 'هارموني'}</p>
+                                <p className="text-gray-300 line-clamp-2">{m.content}</p>
                               </div>
                             ))}
                           </div>
@@ -439,22 +561,25 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ── Workshops ───────────────────────────────────────────────────── */}
-        {activeTab === 'workshops' && (
-          <div className="space-y-5">
+        {/* ── Workshops ─────────────────────────────────────────────────────── */}
+        {tab === 'workshops' && (
+          <div className="p-8 space-y-5 max-w-4xl">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">الدورات</h1>
+              <div>
+                <h1 className="text-xl font-bold">الدورات</h1>
+                <p className="text-sm text-gray-500 mt-0.5">{workshops.length} دورة</p>
+              </div>
               <button onClick={() => { setWsForm(blankWs()); setEditingWsId(null) }}
                 className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition">
-                <Plus size={15} />إضافة دورة
+                <Plus size={14} />دورة جديدة
               </button>
             </div>
 
-            {/* Workshop form */}
+            {/* Form */}
             {wsForm && (
-              <div className="bg-[#0f0f0f] border border-red-600/30 rounded-2xl p-5 space-y-4">
-                <p className="font-semibold text-sm">{editingWsId ? 'تعديل الدورة' : 'دورة جديدة'}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-[#0f0f0f] border border-red-600/25 rounded-2xl p-6 space-y-5">
+                <p className="font-semibold text-sm text-white">{editingWsId ? 'تعديل الدورة' : 'دورة جديدة'}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {([
                     { key: 'title_ar',    label: 'الاسم بالعربي' },
                     { key: 'title_en',    label: 'الاسم بالإنجليزي' },
@@ -462,69 +587,73 @@ export default function AdminPage() {
                     { key: 'category_en', label: 'التصنيف بالإنجليزي' },
                     { key: 'duration_ar', label: 'المدة بالعربي' },
                     { key: 'duration_en', label: 'المدة بالإنجليزي' },
+                    { key: 'image_url',   label: 'رابط الصورة' },
                   ] as { key: keyof typeof wsForm; label: string }[]).map(f => (
-                    <div key={f.key}>
-                      <label className="text-xs text-gray-400 block mb-1">{f.label}</label>
-                      <input value={(wsForm as any)[f.key] ?? ''}
+                    <Field key={f.key} label={f.label}>
+                      <input value={(wsForm as any)[f.key] ?? ''} placeholder={f.label}
                         onChange={e => setWsForm(w => w ? { ...w, [f.key]: e.target.value } : w)}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-600/50 transition" />
-                    </div>
+                        className={inp} />
+                    </Field>
                   ))}
                 </div>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">الوصف بالعربي</label>
-                  <textarea value={wsForm.desc_ar ?? ''} rows={2}
-                    onChange={e => setWsForm(w => w ? { ...w, desc_ar: e.target.value } : w)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition resize-none" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="الوصف بالعربي">
+                    <textarea value={wsForm.desc_ar ?? ''} rows={3}
+                      onChange={e => setWsForm(w => w ? { ...w, desc_ar: e.target.value } : w)}
+                      className={`${inp} resize-none`} />
+                  </Field>
+                  <Field label="الوصف بالإنجليزي">
+                    <textarea value={wsForm.desc_en ?? ''} rows={3}
+                      onChange={e => setWsForm(w => w ? { ...w, desc_en: e.target.value } : w)}
+                      className={`${inp} resize-none`} />
+                  </Field>
                 </div>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">الوصف بالإنجليزي</label>
-                  <textarea value={wsForm.desc_en ?? ''} rows={2}
-                    onChange={e => setWsForm(w => w ? { ...w, desc_en: e.target.value } : w)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition resize-none" />
-                </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <input type="checkbox" id="ws-active" checked={wsForm.is_active}
                     onChange={e => setWsForm(w => w ? { ...w, is_active: e.target.checked } : w)}
-                    className="accent-red-600 w-4 h-4" />
-                  <label htmlFor="ws-active" className="text-sm text-gray-300">نشطة</label>
+                    className="accent-red-600 w-4 h-4 rounded" />
+                  <label htmlFor="ws-active" className="text-sm text-gray-300">دورة نشطة</label>
                 </div>
-                <div className="flex gap-3 justify-end">
-                  <button onClick={() => { setWsForm(null); setEditingWsId(null) }} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition">إلغاء</button>
+                <div className="flex gap-3 justify-end pt-2 border-t border-white/6">
+                  <button onClick={() => { setWsForm(null); setEditingWsId(null) }}
+                    className="px-4 py-2 text-sm text-gray-500 hover:text-white transition">إلغاء</button>
                   <button onClick={handleSaveWorkshop} disabled={savingWs || !wsForm.title_ar}
                     className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-50">
-                    {savingWs ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                    حفظ
+                    {savingWs ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}حفظ
                   </button>
                 </div>
               </div>
             )}
 
-            {loadingWs ? <Spinner /> : workshops.length === 0 ? (
-              <div className="bg-[#0f0f0f] border border-white/5 rounded-2xl p-12 text-center">
-                <BookOpen size={36} className="text-gray-700 mx-auto mb-3" />
-                <p className="text-gray-500">لا توجد دورات بعد</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
+            {loadingWs ? <Spinner /> : workshops.length === 0 ? <Empty icon={BookOpen} label="لا توجد دورات بعد" /> : (
+              <div className="space-y-2">
                 {workshops.map(ws => (
-                  <div key={ws.id} className="bg-[#0f0f0f] border border-white/8 rounded-2xl px-5 py-4 flex items-center gap-4">
+                  <div key={ws.id} className="bg-[#0f0f0f] border border-white/6 rounded-2xl px-5 py-4 flex items-center gap-4 group">
+                    {ws.image_url && (
+                      <img src={ws.image_url} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0 bg-white/5" />
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-white">{ws.title_ar}</p>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${ws.is_active ? 'bg-green-600/15 text-green-400' : 'bg-gray-600/15 text-gray-500'}`}>
-                          {ws.is_active ? 'نشطة' : 'معطّلة'}
-                        </span>
+                        <p className="font-medium text-white text-sm">{ws.title_ar}</p>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          ws.is_active ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-white/5 text-gray-600 border border-white/8'
+                        }`}>{ws.is_active ? 'نشطة' : 'معطّلة'}</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{ws.title_en} · {ws.category_ar} · {ws.duration_ar}</p>
+                      <p className="text-xs text-gray-600 mt-0.5 truncate">
+                        {ws.title_en}
+                        {ws.category_ar && ` · ${ws.category_ar}`}
+                        {ws.duration_ar && ` · ${ws.duration_ar}`}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button onClick={() => { setWsForm({ title_ar: ws.title_ar, title_en: ws.title_en, desc_ar: ws.desc_ar, desc_en: ws.desc_en, duration_ar: ws.duration_ar, duration_en: ws.duration_en, category_ar: ws.category_ar, category_en: ws.category_en, image_url: ws.image_url, is_active: ws.is_active }); setEditingWsId(ws.id) }}
-                        className="p-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:border-white/30 transition">
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
+                      <button onClick={() => {
+                        setWsForm({ title_ar: ws.title_ar, title_en: ws.title_en, desc_ar: ws.desc_ar, desc_en: ws.desc_en, duration_ar: ws.duration_ar, duration_en: ws.duration_en, category_ar: ws.category_ar, category_en: ws.category_en, image_url: ws.image_url, is_active: ws.is_active })
+                        setEditingWsId(ws.id)
+                      }} className="p-2 rounded-lg border border-white/8 text-gray-500 hover:text-white hover:border-white/20 transition">
                         <Edit2 size={13} />
                       </button>
                       <button onClick={() => handleDeleteWorkshop(ws.id)}
-                        className="p-2 rounded-lg border border-white/10 text-gray-400 hover:text-red-400 hover:border-red-600/30 transition">
+                        className="p-2 rounded-lg border border-white/8 text-gray-500 hover:text-red-400 hover:border-red-600/25 transition">
                         <Trash2 size={13} />
                       </button>
                     </div>
@@ -535,167 +664,186 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ── Certificates ────────────────────────────────────────────────── */}
-        {activeTab === 'certificates' && (
-          <div className="space-y-5">
+        {/* ── Certificates ──────────────────────────────────────────────────── */}
+        {tab === 'certificates' && (
+          <div className="p-8 space-y-5 max-w-4xl">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">الشهادات</h1>
+              <div>
+                <h1 className="text-xl font-bold">الشهادات</h1>
+                <p className="text-sm text-gray-500 mt-0.5">{certificates.length} شهادة</p>
+              </div>
               <button onClick={() => setCertForm({ userId: '', title_ar: '', title_en: '', issued_by: 'Harmony', description: '' })}
                 className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition">
-                <Plus size={15} />إصدار شهادة
+                <Plus size={14} />إصدار شهادة
               </button>
             </div>
 
-            {/* Certificate form */}
+            {/* Form */}
             {certForm && (
-              <div className="bg-[#0f0f0f] border border-red-600/30 rounded-2xl p-5 space-y-4">
-                <p className="font-semibold text-sm">إصدار شهادة جديدة</p>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">المستخدم</label>
+              <div className="bg-[#0f0f0f] border border-red-600/25 rounded-2xl p-6 space-y-4">
+                <p className="font-semibold text-sm text-white">إصدار شهادة جديدة</p>
+                <Field label="المستخدم">
                   <select value={certForm.userId} onChange={e => setCertForm(f => f ? { ...f, userId: e.target.value } : f)}
-                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition">
-                    <option value="">اختر المستخدم</option>
-                    {supabaseUsers.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
+                    className={`${inp} bg-[#1a1a1a]`}>
+                    <option value="">اختر المستخدم...</option>
+                    {users.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
                   </select>
+                </Field>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="اسم الشهادة بالعربي">
+                    <input value={certForm.title_ar} placeholder="اسم الشهادة بالعربي"
+                      onChange={e => setCertForm(f => f ? { ...f, title_ar: e.target.value } : f)} className={inp} />
+                  </Field>
+                  <Field label="اسم الشهادة بالإنجليزي">
+                    <input value={certForm.title_en} placeholder="Certificate name in English"
+                      onChange={e => setCertForm(f => f ? { ...f, title_en: e.target.value } : f)} className={inp} />
+                  </Field>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-1">اسم الشهادة بالعربي</label>
-                    <input value={certForm.title_ar} onChange={e => setCertForm(f => f ? { ...f, title_ar: e.target.value } : f)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-1">اسم الشهادة بالإنجليزي</label>
-                    <input value={certForm.title_en} onChange={e => setCertForm(f => f ? { ...f, title_en: e.target.value } : f)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition" />
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="صادرة من">
+                    <input value={certForm.issued_by}
+                      onChange={e => setCertForm(f => f ? { ...f, issued_by: e.target.value } : f)} className={inp} />
+                  </Field>
+                  <Field label="الوصف (اختياري)">
+                    <input value={certForm.description} placeholder="وصف الشهادة..."
+                      onChange={e => setCertForm(f => f ? { ...f, description: e.target.value } : f)} className={inp} />
+                  </Field>
                 </div>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">صادرة من</label>
-                  <input value={certForm.issued_by} onChange={e => setCertForm(f => f ? { ...f, issued_by: e.target.value } : f)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">الوصف (اختياري)</label>
-                  <input value={certForm.description} onChange={e => setCertForm(f => f ? { ...f, description: e.target.value } : f)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-red-600/50 transition" />
-                </div>
-                <div className="flex gap-3 justify-end">
-                  <button onClick={() => setCertForm(null)} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition">إلغاء</button>
+                <div className="flex gap-3 justify-end pt-2 border-t border-white/6">
+                  <button onClick={() => setCertForm(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-white transition">إلغاء</button>
                   <button onClick={handleIssueCert} disabled={savingCert || !certForm.userId || !certForm.title_ar}
                     className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-50">
-                    {savingCert ? <Loader2 size={14} className="animate-spin" /> : <Award size={14} />}
-                    إصدار
+                    {savingCert ? <Loader2 size={13} className="animate-spin" /> : <Award size={13} />}إصدار
                   </button>
                 </div>
               </div>
             )}
 
-            {loadingCerts ? <Spinner /> : certificates.length === 0 ? (
-              <div className="bg-[#0f0f0f] border border-white/5 rounded-2xl p-12 text-center">
-                <Award size={36} className="text-gray-700 mx-auto mb-3" />
-                <p className="text-gray-500">لا توجد شهادات بعد</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {certificates.map(cert => (
-                  <div key={cert.id} className="bg-[#0f0f0f] border border-amber-500/15 rounded-2xl px-5 py-4 flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center flex-shrink-0">
-                      <Award size={16} className="text-amber-400" />
+            {loadingCerts ? <Spinner /> : certificates.length === 0 ? <Empty icon={Award} label="لا توجد شهادات بعد" /> : (
+              <div className="space-y-2">
+                {certificates.map(cert => {
+                  const owner = userMap[cert.user_id]
+                  return (
+                    <div key={cert.id} className="bg-[#0f0f0f] border border-amber-500/12 rounded-2xl px-5 py-4 flex items-center gap-4 group">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/8 border border-amber-500/18 flex items-center justify-center flex-shrink-0">
+                        <Award size={15} className="text-amber-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-white text-sm">{cert.title_ar}</p>
+                        <p className="text-xs text-gray-600 mt-0.5 truncate">
+                          {owner?.name || owner?.email || cert.user_id} · {cert.issued_by} · {fmt(cert.issued_at)}
+                        </p>
+                      </div>
+                      <button onClick={() => handleRevokeCert(cert.id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-400 border border-red-600/20 rounded-xl hover:bg-red-600/10 transition opacity-0 group-hover:opacity-100">
+                        <X size={11} />إلغاء
+                      </button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white">{cert.title_ar}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {(cert as any).user_email || userMap[cert.user_id]?.email || cert.user_id} · {cert.issued_by} · {new Date(cert.issued_at).toLocaleDateString('ar-SA')}
-                      </p>
-                    </div>
-                    <button onClick={() => handleRevokeCert(cert.id)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-400 border border-red-600/25 rounded-lg hover:bg-red-600/10 transition">
-                      <X size={12} />إلغاء
-                    </button>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
         )}
 
-        {/* ── Consultations ────────────────────────────────────────────────── */}
-        {activeTab === 'consultations' && (
-          <div className="space-y-5">
-            <h1 className="text-2xl font-bold">
-              الاستشارات
-              <span className="text-base font-normal text-gray-500 mr-2">
-                ({consultations.filter(c => c.status === 'pending').length} قيد المراجعة)
-              </span>
-            </h1>
-            {loadingConss ? <Spinner /> : consultations.length === 0 ? (
-              <div className="bg-[#0f0f0f] border border-white/5 rounded-2xl p-12 text-center">
-                <MessageCircle size={36} className="text-gray-700 mx-auto mb-3" />
-                <p className="text-gray-500">لا توجد استشارات</p>
-              </div>
-            ) : (
+        {/* ── Consultations ─────────────────────────────────────────────────── */}
+        {tab === 'consultations' && (
+          <div className="p-8 space-y-5 max-w-4xl">
+            <div>
+              <h1 className="text-xl font-bold">الاستشارات</h1>
+              <p className="text-sm text-gray-500 mt-0.5">{consultations.length} استشارة · {pendingConss} معلّقة</p>
+            </div>
+
+            {/* Status tabs */}
+            <div className="flex gap-1 bg-white/4 border border-white/8 rounded-xl p-1 w-fit">
+              {([
+                { key: 'all',     label: 'الكل',        count: consultations.length },
+                { key: 'pending', label: 'قيد المراجعة', count: pendingConss },
+                { key: 'replied', label: 'تم الرد',      count: consultations.filter(c => c.status === 'replied').length },
+                { key: 'closed',  label: 'مغلقة',        count: consultations.filter(c => c.status === 'closed').length },
+              ] as { key: typeof consFilter; label: string; count: number }[]).map(f => (
+                <button key={f.key} onClick={() => setConsFilter(f.key)}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm transition ${
+                    consFilter === f.key ? 'bg-white text-black font-semibold' : 'text-gray-500 hover:text-white'
+                  }`}>
+                  {f.label}
+                  <span className={`text-[10px] font-bold px-1 rounded ${
+                    consFilter === f.key ? 'text-black/40' : 'text-gray-600'
+                  }`}>{f.count}</span>
+                </button>
+              ))}
+            </div>
+
+            {loadingConss ? <Spinner /> : filteredConss.length === 0 ? <Empty icon={MessageCircle} label="لا توجد استشارات" /> : (
               <div className="space-y-3">
-                {consultations.map(c => (
-                  <div key={c.id} className="bg-[#0f0f0f] border border-white/8 rounded-2xl p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-semibold text-white text-sm">{c.subject}</p>
-                          <div className="flex items-center gap-1 text-xs">
-                            {c.status === 'replied' ? <CheckCircle size={11} className="text-green-400" /> :
-                             c.status === 'closed'  ? <XCircle     size={11} className="text-gray-500" /> :
-                                                      <Clock       size={11} className="text-amber-400" />}
-                            <span className={c.status === 'replied' ? 'text-green-400' : c.status === 'closed' ? 'text-gray-500' : 'text-amber-400'}>
+                {filteredConss.map(c => {
+                  const owner = userMap[c.user_id]
+                  return (
+                    <div key={c.id} className="bg-[#0f0f0f] border border-white/6 rounded-2xl p-5 space-y-3">
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold text-white text-sm">{c.subject}</p>
+                            <div className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border font-medium ${
+                              c.status === 'replied' ? 'text-green-400 bg-green-500/8 border-green-500/20' :
+                              c.status === 'closed'  ? 'text-gray-500 bg-white/4 border-white/8' :
+                                                       'text-amber-400 bg-amber-500/8 border-amber-500/20'
+                            }`}>
+                              {c.status === 'replied' ? <CheckCircle size={10} /> : c.status === 'closed' ? <XCircle size={10} /> : <Clock size={10} />}
                               {c.status === 'replied' ? 'تم الرد' : c.status === 'closed' ? 'مغلقة' : 'قيد المراجعة'}
-                            </span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {owner?.name || owner?.email || c.user_id} · {fmt(c.created_at)}
+                          </p>
+                        </div>
+                        {c.status !== 'closed' && (
+                          <div className="flex gap-2 flex-shrink-0">
+                            <button onClick={() => { setReplyingId(replyingId === c.id ? null : c.id); setReplyText('') }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-white/10 rounded-xl text-gray-400 hover:text-white hover:border-white/25 transition">
+                              <Send size={11} />رد
+                            </button>
+                            <button onClick={() => handleCloseConsultation(c.id)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-white/10 rounded-xl text-gray-500 hover:text-red-400 hover:border-red-600/25 transition">
+                              <XCircle size={11} />إغلاق
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Message */}
+                      <div className="bg-black/30 rounded-xl px-4 py-3">
+                        <p className="text-sm text-gray-300 leading-relaxed">{c.message}</p>
+                      </div>
+
+                      {/* Admin reply */}
+                      {c.admin_reply && (
+                        <div className="bg-green-600/6 border border-green-600/18 rounded-xl px-4 py-3">
+                          <p className="text-[11px] text-green-500 font-medium mb-1.5">ردك</p>
+                          <p className="text-sm text-gray-300">{c.admin_reply}</p>
+                        </div>
+                      )}
+
+                      {/* Reply form */}
+                      {replyingId === c.id && (
+                        <div className="space-y-2.5">
+                          <textarea value={replyText} onChange={e => setReplyText(e.target.value)} rows={3}
+                            placeholder="اكتب ردك هنا..."
+                            className={`${inp} resize-none`} />
+                          <div className="flex gap-2 justify-end">
+                            <button onClick={() => { setReplyingId(null); setReplyText('') }}
+                              className="px-3 py-1.5 text-xs text-gray-500 hover:text-white transition">إلغاء</button>
+                            <button onClick={() => handleSendReply(c.id)} disabled={sendingReply || !replyText.trim()}
+                              className="flex items-center gap-1.5 px-4 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-xl transition disabled:opacity-50">
+                              {sendingReply ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />}إرسال
+                            </button>
                           </div>
                         </div>
-                        <p className="text-sm text-gray-400 mt-1 leading-relaxed">{c.message}</p>
-                        <p className="text-xs text-gray-600 mt-1.5">
-                          {userMap[c.user_id]?.name || userMap[c.user_id]?.email || c.user_id} · {new Date(c.created_at).toLocaleDateString('ar-SA')}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        {c.status !== 'closed' && (
-                          <button onClick={() => { setReplyingId(replyingId === c.id ? null : c.id); setReplyText('') }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-white/10 rounded-lg text-gray-400 hover:text-white hover:border-white/30 transition">
-                            <Send size={11} />رد
-                          </button>
-                        )}
-                        {c.status !== 'closed' && (
-                          <button onClick={() => handleCloseConsultation(c.id)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-white/10 rounded-lg text-gray-400 hover:text-red-400 hover:border-red-600/30 transition">
-                            <XCircle size={11} />إغلاق
-                          </button>
-                        )}
-                      </div>
+                      )}
                     </div>
-
-                    {c.admin_reply && (
-                      <div className="mt-3 bg-green-600/8 border border-green-600/20 rounded-xl p-3">
-                        <p className="text-xs text-green-400 font-medium mb-1">ردك</p>
-                        <p className="text-sm text-gray-300">{c.admin_reply}</p>
-                      </div>
-                    )}
-
-                    {replyingId === c.id && (
-                      <div className="mt-3 space-y-2">
-                        <textarea value={replyText} onChange={e => setReplyText(e.target.value)} rows={3}
-                          placeholder="اكتب ردك هنا..."
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-600/50 transition resize-none" />
-                        <div className="flex gap-2 justify-end">
-                          <button onClick={() => { setReplyingId(null); setReplyText('') }} className="px-3 py-1.5 text-xs text-gray-400 hover:text-white transition">إلغاء</button>
-                          <button onClick={() => handleSendReply(c.id)} disabled={sendingReply || !replyText.trim()}
-                            className="flex items-center gap-1.5 px-4 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg transition disabled:opacity-50">
-                            {sendingReply ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />}
-                            إرسال
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
