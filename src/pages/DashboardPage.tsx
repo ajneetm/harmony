@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useAppState, useConversations } from '../store'
+import { db } from '../lib/supabase'
 import { getFontCSSProperties } from '../utils/fonts'
 import RadarChart from '../components/RadarChart'
 import type { ReportChartData } from '../utils/reportService'
@@ -199,7 +200,13 @@ export default function DashboardPage() {
   const name     = user?.user_metadata?.full_name || user?.email?.split('@')[0] || '—'
   const email    = user?.email || ''
   const initial  = name.charAt(0).toUpperCase()
-  const isAdmin  = email === 'a.hajali@ajnee.com'
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    void db.from('profiles').select('role').eq('id', user.id).single()
+      .then(({ data }) => setIsAdmin(data?.role === 'admin'))
+  }, [user])
 
   const totalReports = conversations.filter(c => !!localStorage.getItem(`report-${c.id}`)).length
 

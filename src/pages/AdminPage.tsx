@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { sbConversations, type DBConversation } from '../lib/supabaseConversations'
-import { supabase } from '../lib/supabase'
+import { supabase, db } from '../lib/supabase'
 import {
   sbWorkshops, sbCertificates, sbConsultations,
   type Workshop, type Certificate, type Consultation,
@@ -12,7 +12,6 @@ import {
   CheckCircle, Clock, XCircle, Send, Search, RefreshCw, ChevronDown, ChevronUp,
 } from 'lucide-react'
 
-const ADMIN_EMAIL = 'a.hajali@ajnee.com'
 
 interface AdminUser {
   id: string
@@ -78,7 +77,7 @@ const inp = 'w-full bg-white/4 border border-white/10 rounded-xl px-3.5 py-2.5 t
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { user, signOut } = useAuth()
-  const isAdmin = user?.email === ADMIN_EMAIL
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
 
   const [tab, setTab] = useState<AdminTab>('overview')
 
@@ -119,6 +118,13 @@ export default function AdminPage() {
   const [replyingId,  setReplyingId]  = useState<string | null>(null)
   const [replyText,   setReplyText]   = useState('')
   const [sendingReply, setSendingReply] = useState(false)
+
+  // ── Check admin role ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); return }
+    void db.from('profiles').select('role').eq('id', user.id).single()
+      .then(({ data }) => setIsAdmin(data?.role === 'admin'))
+  }, [user])
 
   // ── Loaders ─────────────────────────────────────────────────────────────────
   const loadUsers = () => {
@@ -255,6 +261,11 @@ export default function AdminPage() {
   if (!user) return (
     <div className="min-h-screen bg-black flex items-center justify-center text-white">
       <p className="text-gray-500 text-sm">يرجى تسجيل الدخول.</p>
+    </div>
+  )
+  if (isAdmin === null) return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <Loader2 size={24} className="text-red-500 animate-spin" />
     </div>
   )
   if (!isAdmin) return (
