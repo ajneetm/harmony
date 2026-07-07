@@ -587,50 +587,110 @@ export default function AdminPage() {
 
             {/* Form */}
             {wsForm && (
-              <div className="bg-[#0f0f0f] border border-red-600/25 rounded-2xl p-6 space-y-5">
-                <p className="font-semibold text-sm text-white">{editingWsId ? 'تعديل الدورة' : 'دورة جديدة'}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {([
-                    { key: 'title_ar',    label: 'الاسم بالعربي' },
-                    { key: 'title_en',    label: 'الاسم بالإنجليزي' },
-                    { key: 'category_ar', label: 'التصنيف بالعربي' },
-                    { key: 'category_en', label: 'التصنيف بالإنجليزي' },
-                    { key: 'duration_ar', label: 'المدة بالعربي' },
-                    { key: 'duration_en', label: 'المدة بالإنجليزي' },
-                    { key: 'image_url',   label: 'رابط الصورة' },
-                  ] as { key: keyof typeof wsForm; label: string }[]).map(f => (
-                    <Field key={f.key} label={f.label}>
-                      <input value={(wsForm as any)[f.key] ?? ''} placeholder={f.label}
-                        onChange={e => setWsForm(w => w ? { ...w, [f.key]: e.target.value } : w)}
-                        className={inp} />
-                    </Field>
-                  ))}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="الوصف بالعربي">
-                    <textarea value={wsForm.desc_ar ?? ''} rows={3}
-                      onChange={e => setWsForm(w => w ? { ...w, desc_ar: e.target.value } : w)}
-                      className={`${inp} resize-none`} />
-                  </Field>
-                  <Field label="الوصف بالإنجليزي">
-                    <textarea value={wsForm.desc_en ?? ''} rows={3}
-                      onChange={e => setWsForm(w => w ? { ...w, desc_en: e.target.value } : w)}
-                      className={`${inp} resize-none`} />
-                  </Field>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <input type="checkbox" id="ws-active" checked={wsForm.is_active}
-                    onChange={e => setWsForm(w => w ? { ...w, is_active: e.target.checked } : w)}
-                    className="accent-red-600 w-4 h-4 rounded" />
-                  <label htmlFor="ws-active" className="text-sm text-gray-300">دورة نشطة</label>
-                </div>
-                <div className="flex gap-3 justify-end pt-2 border-t border-white/6">
+              <div className="bg-[#0f0f0f] border border-red-600/25 rounded-2xl overflow-hidden">
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-white/6 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-red-600/20 border border-red-600/25 flex items-center justify-center">
+                      <BookOpen size={14} className="text-red-400" />
+                    </div>
+                    <p className="font-semibold text-white text-sm">{editingWsId ? 'تعديل الدورة' : 'دورة جديدة'}</p>
+                  </div>
                   <button onClick={() => { setWsForm(null); setEditingWsId(null) }}
-                    className="px-4 py-2 text-sm text-gray-500 hover:text-white transition">إلغاء</button>
-                  <button onClick={handleSaveWorkshop} disabled={savingWs || !wsForm.title_ar}
-                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-50">
-                    {savingWs ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}حفظ
+                    className="p-1.5 rounded-lg text-gray-600 hover:text-white hover:bg-white/5 transition">
+                    <X size={14} />
                   </button>
+                </div>
+
+                <div className="p-6 space-y-6">
+                  {/* Arabic | English columns */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {/* Arabic */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+                        <span className="text-xs font-bold text-red-400 bg-red-600/10 px-2 py-0.5 rounded-full">ع</span>
+                        <span className="text-xs text-gray-500">المحتوى بالعربية</span>
+                      </div>
+                      <Field label="الاسم">
+                        <input dir="rtl" autoComplete="off" value={wsForm.title_ar}
+                          placeholder="اسم الدورة بالعربية"
+                          onChange={e => setWsForm(w => w ? { ...w, title_ar: e.target.value } : w)}
+                          className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 transition" />
+                      </Field>
+                      <Field label="التصنيف">
+                        <input dir="rtl" autoComplete="off" value={wsForm.category_ar ?? ''}
+                          placeholder="مثال: تطوير الذات"
+                          onChange={e => setWsForm(w => w ? { ...w, category_ar: e.target.value } : w)}
+                          className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 transition" />
+                      </Field>
+                      <Field label="المدة">
+                        <input dir="rtl" autoComplete="off" value={wsForm.duration_ar ?? ''}
+                          placeholder="مثال: 4 ساعات"
+                          onChange={e => setWsForm(w => w ? { ...w, duration_ar: e.target.value } : w)}
+                          className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 transition" />
+                      </Field>
+                      <Field label="الوصف">
+                        <textarea dir="rtl" value={wsForm.desc_ar ?? ''} rows={3}
+                          placeholder="وصف الدورة بالعربية..."
+                          onChange={e => setWsForm(w => w ? { ...w, desc_ar: e.target.value } : w)}
+                          className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 transition resize-none" />
+                      </Field>
+                    </div>
+
+                    {/* English */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+                        <span className="text-xs font-bold text-blue-400 bg-blue-600/10 px-2 py-0.5 rounded-full">EN</span>
+                        <span className="text-xs text-gray-500">English Content</span>
+                      </div>
+                      <Field label="Title">
+                        <input dir="ltr" autoComplete="off" value={wsForm.title_en}
+                          placeholder="Course name in English"
+                          onChange={e => setWsForm(w => w ? { ...w, title_en: e.target.value } : w)}
+                          className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 transition" />
+                      </Field>
+                      <Field label="Category">
+                        <input dir="ltr" autoComplete="off" value={wsForm.category_en ?? ''}
+                          placeholder="e.g. Self Development"
+                          onChange={e => setWsForm(w => w ? { ...w, category_en: e.target.value } : w)}
+                          className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 transition" />
+                      </Field>
+                      <Field label="Duration">
+                        <input dir="ltr" autoComplete="off" value={wsForm.duration_en ?? ''}
+                          placeholder="e.g. 4 hours"
+                          onChange={e => setWsForm(w => w ? { ...w, duration_en: e.target.value } : w)}
+                          className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 transition" />
+                      </Field>
+                      <Field label="Description">
+                        <textarea dir="ltr" value={wsForm.desc_en ?? ''} rows={3}
+                          placeholder="Course description in English..."
+                          onChange={e => setWsForm(w => w ? { ...w, desc_en: e.target.value } : w)}
+                          className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 transition resize-none" />
+                      </Field>
+                    </div>
+                  </div>
+
+                  {/* Image URL */}
+                  <Field label="رابط الصورة">
+                    <input dir="ltr" autoComplete="off" value={wsForm.image_url ?? ''}
+                      placeholder="https://..."
+                      onChange={e => setWsForm(w => w ? { ...w, image_url: e.target.value } : w)}
+                      className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 transition" />
+                  </Field>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-3 border-t border-white/6">
+                    <div className="flex items-center gap-2.5">
+                      <input type="checkbox" id="ws-active" checked={wsForm.is_active}
+                        onChange={e => setWsForm(w => w ? { ...w, is_active: e.target.checked } : w)}
+                        className="accent-red-600 w-4 h-4 rounded" />
+                      <label htmlFor="ws-active" className="text-sm text-gray-300">دورة نشطة</label>
+                    </div>
+                    <button onClick={handleSaveWorkshop} disabled={savingWs || !wsForm.title_ar}
+                      className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-50">
+                      {savingWs ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}حفظ
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
