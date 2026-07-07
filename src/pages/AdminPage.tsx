@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { sbConversations, type DBConversation } from '../lib/supabaseConversations'
-import { supabase, db } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import {
   sbWorkshops, sbCertificates, sbConsultations,
   type Workshop, type Certificate, type Consultation,
@@ -122,8 +122,7 @@ export default function AdminPage() {
   // ── Check admin role ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!user) { setIsAdmin(false); return }
-    void db.from('profiles').select('role').eq('id', user.id).single()
-      .then(({ data }) => setIsAdmin(data?.role === 'admin'))
+    void supabase.rpc('is_admin').then(({ data }) => setIsAdmin(data === true))
   }, [user])
 
   // ── Loaders ─────────────────────────────────────────────────────────────────

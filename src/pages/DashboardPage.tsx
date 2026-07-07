@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useAppState, useConversations } from '../store'
-import { db } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { getFontCSSProperties } from '../utils/fonts'
 import RadarChart from '../components/RadarChart'
 import type { ReportChartData } from '../utils/reportService'
@@ -204,8 +204,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!user) return
-    void db.from('profiles').select('role').eq('id', user.id).single()
-      .then(({ data }) => setIsAdmin(data?.role === 'admin'))
+    void supabase.rpc('is_admin').then(({ data }) => setIsAdmin(data === true))
   }, [user])
 
   const totalReports = conversations.filter(c => !!localStorage.getItem(`report-${c.id}`)).length
