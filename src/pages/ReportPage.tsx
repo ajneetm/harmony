@@ -1140,9 +1140,6 @@ Write a focused, practical report divided into:
                   <div className="rounded-2xl overflow-hidden" style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }}>
                     <div className="px-4 pt-3 pb-2 flex items-baseline justify-between gap-2">
                       <p className="text-xs font-semibold text-gray-400">{isArabic ? 'الوظائف التسع' : 'Nine Functions'}</p>
-                      <p className="text-[10px] text-gray-600" dir="ltr">
-                        {isArabic ? 'الكفاءة = (متوسط − 1) ÷ 4 × 100' : 'Efficiency = (avg − 1) ÷ 4 × 100'}
-                      </p>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[520px]">
