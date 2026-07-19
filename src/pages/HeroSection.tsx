@@ -139,7 +139,7 @@ export default function HeroSection() {
       }`}>
 
         {/* ── Desktop Navbar (xl+) ── */}
-        <div className="hidden xl:flex items-center h-16 max-w-[1440px] mx-auto px-8 gap-4" dir={isAr ? 'rtl' : 'ltr'}>
+        <div className="hidden lg:flex items-center h-16 max-w-[1440px] mx-auto px-8 gap-4" dir={isAr ? 'rtl' : 'ltr'}>
           {/* Nav items — first in DOM = appears at start side (right in AR, left in EN) */}
           <div className="flex-1 flex items-center justify-start gap-1">
             {menuItems.map(item => (
@@ -168,7 +168,7 @@ export default function HeroSection() {
 
         {/* ── Mobile Navbar (<xl) ── */}
         <div
-          className="flex xl:hidden items-center h-14 px-4 gap-2"
+          className="flex lg:hidden items-center h-14 px-4 gap-2"
           dir="ltr"
         >
           {/* Start side: Hamburger + User */}
@@ -196,7 +196,7 @@ export default function HeroSection() {
 
       {/* ── Mobile slide-down menu ── */}
       {menuOpen && (
-        <div className="xl:hidden fixed inset-0 z-[90]" onClick={() => setMenuOpen(false)}>
+        <div className="lg:hidden fixed inset-0 z-[90]" onClick={() => setMenuOpen(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div
             className="absolute top-[56px] left-0 right-0 bg-[#0f0f0f] border-b border-red-600/20 shadow-2xl"
@@ -224,7 +224,7 @@ export default function HeroSection() {
 
       {/* ════════════════════ MOBILE MAIN (< xl) ════════════════════ */}
       <main
-        className="xl:hidden h-full flex flex-col items-center justify-center px-6 pt-16 pb-6 overflow-hidden"
+        className="lg:hidden h-full flex flex-col items-center justify-center px-6 pt-16 pb-6 overflow-hidden"
         dir={isAr ? 'rtl' : 'ltr'}
       >
         <div className="max-w-md w-full flex flex-col items-center text-center h-full justify-between">
@@ -285,7 +285,7 @@ export default function HeroSection() {
       </main>
 
       {/* ════════════════════ DESKTOP MAIN (xl+) ════════════════════ */}
-      <main className="hidden xl:flex h-full pt-16" dir="ltr">
+      <main className="hidden lg:flex h-full pt-16" dir="ltr">
         <div className={`w-full max-w-[1440px] mx-auto px-8 flex h-full ${!isAr ? 'flex-row-reverse' : ''}`}>
 
           {/* Faces image — always left */}
