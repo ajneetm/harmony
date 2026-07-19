@@ -18,9 +18,12 @@ interface AdminUser {
   email: string
   name: string | null
   role: string
+  doctor_email: string | null
   created_at: string
   last_sign_in_at: string | null
 }
+
+const AJNEE_API = (import.meta.env.VITE_AJNEE_API_URL as string | undefined) ?? 'https://www.ajnee.com'
 
 type AdminTab = 'overview' | 'users' | 'conversations' | 'workshops' | 'certificates' | 'consultations'
 
@@ -118,6 +121,11 @@ export default function AdminPage() {
   const [replyingId,  setReplyingId]  = useState<string | null>(null)
   const [replyText,   setReplyText]   = useState('')
   const [sendingReply, setSendingReply] = useState(false)
+
+  // invite
+  const [inviteForm, setInviteForm] = useState<{ email: string; name: string } | null>(null)
+  const [inviting,   setInviting]   = useState(false)
+  const [inviteMsg,  setInviteMsg]  = useState<{ ok: boolean; text: string } | null>(null)
 
   // ── Check admin role ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -254,6 +262,33 @@ export default function AdminPage() {
       await sbConsultations.close(id)
       setConsultations(c => c.map(x => x.id === id ? { ...x, status: 'closed' } : x))
     } catch (e) { console.error(e) }
+  }
+
+  const handleInvite = async () => {
+    if (!inviteForm?.email) return
+    setInviting(true); setInviteMsg(null)
+    try {
+      const session = (await supabase.auth.getSession()).data.session
+      const res = await fetch(`${AJNEE_API}/api/harmony/invite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({
+          email: inviteForm.email.trim(),
+          name: inviteForm.name.trim() || undefined,
+          doctor_email: user?.email,  // automatically set to current admin's email
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'فشل الإرسال')
+      setInviteMsg({ ok: true, text: `تم إرسال الدعوة إلى ${inviteForm.email}` })
+      setInviteForm(null)
+      loadUsers()
+    } catch (e: any) {
+      setInviteMsg({ ok: false, text: e.message })
+    } finally { setInviting(false) }
   }
 
   // ── Guards ────────────────────────────────────────────────────────────────────
@@ -409,10 +444,73 @@ export default function AdminPage() {
                 <h1 className="text-xl font-bold">المستخدمون</h1>
                 <p className="text-sm text-gray-500 mt-0.5">{users.length} مستخدم مسجّل</p>
               </div>
-              <button onClick={loadUsers} className="flex items-center gap-2 px-3.5 py-2 text-sm text-gray-400 border border-white/10 rounded-xl hover:bg-white/5 transition">
-                <RefreshCw size={13} />تحديث
-              </button>
+              <div className="flex gap-2">
+                <button onClick={loadUsers} className="flex items-center gap-2 px-3.5 py-2 text-sm text-gray-400 border border-white/10 rounded-xl hover:bg-white/5 transition">
+                  <RefreshCw size={13} />تحديث
+                </button>
+                <button
+                  onClick={() => { setInviteForm({ email: '', name: '' }); setInviteMsg(null) }}
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
+                  <Plus size={14} />دعوة عضو
+                </button>
+              </div>
             </div>
+
+            {/* Invite feedback */}
+            {inviteMsg && (
+              <div className={`rounded-xl px-4 py-3 text-sm flex items-center gap-2 ${
+                inviteMsg.ok
+                  ? 'bg-green-950/30 border border-green-600/25 text-green-400'
+                  : 'bg-red-950/30 border border-red-600/25 text-red-400'
+              }`}>
+                {inviteMsg.ok ? <CheckCircle size={14} /> : <X size={14} />}
+                {inviteMsg.text}
+              </div>
+            )}
+
+            {/* Invite form */}
+            {inviteForm && (
+              <div className="bg-[#0f0f0f] border border-red-600/25 rounded-2xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-white/6 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-red-600/20 border border-red-600/25 flex items-center justify-center">
+                      <Plus size={14} className="text-red-400" />
+                    </div>
+                    <p className="font-semibold text-white text-sm">دعوة عضو جديد</p>
+                  </div>
+                  <button onClick={() => { setInviteForm(null); setInviteMsg(null) }}
+                    className="p-1.5 rounded-lg text-gray-600 hover:text-white hover:bg-white/5 transition">
+                    <X size={14} />
+                  </button>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="البريد الإلكتروني *">
+                      <input dir="ltr" type="email" autoComplete="off"
+                        value={inviteForm.email}
+                        placeholder="user@example.com"
+                        onChange={e => setInviteForm(f => f ? { ...f, email: e.target.value } : f)}
+                        className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 transition" />
+                    </Field>
+                    <Field label="الاسم (اختياري)">
+                      <input dir="rtl" autoComplete="off"
+                        value={inviteForm.name}
+                        placeholder="الاسم الكامل"
+                        onChange={e => setInviteForm(f => f ? { ...f, name: e.target.value } : f)}
+                        className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 transition" />
+                    </Field>
+                  </div>
+                  <p className="text-xs text-gray-600">سيتلقى العضو بريداً إلكترونياً لإعداد كلمة المرور والدخول إلى هارموني. سيُسجَّل حسابك كالطبيب المسؤول عنه.</p>
+                  <div className="flex justify-end pt-2 border-t border-white/6">
+                    <button onClick={handleInvite} disabled={inviting || !inviteForm.email}
+                      className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-50">
+                      {inviting ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                      إرسال الدعوة
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {usersErr && (
               <div className="bg-red-950/30 border border-red-600/25 rounded-xl px-4 py-3 text-sm text-red-400">
@@ -431,9 +529,10 @@ export default function AdminPage() {
             {loadingUsers ? <Spinner /> : (
               <div className="bg-[#0f0f0f] border border-white/6 rounded-2xl overflow-hidden">
                 {/* Table head */}
-                <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-white/6 text-[11px] text-gray-600 uppercase tracking-wider">
+                <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-white/6 text-[11px] text-gray-600 uppercase tracking-wider">
                   <span>المستخدم</span>
                   <span>الدور</span>
+                  <span>الدكتور</span>
                   <span>المحادثات</span>
                   <span>تاريخ الانضمام</span>
                   <span></span>
@@ -445,7 +544,7 @@ export default function AdminPage() {
                     const rs = roleStyle(u.role)
                     return (
                       <div key={u.id}
-                        className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-5 py-3.5 hover:bg-white/2 transition group">
+                        className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 items-center px-5 py-3.5 hover:bg-white/2 transition">
                         {/* User */}
                         <div className="flex items-center gap-3 min-w-0 cursor-pointer"
                           onClick={() => { setConvFilter(u.id); setTab('conversations') }}>
@@ -463,6 +562,10 @@ export default function AdminPage() {
                           className={`text-[11px] px-2.5 py-1 rounded-full border font-medium transition hover:opacity-80 flex-shrink-0 ${rs.color}`}>
                           {updatingRole === u.id ? '...' : rs.label}
                         </button>
+                        {/* Doctor email */}
+                        <p className="text-xs text-gray-600 flex-shrink-0 truncate max-w-[140px]" title={u.doctor_email ?? ''}>
+                          {u.doctor_email ?? <span className="text-gray-800">—</span>}
+                        </p>
                         {/* Stats */}
                         <p className="text-xs text-gray-500 text-center flex-shrink-0">
                           {convCount} <span className="text-gray-700">·</span> {reportCount} تقرير
@@ -471,7 +574,8 @@ export default function AdminPage() {
                         <p className="text-xs text-gray-700 flex-shrink-0">{fmt(u.created_at)}</p>
                         {/* Delete */}
                         <button onClick={() => handleDeleteUser(u)}
-                          className="p-1.5 rounded-lg text-gray-700 hover:text-red-400 hover:bg-red-600/10 transition opacity-0 group-hover:opacity-100 flex-shrink-0">
+                          title="حذف المستخدم"
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-600/10 transition flex-shrink-0">
                           <Trash2 size={13} />
                         </button>
                       </div>
