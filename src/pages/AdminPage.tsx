@@ -267,28 +267,45 @@ export default function AdminPage() {
   const handleInvite = async () => {
     if (!inviteForm?.email) return
     setInviting(true); setInviteMsg(null)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
     try {
       const session = (await supabase.auth.getSession()).data.session
-      const res = await fetch(`${AJNEE_API}/api/harmony/invite`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token ?? ''}`,
-        },
-        body: JSON.stringify({
-          email: inviteForm.email.trim(),
-          name: inviteForm.name.trim() || undefined,
-          doctor_email: user?.email,  // automatically set to current admin's email
-        }),
-      })
-      const json = await res.json()
+      let res: Response
+      try {
+        res = await fetch(`${AJNEE_API}/api/harmony/invite`, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token ?? ''}`,
+          },
+          body: JSON.stringify({
+            email: inviteForm.email.trim(),
+            name: inviteForm.name.trim() || undefined,
+            doctor_email: user?.email,  // automatically set to current admin's email
+          }),
+        })
+      } catch (fetchErr: any) {
+        throw new Error(
+          fetchErr.name === 'AbortError'
+            ? 'انتهت مهلة الاتصال بلوحة أجني — جرّب تاني بعد شوي'
+            : 'تعذّر الوصول للوحة أجني (قد تكون غير متاحة حالياً) — جرّب تاني بعد شوي'
+        )
+      }
+      let json: any
+      try { json = await res.json() }
+      catch { throw new Error(`استجابة غير متوقعة من لوحة أجني (${res.status})`) }
       if (!res.ok) throw new Error(json.error ?? 'فشل الإرسال')
       setInviteMsg({ ok: true, text: `تم إرسال الدعوة إلى ${inviteForm.email}` })
       setInviteForm(null)
       loadUsers()
     } catch (e: any) {
       setInviteMsg({ ok: false, text: e.message })
-    } finally { setInviting(false) }
+    } finally {
+      clearTimeout(timeout)
+      setInviting(false)
+    }
   }
 
   // ── Guards ────────────────────────────────────────────────────────────────────
