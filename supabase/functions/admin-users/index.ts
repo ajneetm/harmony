@@ -22,13 +22,13 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userErr } = await adminClient.auth.getUser(userToken)
     if (userErr || !user) throw new Error('Unauthorized')
 
-    const { data: profile } = await adminClient
-      .schema('harmony')
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    if (profile?.role !== 'admin') throw new Error('Forbidden')
+    const { data: adminRow } = await adminClient
+      .schema('shared')
+      .from('admins')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (!adminRow) throw new Error('Forbidden')
 
     // List all users
     const { data, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
