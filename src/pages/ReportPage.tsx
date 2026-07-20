@@ -14,11 +14,9 @@ import misbaraLogo from '../components/icons/misbara_original_logo.svg'
 import headerSvg from '../components/icons/header.svg'
 import footerSvg from '../components/icons/footer.svg'
 import { getFontCSSProperties } from '../utils/fonts'
-import { db } from '../lib/supabase'
+import { db, supabase } from '../lib/supabase'
 import { generateChartData } from '../utils/reportService'
 import { useAuth } from '../context/AuthContext'
-
-const ADMIN_EMAIL = 'a.hajali@ajnee.com'
 
 const FN_NAMES_AR = ['الإدراك', 'الجاهزية', 'النية', 'الفعل', 'التفاعل', 'الناتج', 'الاستقبال', 'التطور', 'التشكيل']
 const FN_NAMES_EN = ['Perception', 'Readiness', 'Intention', 'Action', 'Interaction', 'Outcome', 'Reception', 'Evolution', 'Formation']
@@ -318,12 +316,12 @@ Write a focused, practical report divided into:
 
   useEffect(() => {
     if (!user) return
-    if (user.email === ADMIN_EMAIL) { setUserRole('trainer'); return }
     db.from('profiles').select('role').eq('id', user.id).single()
       .then(({ data }) => { if (data?.role) setUserRole(data.role) })
+    supabase.rpc('is_admin').then(({ data }) => { if (data === true) setUserRole('admin') })
   }, [user])
 
-  const isTrainer = userRole === 'trainer' || userRole === 'admin' || user?.email === ADMIN_EMAIL
+  const isTrainer = userRole === 'trainer' || userRole === 'admin'
 
   const handleDownloadPDF = async () => {
     if (!reportData) return

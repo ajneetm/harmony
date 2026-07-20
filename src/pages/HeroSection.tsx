@@ -4,9 +4,7 @@ import { getFontCSSProperties } from '../utils/fonts'
 import { useAppState } from '../store'
 import { translations } from '../utils/translations'
 import { useAuth } from '../context/AuthContext'
-import { db } from '../lib/supabase'
-
-const ADMIN_EMAIL = 'a.hajali@ajnee.com'
+import { db, supabase } from '../lib/supabase'
 
 export default function HeroSection() {
   const { language, setLanguage } = useAppState()
@@ -78,9 +76,9 @@ export default function HeroSection() {
 
   useEffect(() => {
     if (!user) { setIsTrainer(false); return }
-    if (user.email === ADMIN_EMAIL) { setIsTrainer(true); return }
     db.from('profiles').select('role').eq('id', user.id).single()
       .then(({ data }) => setIsTrainer(data?.role === 'trainer' || data?.role === 'admin'))
+    supabase.rpc('is_admin').then(({ data }) => { if (data === true) setIsTrainer(true) })
   }, [user])
 
   const handleChatRedirect = () => {

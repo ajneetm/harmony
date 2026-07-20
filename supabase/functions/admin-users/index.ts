@@ -1,7 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js'
 
-const ADMIN_EMAIL = 'a.hajali@ajnee.com'
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -23,7 +21,14 @@ Deno.serve(async (req) => {
     // Verify identity
     const { data: { user }, error: userErr } = await adminClient.auth.getUser(userToken)
     if (userErr || !user) throw new Error('Unauthorized')
-    if (user.email !== ADMIN_EMAIL) throw new Error('Forbidden')
+
+    const { data: profile } = await adminClient
+      .schema('harmony')
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    if (profile?.role !== 'admin') throw new Error('Forbidden')
 
     // List all users
     const { data, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
