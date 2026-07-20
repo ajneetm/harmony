@@ -21,7 +21,6 @@ export default function HeroSection() {
   const t = translations[language]
   const hero = t.hero
   const isAr = language === 'ar'
-  const qMark = isAr ? '؟' : '?'
 
   const menuItems = [
     { id: 'who',      title: hero.whoWeAre,      content: hero.whoWeAreContent },
@@ -235,7 +234,7 @@ export default function HeroSection() {
           {/* Active tab content */}
           <div className="flex flex-col items-center space-y-2 flex-shrink-0 px-2 mt-4">
             <h3 className="text-xl font-bold text-[#FFBD00]">
-              {activeTab.title}{qMark}
+              {activeTab.title}
             </h3>
             <p className="text-[13px] font-light text-gray-300 leading-relaxed max-w-[300px] line-clamp-3">
               {activeTab.content}
@@ -305,7 +304,7 @@ export default function HeroSection() {
             {/* Active tab title + content */}
             <div className={`flex flex-col gap-2 w-full ${isAr ? 'text-right' : 'text-left'}`}>
               <h2 className="text-2xl font-bold text-[#FFBD00]">
-                {activeTab.title}{qMark}
+                {activeTab.title}
               </h2>
               <p className="text-base text-gray-300 leading-relaxed">
                 {activeTab.content}
