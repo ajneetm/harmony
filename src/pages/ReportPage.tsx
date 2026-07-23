@@ -446,7 +446,7 @@ Write a focused, practical report divided into:
           if (ctx) {
             ctx.drawImage(canvas, 0, sourceYPx, imgWidthPx, sliceCanvas.height, 0, 0, imgWidthPx, sliceCanvas.height)
           }
-          pdf.addImage(sliceCanvas.toDataURL('image/png', 0.92), 'PNG', 0, 0, pdfWidth, sliceMm)
+          pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, pdfWidth, sliceMm)
 
           yMm += sliceMm
           localCount++
@@ -574,7 +574,7 @@ Write a focused, practical report divided into:
           sliceCanvas.height = Math.max(1, sliceHeightPx)
           const ctx = sliceCanvas.getContext('2d')
           if (ctx) ctx.drawImage(canvas, 0, sourceYPx, imgWidthPx, sliceCanvas.height, 0, 0, imgWidthPx, sliceCanvas.height)
-          pdf.addImage(sliceCanvas.toDataURL('image/png', 0.92), 'PNG', 0, 0, pdfWidth, sliceMm)
+          pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, pdfWidth, sliceMm)
           yMm += sliceMm
           pageCount++
         }
