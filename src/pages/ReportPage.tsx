@@ -989,22 +989,7 @@ Write a focused, practical report divided into:
                       const re = chartData.radarEmotional
                       const rb = chartData.radarBehavioral
 
-                      const fnCoherence = (c: number, e: number, b: number) =>
-                        Math.max(0, Math.round(100 - (Math.max(c, e, b) - Math.min(c, e, b)) * 15))
-
-                      const worldInternalCoherence = (start: number) => {
-                        // Compare average scores of the 3 functions within the world
-                        const fnAvgs = [0, 1, 2].map(j =>
-                          (rc[start + j].value + re[start + j].value + rb[start + j].value) / 3
-                        )
-                        const gap = Math.max(...fnAvgs) - Math.min(...fnAvgs)
-                        return Math.max(0, Math.round(100 - gap * 15))
-                      }
-
-                      const innerCoh  = worldInternalCoherence(0)
-                      const physCoh   = worldInternalCoherence(3)
-                      const existCoh  = worldInternalCoherence(6)
-
+                      // Official World Efficiency per spec: (sum of world's 9 answers / 45) × 100
                       const worlds = [
                         {
                           title: chartData.worldLabels.inner,
@@ -1013,7 +998,7 @@ Write a focused, practical report divided into:
                           cognitive:  rc.slice(0, 3).map(d => d.value),
                           emotional:  re.slice(0, 3).map(d => d.value),
                           behavioral: rb.slice(0, 3).map(d => d.value),
-                          coherence:  innerCoh,
+                          coherence:  chartData.worldMentalPct ?? 0,
                         },
                         {
                           title: chartData.worldLabels.physical,
@@ -1022,7 +1007,7 @@ Write a focused, practical report divided into:
                           cognitive:  rc.slice(3, 6).map(d => d.value),
                           emotional:  re.slice(3, 6).map(d => d.value),
                           behavioral: rb.slice(3, 6).map(d => d.value),
-                          coherence:  physCoh,
+                          coherence:  chartData.worldEmotionalPct ?? 0,
                         },
                         {
                           title: chartData.worldLabels.existential,
@@ -1031,7 +1016,7 @@ Write a focused, practical report divided into:
                           cognitive:  rc.slice(6, 9).map(d => d.value),
                           emotional:  re.slice(6, 9).map(d => d.value),
                           behavioral: rb.slice(6, 9).map(d => d.value),
-                          coherence:  existCoh,
+                          coherence:  chartData.worldExistentialPct ?? 0,
                         },
                       ]
 
@@ -1054,15 +1039,10 @@ Write a focused, practical report divided into:
               const rc = chartData.radarCognitive
               const re = chartData.radarEmotional
               const rb = chartData.radarBehavioral
+              // Per-function driver balance, used only as context for the drill-down AI analysis
+              // (not an official spec metric — kept out of the visible summary tables)
               const fnCoh = (c: number, e: number, b: number) =>
                 Math.max(0, Math.round(100 - (Math.max(c, e, b) - Math.min(c, e, b)) * 15))
-              const worldCoh = (start: number) => {
-                const fnAvgs = [0, 1, 2].map(j =>
-                  (rc[start + j].value + re[start + j].value + rb[start + j].value) / 3
-                )
-                const gap = Math.max(...fnAvgs) - Math.min(...fnAvgs)
-                return Math.max(0, Math.round(100 - gap * 15))
-              }
               const fnNames = isArabic ? FN_NAMES_AR : FN_NAMES_EN
               const thCls = 'py-2 px-3 text-xs font-semibold text-gray-400 border-b border-white/10'
               const tdCls = 'py-2 px-3 text-sm border-b border-white/5'
@@ -1111,14 +1091,13 @@ Write a focused, practical report divided into:
                           <tr>
                             <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'العالم' : 'World'}</th>
                             <th className={`${thCls} text-center`}>{isArabic ? 'الكفاءة' : 'Efficiency'}</th>
-                            <th className={`${thCls} text-center`}>{isArabic ? 'الانسجام' : 'Harmony'}</th>
                           </tr>
                         </thead>
                         <tbody>
                           {[
-                            { name: chartData.worldLabels?.inner       ?? (isArabic ? 'العالم الداخلي'   : 'Inner World'),       pct: chartData.worldMentalPct      ?? 0, coh: worldCoh(0), color: '#22c55e' },
-                            { name: chartData.worldLabels?.physical    ?? (isArabic ? 'العالم الخارجي'   : 'Physical World'),    pct: chartData.worldEmotionalPct   ?? 0, coh: worldCoh(3), color: '#ae1f23' },
-                            { name: chartData.worldLabels?.existential ?? (isArabic ? 'العالم الوجودي'   : 'Existential World'), pct: chartData.worldExistentialPct ?? 0, coh: worldCoh(6), color: '#3b82f6' },
+                            { name: chartData.worldLabels?.inner       ?? (isArabic ? 'العالم الداخلي'   : 'Inner World'),       pct: chartData.worldMentalPct      ?? 0, color: '#22c55e' },
+                            { name: chartData.worldLabels?.physical    ?? (isArabic ? 'العالم الخارجي'   : 'Physical World'),    pct: chartData.worldEmotionalPct   ?? 0, color: '#ae1f23' },
+                            { name: chartData.worldLabels?.existential ?? (isArabic ? 'العالم الوجودي'   : 'Existential World'), pct: chartData.worldExistentialPct ?? 0, color: '#3b82f6' },
                           ].map((row, i) => (
                             <tr key={i}>
                               <td className={tdCls}>
@@ -1126,7 +1105,6 @@ Write a focused, practical report divided into:
                                 {row.name}
                               </td>
                               <td className={`${tdCls} text-center font-bold text-white`}>{row.pct}%</td>
-                              <td className={`${tdCls} text-center font-bold`} style={{ color: row.color }}>{row.coh}%</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1149,7 +1127,6 @@ Write a focused, practical report divided into:
                             <th className={`${thCls} text-center`} style={{ color: '#3b82f6' }}>{isArabic ? 'سلوكي' : 'Beh.'}</th>
                             <th className={`${thCls} text-center`}>{isArabic ? 'النسبة' : 'Avg.'}</th>
                             <th className={`${thCls} text-center`}>{isArabic ? 'الكفاءة' : 'Eff.'}</th>
-                            <th className={`${thCls} text-center`}>{isArabic ? 'الانسجام' : 'Harm.'}</th>
                             <th className={`${thCls} text-center w-10`} />
                           </tr>
                         </thead>
@@ -1163,7 +1140,6 @@ Write a focused, practical report divided into:
                             const eff = Math.round((avgRaw - 1) / 4 * 100)
                             const effColor = eff >= 75 ? '#22c55e' : eff >= 50 ? '#f59e0b' : '#ef4444'
                             const coh = fnCoh(c, e, b)
-                            const cohColor = coh >= 75 ? '#22c55e' : coh >= 50 ? '#f59e0b' : '#ef4444'
                             return (
                               <tr key={i} className="hover:bg-white/2 transition">
                                 <td className={`${tdCls} font-medium`}>{name}</td>
@@ -1172,7 +1148,6 @@ Write a focused, practical report divided into:
                                 <td className={`${tdCls} text-center`} style={{ color: '#3b82f6' }}>{b.toFixed(1)}</td>
                                 <td className={`${tdCls} text-center text-gray-300`}>{pct}%</td>
                                 <td className={`${tdCls} text-center font-semibold`} style={{ color: effColor }}>{eff}%</td>
-                                <td className={`${tdCls} text-center font-bold`} style={{ color: cohColor }}>{coh}%</td>
                                 <td className={`${tdCls} text-center`}>
                                   <button
                                     onClick={() => setDrillDown({ functionName: name, cogScore: c, emoScore: e, behScore: b, coherence: coh })}
