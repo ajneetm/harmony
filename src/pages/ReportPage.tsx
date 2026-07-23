@@ -1191,7 +1191,7 @@ Write a focused, practical report divided into:
                     </div>
                   </div>
 
-                  {/* Table 4 — 12 Indicators */}
+                  {/* Table 4 — 27 Indicators */}
                   {(() => {
                     const drivers = [
                       { name: isArabic ? 'الذهني'   : 'Cognitive',  pct: chartData.mental.percentage },
@@ -1213,60 +1213,109 @@ Write a focused, practical report divided into:
                     const allWorldsEqual  = wlds.every(w => w.pct === wlds[0].pct)
                     const allFnsEqual     = chartData.allElements.every(f => f.score === chartData.allElements[0].score)
                     const tied = isArabic ? 'متساوية' : 'Equal'
-                    const driverGap   = Math.max(...drivers.map(d => d.pct)) - Math.min(...drivers.map(d => d.pct))
                     const ap          = chartData.actionPower ?? Math.round(chartData.overall * chartData.harmony / 100)
 
+                    // Function efficiency per function, in fixed (unsorted) order
+                    const fnEffs = fnNames.map((name, i) => {
+                      const avgRaw = ((rc[i]?.value ?? 0) + (re[i]?.value ?? 0) + (rb[i]?.value ?? 0)) / 3
+                      return { name, eff: Math.round((avgRaw - 1) / 4 * 100) }
+                    })
+
+                    const DESC = isArabic ? {
+                      overall:       'يقيس المستوى العام للأداء في جميع وظائف ومحركات المنظومة قبل احتساب أثر الانسجام.',
+                      harmony:       'يقيس درجة التوافق بين المحركات والعوالم والوظائف داخل المنظومة.',
+                      perfEff:       'تقيس مقدار الأداء الذي يتحول فعليًا إلى نتائج بعد احتساب أثر الانسجام.',
+                      driverHarmony: 'يكشف مدى التوازن بين المحركات الذهنية والمشاعرية والسلوكية.',
+                      worldHarmony:  'يكشف مدى التوازن بين العالم الداخلي والخارجي والوجودي.',
+                      fnHarmony:     'يكشف مدى تقارب مستويات أداء الوظائف التسع.',
+                      worldEff:      'تقيس مستوى أداء العالم بصورة مستقلة.',
+                      strongWorld:   'يمثل العالم الأعلى أداءً في المنظومة.',
+                      weakWorld:     'يمثل العالم الأقل أداءً ويحتاج إلى تطوير أكبر.',
+                      fnEff:         'تقيس مستوى أداء الوظيفة اعتمادًا على متوسط محركاتها الثلاثة.',
+                      strongFn:      'تمثل الوظيفة الأعلى أداءً.',
+                      weakFn:        'تمثل الوظيفة الأقل أداءً.',
+                      driverPct:     'تقيس حضور كل محرك داخل المنظومة.',
+                      domDriver:     'يمثل المحرك الأكثر تأثيرًا في توجيه الأفعال.',
+                      weakDriver:    'يمثل المحرك الأقل تأثيرًا ويحتاج إلى دعم لتحقيق توازن أفضل.',
+                    } : {
+                      overall:       'Measures the overall performance level across all functions and drivers before factoring in harmony.',
+                      harmony:       'Measures the degree of alignment between the drivers, worlds, and functions within the system.',
+                      perfEff:       'Measures how much of the performance actually converts into results after factoring in harmony.',
+                      driverHarmony: 'Reveals the balance between the mental, emotional, and behavioral drivers.',
+                      worldHarmony:  'Reveals the balance between the inner, physical, and existential worlds.',
+                      fnHarmony:     'Reveals how close the performance levels of the nine functions are to each other.',
+                      worldEff:      'Measures the performance level of the world independently.',
+                      strongWorld:   'The highest-performing world in the system.',
+                      weakWorld:     'The lowest-performing world, needing the most development.',
+                      fnEff:         "Measures the function's performance based on the average of its three drivers.",
+                      strongFn:      'The highest-performing function.',
+                      weakFn:        'The lowest-performing function.',
+                      driverPct:     "Measures each driver's presence within the system.",
+                      domDriver:     'The driver with the greatest influence on directing actions.',
+                      weakDriver:    'The least influential driver, needing support for better balance.',
+                    }
+
                     const rows = isArabic ? [
-                      { num: 1,  label: 'كفاءة الأداء',                        value: `${ap}%` },
-                      { num: 2,  label: 'المحرك الغالب',                       value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 3,  label: 'الأداء العام',                        value: `${chartData.overall}%` },
-                      { num: 4,  label: 'الانسجام العام',                      value: `${chartData.harmony}%` },
-                      { num: 5,  label: 'انسجام المحركات',                     value: `${chartData.driverHarmony ?? '-'}%` },
-                      { num: 6,  label: 'انسجام العوالم',                      value: `${chartData.worldHarmony ?? '-'}%` },
-                      { num: 6.5, label: 'انسجام الوظائف',                     value: `${chartData.fnHarmony ?? '-'}%` },
-                      { num: 7,  label: 'المحرك الغالب',                       value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 8,  label: 'أقوى عالم',                          value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)` },
-                      { num: 9,  label: 'العالم الأكثر حاجة إلى التطوير',       value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)` },
-                      { num: 10, label: 'المحرك الأقل حضورًا',                 value: allDriversEqual ? tied : `${weakDriver.name} (${weakDriver.pct}%)` },
-                      { num: 11, label: 'أقوى وظيفة',                         value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${(strongFn?.score ?? 0).toFixed(1)})` },
-                      { num: 12, label: 'الوظيفة الأكثر حاجة إلى التطوير',      value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${(weakFn?.score ?? 0).toFixed(1)})` },
-                      { num: 13, label: 'أكبر فجوة بين المحركات',              value: `${driverGap}%` },
+                      { label: 'الأداء العام',                       value: `${chartData.overall}%`, desc: DESC.overall },
+                      { label: 'الانسجام العام',                     value: `${chartData.harmony}%`, desc: DESC.harmony },
+                      { label: 'كفاءة الأداء',                       value: `${ap}%`, desc: DESC.perfEff },
+                      { label: 'انسجام المحركات',                    value: `${chartData.driverHarmony ?? '-'}%`, desc: DESC.driverHarmony },
+                      { label: 'انسجام العوالم',                     value: `${chartData.worldHarmony ?? '-'}%`, desc: DESC.worldHarmony },
+                      { label: 'انسجام الوظائف',                     value: `${chartData.fnHarmony ?? '-'}%`, desc: DESC.fnHarmony },
+                      { label: 'كفاءة العالم الداخلي',                value: `${wlds[0].pct}%`, desc: DESC.worldEff },
+                      { label: 'كفاءة العالم الخارجي',                value: `${wlds[1].pct}%`, desc: DESC.worldEff },
+                      { label: 'كفاءة العالم الوجودي',                value: `${wlds[2].pct}%`, desc: DESC.worldEff },
+                      { label: 'أقوى عالم',                          value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)`, desc: DESC.strongWorld },
+                      { label: 'العالم الأكثر حاجة إلى التطوير',       value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)`, desc: DESC.weakWorld },
+                      ...fnEffs.map(f => ({ label: `كفاءة ${f.name}`, value: `${f.eff}%`, desc: DESC.fnEff })),
+                      { label: 'أقوى وظيفة',                         value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${(strongFn?.score ?? 0).toFixed(1)})`, desc: DESC.strongFn },
+                      { label: 'الوظيفة الأكثر حاجة إلى التطوير',      value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${(weakFn?.score ?? 0).toFixed(1)})`, desc: DESC.weakFn },
+                      { label: 'نسبة المحرك الذهني',                  value: `${drivers[0].pct}%`, desc: DESC.driverPct },
+                      { label: 'نسبة المحرك المشاعري',                value: `${drivers[1].pct}%`, desc: DESC.driverPct },
+                      { label: 'نسبة المحرك السلوكي',                 value: `${drivers[2].pct}%`, desc: DESC.driverPct },
+                      { label: 'المحرك الغالب',                       value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)`, desc: DESC.domDriver },
+                      { label: 'المحرك الأقل حضورًا',                 value: allDriversEqual ? tied : `${weakDriver.name} (${weakDriver.pct}%)`, desc: DESC.weakDriver },
                     ] : [
-                      { num: 1,  label: 'Performance Efficiency',              value: `${ap}%` },
-                      { num: 2,  label: 'Dominant Driver',                     value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 3,  label: 'Overall Performance',                 value: `${chartData.overall}%` },
-                      { num: 4,  label: 'General Harmony',                     value: `${chartData.harmony}%` },
-                      { num: 5,  label: 'Driver Harmony',                      value: `${chartData.driverHarmony ?? '-'}%` },
-                      { num: 6,  label: 'World Harmony',                       value: `${chartData.worldHarmony ?? '-'}%` },
-                      { num: 6.5, label: 'Function Harmony',                   value: `${chartData.fnHarmony ?? '-'}%` },
-                      { num: 7,  label: 'Dominant Driver',                     value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 8,  label: 'Strongest World',                     value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)` },
-                      { num: 9,  label: 'World Most in Need of Development',   value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)` },
-                      { num: 10, label: 'Least Present Driver',                value: allDriversEqual ? tied : `${weakDriver.name} (${weakDriver.pct}%)` },
-                      { num: 11, label: 'Strongest Function',                  value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${(strongFn?.score ?? 0).toFixed(1)})` },
-                      { num: 12, label: 'Function Most in Need of Development', value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${(weakFn?.score ?? 0).toFixed(1)})` },
-                      { num: 13, label: 'Largest Driver Gap',                  value: `${driverGap}%` },
+                      { label: 'Overall Performance',                 value: `${chartData.overall}%`, desc: DESC.overall },
+                      { label: 'General Harmony',                     value: `${chartData.harmony}%`, desc: DESC.harmony },
+                      { label: 'Performance Efficiency',               value: `${ap}%`, desc: DESC.perfEff },
+                      { label: 'Driver Harmony',                      value: `${chartData.driverHarmony ?? '-'}%`, desc: DESC.driverHarmony },
+                      { label: 'World Harmony',                       value: `${chartData.worldHarmony ?? '-'}%`, desc: DESC.worldHarmony },
+                      { label: 'Function Harmony',                    value: `${chartData.fnHarmony ?? '-'}%`, desc: DESC.fnHarmony },
+                      { label: 'Inner World Efficiency',              value: `${wlds[0].pct}%`, desc: DESC.worldEff },
+                      { label: 'Physical World Efficiency',           value: `${wlds[1].pct}%`, desc: DESC.worldEff },
+                      { label: 'Existential World Efficiency',        value: `${wlds[2].pct}%`, desc: DESC.worldEff },
+                      { label: 'Strongest World',                     value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)`, desc: DESC.strongWorld },
+                      { label: 'World Most in Need of Development',   value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)`, desc: DESC.weakWorld },
+                      ...fnEffs.map(f => ({ label: `${f.name} Efficiency`, value: `${f.eff}%`, desc: DESC.fnEff })),
+                      { label: 'Strongest Function',                  value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${(strongFn?.score ?? 0).toFixed(1)})`, desc: DESC.strongFn },
+                      { label: 'Function Most in Need of Development', value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${(weakFn?.score ?? 0).toFixed(1)})`, desc: DESC.weakFn },
+                      { label: 'Cognitive Driver Percentage',         value: `${drivers[0].pct}%`, desc: DESC.driverPct },
+                      { label: 'Emotional Driver Percentage',         value: `${drivers[1].pct}%`, desc: DESC.driverPct },
+                      { label: 'Behavioral Driver Percentage',        value: `${drivers[2].pct}%`, desc: DESC.driverPct },
+                      { label: 'Dominant Driver',                     value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)`, desc: DESC.domDriver },
+                      { label: 'Least Present Driver',                value: allDriversEqual ? tied : `${weakDriver.name} (${weakDriver.pct}%)`, desc: DESC.weakDriver },
                     ]
 
                     return (
                       <div className="rounded-2xl overflow-hidden" style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }}>
                         <p className="text-xs font-semibold text-gray-400 px-4 pt-3 pb-2">
-                          {isArabic ? 'المؤشرات الـ 13' : '13 Indicators'}
+                          {isArabic ? 'المؤشرات الـ 27' : '27 Indicators'}
                         </p>
                         <table className="w-full">
                           <thead>
                             <tr>
-                              <th className={`${thCls} text-center w-8`}>#</th>
                               <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'المؤشر' : 'Indicator'}</th>
-                              <th className={`${thCls} text-${isArabic ? 'left' : 'right'}`}>{isArabic ? 'القيمة' : 'Value'}</th>
+                              <th className={`${thCls} text-center`}>{isArabic ? 'النتيجة' : 'Result'}</th>
+                              <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'ماذا يكشف؟' : 'What it reveals'}</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {rows.map(row => (
-                              <tr key={row.num} className="hover:bg-white/2 transition">
-                                <td className={`${tdCls} text-center text-gray-600 text-xs`}>{row.num}</td>
-                                <td className={tdCls}>{row.label}</td>
-                                <td className={`${tdCls} text-${isArabic ? 'left' : 'right'} font-semibold text-white`}>{row.value}</td>
+                            {rows.map((row, i) => (
+                              <tr key={i} className="hover:bg-white/2 transition">
+                                <td className={`${tdCls} font-medium whitespace-nowrap`}>{row.label}</td>
+                                <td className={`${tdCls} text-center font-semibold text-white whitespace-nowrap`}>{row.value}</td>
+                                <td className={`${tdCls} text-gray-400 text-xs leading-relaxed`}>{row.desc}</td>
                               </tr>
                             ))}
                           </tbody>
