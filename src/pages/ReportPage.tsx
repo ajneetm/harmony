@@ -989,7 +989,16 @@ Write a focused, practical report divided into:
                       const re = chartData.radarEmotional
                       const rb = chartData.radarBehavioral
 
-                      // Official World Efficiency per spec: (sum of world's 9 answers / 45) × 100
+                      // World harmony: same pattern as the official Hf (100 − (max − min) Function
+                      // Efficiency), scoped to just the 3 functions belonging to this world.
+                      const worldHarmonyFor = (start: number) => {
+                        const effs = [0, 1, 2].map(j => {
+                          const avgRaw = (rc[start + j].value + re[start + j].value + rb[start + j].value) / 3
+                          return Math.round(((avgRaw - 1) / 4) * 100)
+                        })
+                        return Math.max(0, 100 - (Math.max(...effs) - Math.min(...effs)))
+                      }
+
                       const worlds = [
                         {
                           title: chartData.worldLabels.inner,
@@ -998,7 +1007,7 @@ Write a focused, practical report divided into:
                           cognitive:  rc.slice(0, 3).map(d => d.value),
                           emotional:  re.slice(0, 3).map(d => d.value),
                           behavioral: rb.slice(0, 3).map(d => d.value),
-                          coherence:  chartData.worldMentalPct ?? 0,
+                          coherence:  worldHarmonyFor(0),
                         },
                         {
                           title: chartData.worldLabels.physical,
@@ -1007,7 +1016,7 @@ Write a focused, practical report divided into:
                           cognitive:  rc.slice(3, 6).map(d => d.value),
                           emotional:  re.slice(3, 6).map(d => d.value),
                           behavioral: rb.slice(3, 6).map(d => d.value),
-                          coherence:  chartData.worldEmotionalPct ?? 0,
+                          coherence:  worldHarmonyFor(3),
                         },
                         {
                           title: chartData.worldLabels.existential,
@@ -1016,7 +1025,7 @@ Write a focused, practical report divided into:
                           cognitive:  rc.slice(6, 9).map(d => d.value),
                           emotional:  re.slice(6, 9).map(d => d.value),
                           behavioral: rb.slice(6, 9).map(d => d.value),
-                          coherence:  chartData.worldExistentialPct ?? 0,
+                          coherence:  worldHarmonyFor(6),
                         },
                       ]
 
@@ -1043,6 +1052,14 @@ Write a focused, practical report divided into:
               // (not an official spec metric — kept out of the visible summary tables)
               const fnCoh = (c: number, e: number, b: number) =>
                 Math.max(0, Math.round(100 - (Math.max(c, e, b) - Math.min(c, e, b)) * 15))
+              // World harmony: same pattern as the official Hf, scoped to this world's 3 functions
+              const worldHarmonyFor = (start: number) => {
+                const effs = [0, 1, 2].map(j => {
+                  const avgRaw = (rc[start + j].value + re[start + j].value + rb[start + j].value) / 3
+                  return Math.round(((avgRaw - 1) / 4) * 100)
+                })
+                return Math.max(0, 100 - (Math.max(...effs) - Math.min(...effs)))
+              }
               const fnNames = isArabic ? FN_NAMES_AR : FN_NAMES_EN
               const thCls = 'py-2 px-3 text-xs font-semibold text-gray-400 border-b border-white/10'
               const tdCls = 'py-2 px-3 text-sm border-b border-white/5'
@@ -1091,13 +1108,14 @@ Write a focused, practical report divided into:
                           <tr>
                             <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'العالم' : 'World'}</th>
                             <th className={`${thCls} text-center`}>{isArabic ? 'الكفاءة' : 'Efficiency'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'الانسجام' : 'Harmony'}</th>
                           </tr>
                         </thead>
                         <tbody>
                           {[
-                            { name: chartData.worldLabels?.inner       ?? (isArabic ? 'العالم الداخلي'   : 'Inner World'),       pct: chartData.worldMentalPct      ?? 0, color: '#22c55e' },
-                            { name: chartData.worldLabels?.physical    ?? (isArabic ? 'العالم الخارجي'   : 'Physical World'),    pct: chartData.worldEmotionalPct   ?? 0, color: '#ae1f23' },
-                            { name: chartData.worldLabels?.existential ?? (isArabic ? 'العالم الوجودي'   : 'Existential World'), pct: chartData.worldExistentialPct ?? 0, color: '#3b82f6' },
+                            { name: chartData.worldLabels?.inner       ?? (isArabic ? 'العالم الداخلي'   : 'Inner World'),       pct: chartData.worldMentalPct      ?? 0, harm: worldHarmonyFor(0), color: '#22c55e' },
+                            { name: chartData.worldLabels?.physical    ?? (isArabic ? 'العالم الخارجي'   : 'Physical World'),    pct: chartData.worldEmotionalPct   ?? 0, harm: worldHarmonyFor(3), color: '#ae1f23' },
+                            { name: chartData.worldLabels?.existential ?? (isArabic ? 'العالم الوجودي'   : 'Existential World'), pct: chartData.worldExistentialPct ?? 0, harm: worldHarmonyFor(6), color: '#3b82f6' },
                           ].map((row, i) => (
                             <tr key={i}>
                               <td className={tdCls}>
@@ -1105,6 +1123,7 @@ Write a focused, practical report divided into:
                                 {row.name}
                               </td>
                               <td className={`${tdCls} text-center font-bold text-white`}>{row.pct}%</td>
+                              <td className={`${tdCls} text-center font-bold`} style={{ color: row.color }}>{row.harm}%</td>
                             </tr>
                           ))}
                         </tbody>
