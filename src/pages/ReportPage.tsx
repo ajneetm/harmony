@@ -894,7 +894,7 @@ Write a focused, practical report divided into:
                       {/* Overall */}
                       <div className="flex-1 rounded-2xl px-5 py-4" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
                         <p className="text-xs text-gray-400 mb-2">
-                          {isArabic ? 'المستوى العام' : 'Overall Level'}
+                          {isArabic ? 'الأداء العام' : 'Overall Performance'}
                         </p>
                         <p className="text-4xl font-bold leading-none text-white">
                           {chartData.overall}%
@@ -903,7 +903,7 @@ Write a focused, practical report divided into:
                       {/* Harmony */}
                       <div className="flex-1 rounded-2xl px-5 py-4" style={{ background: '#1a1a1a', border: '1px solid #2e2e2e' }}>
                         <p className="text-xs text-gray-400 mb-2">
-                          {isArabic ? 'التجانس بين الوظائف' : 'Function Coherence'}
+                          {isArabic ? 'الانسجام العام' : 'General Harmony'}
                         </p>
                         <p className="text-4xl font-bold leading-none text-white">
                           {chartData.harmony}%
@@ -1080,7 +1080,7 @@ Write a focused, practical report divided into:
                         <thead>
                           <tr>
                             <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'المحرك' : 'Driver'}</th>
-                            <th className={`${thCls} text-center`}>{isArabic ? 'مستوى الحضور' : 'Presence'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'النسبة' : 'Percentage'}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1110,8 +1110,8 @@ Write a focused, practical report divided into:
                         <thead>
                           <tr>
                             <th className={`${thCls} text-${isArabic ? 'right' : 'left'}`}>{isArabic ? 'العالم' : 'World'}</th>
-                            <th className={`${thCls} text-center`}>{isArabic ? 'الأداء' : 'Score'}</th>
-                            <th className={`${thCls} text-center`}>{isArabic ? 'التجانس' : 'Coh.'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'الكفاءة' : 'Efficiency'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'الانسجام' : 'Harmony'}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1149,7 +1149,7 @@ Write a focused, practical report divided into:
                             <th className={`${thCls} text-center`} style={{ color: '#3b82f6' }}>{isArabic ? 'سلوكي' : 'Beh.'}</th>
                             <th className={`${thCls} text-center`}>{isArabic ? 'النسبة' : 'Avg.'}</th>
                             <th className={`${thCls} text-center`}>{isArabic ? 'الكفاءة' : 'Eff.'}</th>
-                            <th className={`${thCls} text-center`}>{isArabic ? 'التجانس' : 'Coh.'}</th>
+                            <th className={`${thCls} text-center`}>{isArabic ? 'الانسجام' : 'Harm.'}</th>
                             <th className={`${thCls} text-center w-10`} />
                           </tr>
                         </thead>
@@ -1217,35 +1217,35 @@ Write a focused, practical report divided into:
                     const ap          = chartData.actionPower ?? Math.round(chartData.overall * chartData.harmony / 100)
 
                     const rows = isArabic ? [
-                      { num: 1,  label: 'كفاءة الأداء',              value: `${ap}%` },
-                      { num: 2,  label: 'يقودك الجانب',              value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 3,  label: 'متوسط الأداء العام',         value: `${chartData.overall}%` },
-                      { num: 4,  label: 'التجانس العام',              value: `${chartData.harmony}%` },
-                      { num: 5,  label: 'تجانس المحركات',             value: `${chartData.driverHarmony ?? '-'}%` },
-                      { num: 6,  label: 'تجانس العوالم',              value: `${chartData.worldHarmony ?? '-'}%` },
-                      { num: 6.5, label: 'الانسجام العام',             value: `${chartData.fnHarmony ?? '-'}%` },
-                      { num: 7,  label: 'المحرك المسيطر',             value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 8,  label: 'أقوى عالم',                  value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)` },
-                      { num: 9,  label: 'أضعف عالم',                  value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)` },
-                      { num: 10, label: 'أضعف محرك',                  value: allDriversEqual ? tied : `${weakDriver.name} (${weakDriver.pct}%)` },
-                      { num: 11, label: 'أقوى وظيفة',                 value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${(strongFn?.score ?? 0).toFixed(1)})` },
-                      { num: 12, label: 'أضعف وظيفة',                 value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${(weakFn?.score ?? 0).toFixed(1)})` },
-                      { num: 13, label: 'أكبر فجوة بين المحركات',     value: `${driverGap}%` },
+                      { num: 1,  label: 'كفاءة الأداء',                        value: `${ap}%` },
+                      { num: 2,  label: 'المحرك الغالب',                       value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 3,  label: 'الأداء العام',                        value: `${chartData.overall}%` },
+                      { num: 4,  label: 'الانسجام العام',                      value: `${chartData.harmony}%` },
+                      { num: 5,  label: 'انسجام المحركات',                     value: `${chartData.driverHarmony ?? '-'}%` },
+                      { num: 6,  label: 'انسجام العوالم',                      value: `${chartData.worldHarmony ?? '-'}%` },
+                      { num: 6.5, label: 'انسجام الوظائف',                     value: `${chartData.fnHarmony ?? '-'}%` },
+                      { num: 7,  label: 'المحرك الغالب',                       value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 8,  label: 'أقوى عالم',                          value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)` },
+                      { num: 9,  label: 'العالم الأكثر حاجة إلى التطوير',       value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)` },
+                      { num: 10, label: 'المحرك الأقل حضورًا',                 value: allDriversEqual ? tied : `${weakDriver.name} (${weakDriver.pct}%)` },
+                      { num: 11, label: 'أقوى وظيفة',                         value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${(strongFn?.score ?? 0).toFixed(1)})` },
+                      { num: 12, label: 'الوظيفة الأكثر حاجة إلى التطوير',      value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${(weakFn?.score ?? 0).toFixed(1)})` },
+                      { num: 13, label: 'أكبر فجوة بين المحركات',              value: `${driverGap}%` },
                     ] : [
-                      { num: 1,  label: 'Performance Efficiency',    value: `${ap}%` },
-                      { num: 2,  label: 'Leading Driver',            value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 3,  label: 'Action Average',            value: `${chartData.overall}%` },
-                      { num: 4,  label: 'General Harmony',           value: `${chartData.harmony}%` },
-                      { num: 5,  label: 'Driver Harmony',            value: `${chartData.driverHarmony ?? '-'}%` },
-                      { num: 6,  label: 'World Harmony',             value: `${chartData.worldHarmony ?? '-'}%` },
-                      { num: 6.5, label: 'Overall Harmony',          value: `${chartData.fnHarmony ?? '-'}%` },
-                      { num: 7,  label: 'Dominant Driver',           value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
-                      { num: 8,  label: 'Strongest World',           value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)` },
-                      { num: 9,  label: 'Weakest World',             value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)` },
-                      { num: 10, label: 'Weakest Driver',            value: allDriversEqual ? tied : `${weakDriver.name} (${weakDriver.pct}%)` },
-                      { num: 11, label: 'Strongest Function',        value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${(strongFn?.score ?? 0).toFixed(1)})` },
-                      { num: 12, label: 'Weakest Function',          value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${(weakFn?.score ?? 0).toFixed(1)})` },
-                      { num: 13, label: 'Largest Driver Gap',        value: `${driverGap}%` },
+                      { num: 1,  label: 'Performance Efficiency',              value: `${ap}%` },
+                      { num: 2,  label: 'Dominant Driver',                     value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 3,  label: 'Overall Performance',                 value: `${chartData.overall}%` },
+                      { num: 4,  label: 'General Harmony',                     value: `${chartData.harmony}%` },
+                      { num: 5,  label: 'Driver Harmony',                      value: `${chartData.driverHarmony ?? '-'}%` },
+                      { num: 6,  label: 'World Harmony',                       value: `${chartData.worldHarmony ?? '-'}%` },
+                      { num: 6.5, label: 'Function Harmony',                   value: `${chartData.fnHarmony ?? '-'}%` },
+                      { num: 7,  label: 'Dominant Driver',                     value: allDriversEqual ? tied : `${domDriver.name} (${domDriver.pct}%)` },
+                      { num: 8,  label: 'Strongest World',                     value: allWorldsEqual ? tied : `${strongWorld.name} (${strongWorld.pct}%)` },
+                      { num: 9,  label: 'World Most in Need of Development',   value: allWorldsEqual ? tied : `${weakWorld.name} (${weakWorld.pct}%)` },
+                      { num: 10, label: 'Least Present Driver',                value: allDriversEqual ? tied : `${weakDriver.name} (${weakDriver.pct}%)` },
+                      { num: 11, label: 'Strongest Function',                  value: allFnsEqual ? tied : `${strongFn?.name ?? '—'} (${(strongFn?.score ?? 0).toFixed(1)})` },
+                      { num: 12, label: 'Function Most in Need of Development', value: allFnsEqual ? tied : `${weakFn?.name ?? '—'} (${(weakFn?.score ?? 0).toFixed(1)})` },
+                      { num: 13, label: 'Largest Driver Gap',                  value: `${driverGap}%` },
                     ]
 
                     return (
