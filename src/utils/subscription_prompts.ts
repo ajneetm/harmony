@@ -25,6 +25,7 @@ const subscription_AR_PROMPT = `
 
 * أن تكون العبارات واضحة وسهلة الفهم ومناسبة لمقياس ليكرت (موافق بشدة - موافق - لا أعرف - غير موافق - غير موافق بشدة)
 * أن تتضمن كل عبارة عنصرًا واحدًا فقط.
+* ممنوع منعًا باتًا أن تكون العبارة مركّبة (Double-barreled) — يعني تجمع بين فكرتين أو سلوكين مختلفين بحرف عطف مثل "و"، بحيث يمكن للشخص أن يوافق على جزء ويرفض الجزء الآخر (مثال خاطئ: "أخطط جيدًا وأتحمل المسؤولية"). كل عبارة يجب أن تكون قابلة للإجابة بدرجة واحدة واضحة لا لبس فيها.
 * أن تتوزع العبارات على النطاقات التسعة بالتساوي.
 * أن تكون مرتبطة بمشكلة سلوكية أو نمط حياة أو تحدٍّ واقعي محدد يتم تقديمه ضمن المشكلة.
 
@@ -142,6 +143,7 @@ Thus, the result will be: 3 Worlds × 3 Elements × 3 Dimensions = 27 Evaluative
 
 * The statements must be clear, easy to understand, and suitable for a Likert scale (Strongly Agree – Agree – Neutral – Disagree – Strongly Disagree)
 * Each statement should include only **one** element.
+* Statements must never be double-barreled — never combine two different ideas or behaviors with "and" such that someone could agree with one part and disagree with the other (bad example: "I plan well and take responsibility"). Every statement must be answerable with a single, unambiguous rating.
 * The 27 statements must be evenly distributed across the nine domains.
 * The statements must be relevant to a specific behavioral issue, lifestyle challenge, or real-life situation presented in the "problem" input.
 

@@ -98,6 +98,10 @@ ${aiResponse}
 - وزّع الأسئلة المعكوسة بشكل غير متوقع على الوظائف التسع (لا تجعلها في نهاية القائمة فقط).
 - الأسئلة العادية (reversed: false) تصف حالة إيجابية أو قوة.
 
+**تعليمات مهمة حول بساطة السؤال:**
+- كل سؤال يجب أن يقيس فكرة أو سلوكًا واحدًا فقط.
+- ممنوع دمج فكرتين بحرف عطف "و" في نفس السؤال (مثال خاطئ: "أخطط جيدًا وأتحمل المسؤولية عن قراراتي") — لازم يكون فيه إجابة واحدة واضحة ممكنة، لا إجابتين مختلفتين لجزأين من نفس السؤال.
+
 يجب أن يكون الناتج عبارة عن JSON object كامل ومتكامل بالشكل التالي:
 {
   "problem": "ملخص المشكلة",
@@ -122,6 +126,10 @@ ${aiResponse}
 - Distribute the reversed questions unpredictably across the nine functions (not only at the end).
 - Regular questions (reversed: false) describe a positive state or strength.
 
+**Important instructions about question simplicity:**
+- Each question must measure exactly one idea or behavior.
+- Never join two ideas with "and" in the same question (bad example: "I plan well and take responsibility for my decisions") — there must be one clear possible answer, not two different answers for two parts of the same question.
+
 The output should be a complete JSON object in the following format:
 {
   "problem": "problem summary",
@@ -135,8 +143,8 @@ The output should be a complete JSON object in the following format:
 Only return the complete JSON object, do not return any commands, comments, or anything else.`
 
     const systemInstruction = language === 'ar'
-      ? 'أنت خبير في نموذج هارموني. قم بإنشاء 27 سؤالاً بالضبط: 18 إيجابية (reversed: false) و9 سلبية (reversed: true) موزعة بشكل عشوائي. أرجع JSON فقط.'
-      : 'You are a Harmony model expert. Generate exactly 27 questions: 18 positive (reversed: false) and 9 negative (reversed: true) distributed randomly. Return valid JSON only.'
+      ? 'أنت خبير في نموذج هارموني. قم بإنشاء 27 سؤالاً بالضبط: 18 إيجابية (reversed: false) و9 سلبية (reversed: true) موزعة بشكل عشوائي. كل سؤال يقيس فكرة واحدة فقط، بدون دمج فكرتين بـ"و". أرجع JSON فقط.'
+      : 'You are a Harmony model expert. Generate exactly 27 questions: 18 positive (reversed: false) and 9 negative (reversed: true) distributed randomly. Each question must measure exactly one idea, never two ideas joined with "and". Return valid JSON only.'
 
     const res = await fetch(fnUrl('ai-questions'), {
       method: 'POST',
